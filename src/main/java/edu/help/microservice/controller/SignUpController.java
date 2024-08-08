@@ -39,7 +39,7 @@ public class SignUpController {
             String verificationCode = "sample-code"; // Hardcoded for testing
             newRegistration.setPasscode(verificationCode);
             registrationService.save(newRegistration);
-            sendVerificationEmail(email, verificationCode);
+            sendVerificationEmail(email, verificationCode); // Calling send verification email
             return ResponseEntity.ok("sent email");
         } else if (existingRegistration.getUserData() != null) {
             // Email exists and first name exists
@@ -49,7 +49,7 @@ public class SignUpController {
             String verificationCode = "sample-code"; // Hardcoded for testing
             existingRegistration.setPasscode(verificationCode);
             registrationService.save(existingRegistration);
-            sendVerificationEmail(email, verificationCode);
+            sendVerificationEmail(email, verificationCode);  // Calling send verification email
             return ResponseEntity.ok("Re-sent email");
         }
     }
@@ -63,7 +63,7 @@ public class SignUpController {
             String verificationCode = "sample-code"; // Hardcoded for testing
             registration.setPasscode(verificationCode);
             registrationService.save(registration);
-            sendVerificationEmail(email, verificationCode);
+            sendVerificationEmail(email, verificationCode); // Calling send verification email
             return ResponseEntity.ok("Verification email sent");
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Email not found");
@@ -92,9 +92,9 @@ public class SignUpController {
             registration.setUserData(newUser);
             registrationService.save(registration);
 
-            return ResponseEntity.ok("LOGIN SUCCEEDED");
+            return ResponseEntity.ok("REGISTRATION SUCCEEDED");
         } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("LOGIN FAILED");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("REGISTRATION FAILED");
         }
     }
 

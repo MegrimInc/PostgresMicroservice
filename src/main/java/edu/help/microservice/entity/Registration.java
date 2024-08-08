@@ -13,10 +13,12 @@ public class Registration {
     private String email;
 
     private String passcode;
-    private Boolean isBar;
+
+    @Column(name = "is_bar")
+    private Boolean isBar = false;
 
     @ManyToOne
-    @JoinColumn(name = "userDataID", referencedColumnName = "userID", nullable = true)
+    @JoinColumn(name = "user_dataid", referencedColumnName = "userID", nullable = true)
     private UserData userData;
 
     // Getters and Setters

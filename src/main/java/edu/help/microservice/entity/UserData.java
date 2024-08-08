@@ -5,8 +5,6 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "userdata")
 public class UserData {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userID;
 
     @Column(nullable = false, unique = true)
@@ -15,7 +13,10 @@ public class UserData {
     @Column(nullable = false)
     private String password;
 
+    @Column(name = "first_name")
     private String firstName;
+
+    @Column(name = "last_name")
     private String lastName;
 
     private Boolean acceptedTOS = false;
