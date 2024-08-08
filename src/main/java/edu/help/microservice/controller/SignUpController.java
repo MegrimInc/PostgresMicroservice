@@ -4,11 +4,21 @@ import edu.help.microservice.dto.AcceptTOSRequest;
 import edu.help.microservice.dto.LoginRequest;
 import edu.help.microservice.dto.RegistrationRequest;
 import edu.help.microservice.dto.VerificationRequest;
+import edu.help.microservice.entity.Bar;
 import edu.help.microservice.entity.Registration;
 import edu.help.microservice.entity.UserData;
+import edu.help.microservice.service.BarService;
 import edu.help.microservice.service.RegistrationService;
 import edu.help.microservice.service.UserDataService;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.mail.MailException;
+import org.springframework.mail.MailSender;
+import org.springframework.mail.SimpleMailMessage;
+import java.util.Properties;
 
+import java.util.Random;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +35,9 @@ public class SignUpController {
     @Autowired
     private UserDataService userDataService;
 
+    @Autowired
+    private BarService barService;
+
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody AcceptTOSRequest request) {
         String email = request.getEmail();
@@ -36,7 +49,7 @@ public class SignUpController {
             Registration newRegistration = new Registration();
             newRegistration.setEmail(email);
             registrationService.save(newRegistration);
-            String verificationCode = "sample-code"; // Hardcoded for testing
+            String verificationCode = generateVerificationCode(); // Hardcoded for testing
             newRegistration.setPasscode(verificationCode);
             registrationService.save(newRegistration);
             sendVerificationEmail(email, verificationCode); // Calling send verification email
@@ -117,23 +130,67 @@ public class SignUpController {
     public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
         String email = loginRequest.getEmail();
         String password = loginRequest.getPassword();
-        //ACCEPT TOS HAS TO BE TRUE
+//ACCEPT TOS HAS TO BE TRUE
+        Registration registeredUser = registrationService.findByEmail(email);
         UserData user = userDataService.findByEmail(email);
+        Bar testBar = barService.findByEmail(email);
+
         if (user != null && user.getPassword().equals(password)) {
-            return ResponseEntity.ok("LOGIN SUCCEEDED");
+            return ResponseEntity.ok(user.getUserID().toString());
+        } else if (registeredUser != null && registeredUser.getPasscode().equals(password) && registeredUser.getIsBar()) {
+            return ResponseEntity.ok("" + (testBar.getBarId()*-1));
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("LOGIN FAILED");
         }
     }
 
+
     
     private String generateVerificationCode() {
         // Generate a random verification code
-        return UUID.randomUUID().toString();
+        Random rand = new Random();
+
+        return "" + rand.nextInt(0, 9) +
+                rand.nextInt(0, 9) +
+                rand.nextInt(0, 9) +
+                rand.nextInt(0, 9) +
+                rand.nextInt(0, 9) +
+                rand.nextInt(0, 9);
     }
 
-    private void sendVerificationEmail(String email, String verificationCode) {
-        // Logic to send verification email
+    private void sendVerificationEmail(String email, String code) {
+        JavaMailSenderImpl test = new JavaMailSenderImpl();
+
+
+        test.setHost("email-smtp.us-east-1.amazonaws.com");
+        test.setPort(25);
+
+        test.setUsername("AKIARKMXJUVKGK3ZC6FH");
+        test.setPassword("BJ0EwGiCXsXWcZT2QSI5eR+5yFzbimTnquszEXPaEXsd");
+
+        Properties props = test.getJavaMailProperties();
+        props.put("mail.transport.protocol", "smtp");
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.debug", "true");
+
+        SimpleMailMessage msg = new SimpleMailMessage();
+        msg.setTo(email);
+        msg.setFrom("noreply@barzzy.site");
+        msg.setSubject("Barzzy Verification Code");
+        msg.setText(
+                "Your verification code is: " + code);
+
+        try{
+            test.send(msg);
+            System.out.println("Successful send");
+        }
+        catch(MailException ex) {
+            // simply log it and go on...
+            System.err.println(ex.getMessage());
+        }
+    
+
     }
 }
 
