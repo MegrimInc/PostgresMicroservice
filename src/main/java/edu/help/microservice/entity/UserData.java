@@ -5,6 +5,9 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "userdata")
 public class UserData {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userID;
 
     @Column(nullable = false, unique = true)
