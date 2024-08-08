@@ -58,7 +58,7 @@ public class SignUpController {
     public ResponseEntity<String> sendVerification(@RequestBody AcceptTOSRequest request) {
         String email = request.getEmail();
         Registration registration = registrationService.findByEmail(email);
-
+//AcceptedTOS needs to be FALSE
         if (registration != null) {
             String verificationCode = "sample-code"; // Hardcoded for testing
             registration.setPasscode(verificationCode);
@@ -117,7 +117,7 @@ public class SignUpController {
     public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
         String email = loginRequest.getEmail();
         String password = loginRequest.getPassword();
-
+        //ACCEPT TOS HAS TO BE TRUE
         UserData user = userDataService.findByEmail(email);
         if (user != null && user.getPassword().equals(password)) {
             return ResponseEntity.ok("LOGIN SUCCEEDED");
