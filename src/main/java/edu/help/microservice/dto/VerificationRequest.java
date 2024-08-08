@@ -1,40 +1,27 @@
-package edu.help.microservice.entity;
+package edu.help.microservice.dto;
 
-import jakarta.persistence.*;
-
-@Entity
-@Table(name = "userdata")
-public class UserData {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long userID;
-
-    @Column(nullable = false, unique = true)
+public class VerificationRequest {
     private String email;
-
-    @Column(nullable = false)
+    private String verificationCode;
     private String password;
-
     private String firstName;
     private String lastName;
 
-    private Boolean acceptedTOS = false;
-
     // Getters and Setters
-    public Long getUserID() {
-        return userID;
-    }
-
-    public void setUserID(Long userID) {
-        this.userID = userID;
-    }
-
     public String getEmail() {
         return email;
     }
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getVerificationCode() {
+        return verificationCode;
+    }
+
+    public void setVerificationCode(String verificationCode) {
+        this.verificationCode = verificationCode;
     }
 
     public String getPassword() {
@@ -60,14 +47,5 @@ public class UserData {
     public void setLastName(String lastName) {
         this.lastName = lastName;
     }
-
-    public Boolean getAcceptedTOS() {
-        return acceptedTOS;
-    }
-
-    public void setAcceptedTOS(Boolean acceptedTOS) {
-        this.acceptedTOS = acceptedTOS;
-    }
 }
-
 

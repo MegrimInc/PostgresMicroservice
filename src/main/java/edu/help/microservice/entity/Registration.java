@@ -3,33 +3,29 @@ package edu.help.microservice.entity;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "Registration")
+@Table(name = "registration")
 public class Registration {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "RegistrationID")
-    private Long registrationId;
+    private Long registrationID;
 
-    @Column(name = "Email", unique = true, nullable = false)
+    @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(name = "BarID")
-    private Integer barId;
+    private String passcode;
+    private Boolean isBar;
 
-    @Column(name = "UserID")
-    private Long userId;  // Corrected to Long
+    @ManyToOne
+    @JoinColumn(name = "userDataID", referencedColumnName = "userID", nullable = true)
+    private UserData userData;
 
-    @Column(name = "Password", nullable = false)
-    private String password;
-
-    // Getters and setters
-    public Long getRegistrationId() {
-        return registrationId;
+    // Getters and Setters
+    public Long getRegistrationID() {
+        return registrationID;
     }
 
-    public void setRegistrationId(Long registrationId) {
-        this.registrationId = registrationId;
+    public void setRegistrationID(Long registrationID) {
+        this.registrationID = registrationID;
     }
 
     public String getEmail() {
@@ -40,27 +36,28 @@ public class Registration {
         this.email = email;
     }
 
-    public Integer getBarId() {
-        return barId;
+    public String getPasscode() {
+        return passcode;
     }
 
-    public void setBarId(Integer barId) {
-        this.barId = barId;
+    public void setPasscode(String passcode) {
+        this.passcode = passcode;
     }
 
-    public Long getUserId() {  // Corrected getter
-        return userId;
+    public Boolean getIsBar() {
+        return isBar;
     }
 
-    public void setUserId(Long userId) {  // Corrected setter
-        this.userId = userId;
+    public void setIsBar(Boolean isBar) {
+        this.isBar = isBar;
     }
 
-    public String getPassword() {
-        return password;
+    public UserData getUserData() {
+        return userData;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setUserData(UserData userData) {
+        this.userData = userData;
     }
 }
+
