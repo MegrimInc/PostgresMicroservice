@@ -6,6 +6,7 @@ import edu.help.microservice.entity.Bar;
 import edu.help.microservice.entity.Tag;
 import edu.help.microservice.dto.BarDTO;
 import edu.help.microservice.dto.TagDTO;
+import edu.help.microservice.entity.UserData;
 import edu.help.microservice.repository.BarRepository;
 import edu.help.microservice.repository.DrinkRepository;
 import edu.help.microservice.repository.TagRepository;
@@ -70,4 +71,9 @@ public class BarService {
     public Drink findDrinkById(Integer drinkId) {
         return drinkRepository.findById(drinkId).orElse(null);
     }
+
+    public Bar findByEmail(String email) {
+        return barRepository.findByEmail(email).orElse(null);
+    }
+
 }
