@@ -10,7 +10,7 @@ public class Bar implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "bar_id", nullable = false)
-    private Integer barId;
+    private Long barId;
 
     @Column(name = "bar_status")
     private Boolean barStatus;
@@ -46,11 +46,11 @@ public class Bar implements Serializable {
     private String barTag;
 
     // Getters and Setters
-    public Integer getBarId() {
+    public Long getBarId() {
         return barId;
     }
 
-    public void setBarId(Integer barId) {
+    public void setBarId(Long barId) {
         this.barId = barId;
     }
 
