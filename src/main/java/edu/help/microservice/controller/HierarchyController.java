@@ -1,0 +1,65 @@
+package edu.help.microservice.controller;
+
+import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import edu.help.microservice.service.HierarchyService;
+
+@RestController
+@RequestMapping("/hierarchy")
+public class HierarchyController {
+
+    @Autowired
+    private HierarchyService hierarchyService;
+
+    @PostMapping("/create")
+    public String createHierarchy(@RequestBody HierarchyRequest request) {
+        hierarchyService.createHierarchy(request.getBarId(), request.getUserId(), request.getOrderId(), request.getDrinkIds());
+        return "Hierarchy created successfully";
+    }
+
+    public static class HierarchyRequest {
+        private int barId;
+        private int userId;
+        private String orderId;
+        private Set<Integer> drinkIds;
+
+        // Getters and Setters
+        public int getBarId() {
+            return barId;
+        }
+
+        public void setBarId(int barId) {
+            this.barId = barId;
+        }
+
+        public int getUserId() {
+            return userId;
+        }
+
+        public void setUserId(int userId) {
+            this.userId = userId;
+        }
+
+        public String getOrderId() {
+            return orderId;
+        }
+
+        public void setOrderId(String orderId) {
+            this.orderId = orderId;
+        }
+
+        public Set<Integer> getDrinkIds() {
+            return drinkIds;
+        }
+
+        public void setDrinkIds(Set<Integer> drinkIds) {
+            this.drinkIds = drinkIds;
+        }
+    }
+}
