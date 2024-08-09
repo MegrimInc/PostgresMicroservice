@@ -72,8 +72,8 @@ public class BarService {
         return drinkRepository.findById(drinkId).orElse(null);
     }
 
-    public Bar findByEmail(String email) {
-        return barRepository.findByEmail(email).orElse(null);
+    public Bar findByBarEmail(String bar_email) {
+        return barRepository.findByBarEmail(bar_email).orElse(null);
     }
 
 }

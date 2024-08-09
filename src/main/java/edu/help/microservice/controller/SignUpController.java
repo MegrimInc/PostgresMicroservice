@@ -59,7 +59,7 @@ public class SignUpController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("email already exists");
         } else {
             // Email exists and first name does not exist
-            String verificationCode = "sample-code"; // Hardcoded for testing
+            String verificationCode = generateVerificationCode(); // Hardcoded for testing
             existingRegistration.setPasscode(verificationCode);
             registrationService.save(existingRegistration);
             sendVerificationEmail(email, verificationCode);  // Calling send verification email
@@ -73,7 +73,7 @@ public class SignUpController {
         Registration registration = registrationService.findByEmail(email);
 //AcceptedTOS needs to be FALSE
         if (registration != null) {
-            String verificationCode = "sample-code"; // Hardcoded for testing
+            String verificationCode = generateVerificationCode(); // Hardcoded for testing
             registration.setPasscode(verificationCode);
             registrationService.save(registration);
             sendVerificationEmail(email, verificationCode); // Calling send verification email
@@ -105,7 +105,7 @@ public class SignUpController {
             registration.setUserData(newUser);
             registrationService.save(registration);
 
-            return ResponseEntity.ok("REGISTRATION SUCCEEDED");
+            return ResponseEntity.ok(newUser.getUserID().toString());
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("REGISTRATION FAILED");
         }
@@ -133,7 +133,7 @@ public class SignUpController {
 //ACCEPT TOS HAS TO BE TRUE
         Registration registeredUser = registrationService.findByEmail(email);
         UserData user = userDataService.findByEmail(email);
-        Bar testBar = barService.findByEmail(email);
+        Bar testBar = barService.findByBarEmail(email);
 
         if (user != null && user.getPassword().equals(password)) {
             return ResponseEntity.ok(user.getUserID().toString());
@@ -163,7 +163,7 @@ public class SignUpController {
 
 
         test.setHost("email-smtp.us-east-1.amazonaws.com");
-        test.setPort(25);
+        test.setPort(587);
 
         test.setUsername("AKIARKMXJUVKGK3ZC6FH");
         test.setPassword("BJ0EwGiCXsXWcZT2QSI5eR+5yFzbimTnquszEXPaEXsd");
@@ -189,7 +189,7 @@ public class SignUpController {
             // simply log it and go on...
             System.err.println(ex.getMessage());
         }
-    
+
 
     }
 }
