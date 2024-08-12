@@ -17,6 +17,9 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class WebSocketOrderHandler extends TextWebSocketHandler {
 
     private final Map<String, WebSocketSession> sessionMap = new ConcurrentHashMap<>();
@@ -88,59 +91,69 @@ public void afterConnectionEstablished(WebSocketSession session) throws Exceptio
     }
     
     
-   private String fetchInitialStatus(String path) {
-    // Extract barId, userId, and orderId from the path
-    String[] parts = path.split("\\.");
-
-    if (parts.length >= 4) {
-        String barId = parts[1];
-        String userId = parts[2];
-        // Replace dashes with underscores in the orderId
-        String orderId = parts[3].replace("-", "_");
-
-        System.out.println("Debug: Extracted barId: " + barId + ", userId: " + userId + ", orderId: " + orderId);
-
-        try (Connection connection = dataSource.getConnection();
-             Statement stmt = connection.createStatement()) {
-
-            // Match paths with the first 4 levels and collect all drink IDs
-            String query = String.format(
-                "SELECT path, status FROM hierarchy WHERE path ~ 'root.%s.%s.%s.*' ORDER BY id ASC",
-                barId, userId, orderId);
-            System.out.println("Debug: Executing query: " + query);
-
-            ResultSet rs = stmt.executeQuery(query);
-            StringBuilder drinkIds = new StringBuilder();
-            int status = -1;
-
-            while (rs.next()) {
-                String fullPath = rs.getString("path");
-                if (status == -1) {
-                    status = rs.getInt("status"); // Assuming status is the same for all drinks in the order
+    private String fetchInitialStatus(String path) {
+        // Extract barId, userId, and orderId from the path
+        String[] parts = path.split("\\.");
+    
+        if (parts.length >= 4) {
+            String barId = parts[1];
+            String userId = parts[2];
+            String orderId = parts[3].replace("-", "_"); // Replace dashes with underscores
+    
+            System.out.println("Debug: Extracted barId: " + barId + ", userId: " + userId + ", orderId: " + orderId);
+    
+            try (Connection connection = dataSource.getConnection();
+                 Statement stmt = connection.createStatement()) {
+    
+                String query = String.format(
+                    "SELECT path, status FROM hierarchy WHERE path ~ 'root.%s.%s.%s.*.*' ORDER BY id ASC",
+                    barId, userId, orderId);
+                System.out.println("Debug: Executing query: " + query);
+    
+                ResultSet rs = stmt.executeQuery(query);
+                Map<String, Integer> drinkQuantities = new ConcurrentHashMap<>();
+                int status = -1;
+    
+                while (rs.next()) {
+                    String fullPath = rs.getString("path");
+                    if (status == -1) {
+                        status = rs.getInt("status"); // Assuming status is the same for all drinks in the order
+                    }
+                    String[] pathParts = fullPath.split("\\.");
+                    if (pathParts.length == 6) {
+                        String drinkId = pathParts[4]; // Extract drink ID
+                        int drinkCount = Integer.parseInt(pathParts[5]); // Extract drink count
+                        drinkQuantities.put(drinkId, drinkCount);
+                        System.out.println("Debug: Added to drinkQuantities -> Drink ID: " + drinkId + ", Count: " + drinkCount);
+                    } else {
+                        System.out.println("Debug: Unexpected path length: " + fullPath);
+                    }
                 }
-                String[] pathParts = fullPath.split("\\.");
-                if (pathParts.length == 5) {
-                    drinkIds.append(pathParts[4]).append(", ");
+    
+                if (!drinkQuantities.isEmpty()) {
+                    Map<String, Object> result = new ConcurrentHashMap<>();
+                    result.put("barId", Integer.valueOf(barId));
+                    result.put("userId", Integer.valueOf(userId));
+                    result.put("orderId", orderId);
+                    result.put("status", status);
+                    result.put("drinkQuantities", drinkQuantities);
+    
+                    // Convert the map to a JSON string
+                    return new ObjectMapper().writeValueAsString(result);
+                } else {
+                    System.out.println("Debug: drinkQuantities map is empty despite matching paths.");
                 }
-                System.out.println("Debug: Query returned path: " + fullPath);
+            } catch (SQLException | JsonProcessingException e) {
+                e.printStackTrace();
+                System.out.println("Debug: Exception encountered: " + e.getMessage());
             }
-
-            if (drinkIds.length() > 0) {
-                // Remove the last comma and space
-                drinkIds.setLength(drinkIds.length() - 2);
-                return String.format("root.%s.%s.%s.{%s}, Status: %d", barId, userId, orderId, drinkIds.toString(), status);
-            } else {
-                System.out.println("Debug: No results found for path: " + path);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            System.out.println("Debug: SQLException encountered: " + e.getMessage());
+        } else {
+            System.out.println("Debug: Path does not contain enough parts: " + path);
         }
-    } else {
-        System.out.println("Debug: Path does not contain enough parts: " + path);
+        return null;
     }
-    return null;
-}
+    
+
 
 
     
