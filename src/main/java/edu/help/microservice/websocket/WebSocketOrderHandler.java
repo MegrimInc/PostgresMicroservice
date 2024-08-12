@@ -106,7 +106,7 @@ public void afterConnectionEstablished(WebSocketSession session) throws Exceptio
                  Statement stmt = connection.createStatement()) {
     
                 String query = String.format(
-                    "SELECT path, status FROM hierarchy WHERE path ~ 'root.%s.%s.%s.*.*' ORDER BY id ASC",
+                    "SELECT path, status FROM hierarchy WHERE path ~ 'root.%s.%s.%s.*.*'",
                     barId, userId, orderId);
                 System.out.println("Debug: Executing query: " + query);
     
