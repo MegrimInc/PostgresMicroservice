@@ -54,15 +54,19 @@ public class OrderStatusService {
                                     String path = "root." + barId + "." + userId + "." + orderId;
 
                                     String query = String.format(
-                                        "SELECT status FROM hierarchy WHERE bar_id = '%s' AND user_id = '%s' AND order_id = '%s'",
+                                        "SELECT status, claimer FROM hierarchy WHERE bar_id = '%s' AND user_id = '%s' AND order_id = '%s'",
                                             barId, userId, orderId);
 
                                     Statement statusStatement = connection.createStatement();
                                     ResultSet statusResult = statusStatement.executeQuery(query);
                                     if (statusResult.next()) {
                                         String status = statusResult.getString("status");
+                                        String claimer = statusResult.getString("claimer");
                                         String statusMessage = (status != null) ? status : "null";
-                                        String message = String.format("Path: %s, Status: %s", path, statusMessage);
+                                        String claimerMessage = (claimer != null) ? claimer : "null";
+
+                                        // Include both status and claimer in the message
+                                        String message = String.format("Path: %s, Status: %s, Claimer: %s", path, statusMessage, claimerMessage);
                                         webSocketOrderHandler.sendOrderUpdate(path, message);
                                     }
                                     statusResult.close();

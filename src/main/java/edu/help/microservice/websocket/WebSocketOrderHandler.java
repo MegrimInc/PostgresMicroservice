@@ -106,19 +106,26 @@ public void afterConnectionEstablished(WebSocketSession session) throws Exceptio
                  Statement stmt = connection.createStatement()) {
     
                 String query = String.format(
-                    "SELECT path, status FROM hierarchy WHERE path ~ 'root.%s.%s.%s.*.*'",
+                    "SELECT path, status, claimer FROM hierarchy WHERE path ~ 'root.%s.%s.%s.*.*'",
                     barId, userId, orderId);
                 System.out.println("Debug: Executing query: " + query);
     
                 ResultSet rs = stmt.executeQuery(query);
                 Map<String, Integer> drinkQuantities = new ConcurrentHashMap<>();
-                int status = -1;
+                String status = null;
+                String claimer = null;
     
                 while (rs.next()) {
                     String fullPath = rs.getString("path");
-                    if (status == -1) {
-                        status = rs.getInt("status"); // Assuming status is the same for all drinks in the order
+    
+                    if (status == null) {
+                        status = rs.getString("status"); // Assuming status is the same for all drinks in the order
                     }
+    
+                    if (claimer == null) {
+                        claimer = rs.getString("claimer"); // Fetch claimer if available
+                    }
+    
                     String[] pathParts = fullPath.split("\\.");
                     if (pathParts.length == 6) {
                         String drinkId = pathParts[4]; // Extract drink ID
@@ -135,7 +142,11 @@ public void afterConnectionEstablished(WebSocketSession session) throws Exceptio
                     result.put("barId", Integer.valueOf(barId));
                     result.put("userId", Integer.valueOf(userId));
                     result.put("orderId", orderId);
-                    result.put("status", status);
+    
+                    // Use default values if status or claimer is null
+                    result.put("status", status != null ? status : "unready");
+                    result.put("claimer", claimer != null ? claimer : "unclaimed");
+    
                     result.put("drinkQuantities", drinkQuantities);
     
                     // Convert the map to a JSON string
@@ -152,6 +163,7 @@ public void afterConnectionEstablished(WebSocketSession session) throws Exceptio
         }
         return null;
     }
+    
     
 
 
