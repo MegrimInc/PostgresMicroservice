@@ -34,7 +34,7 @@ public class HierarchyService {
             if (currentRank != null) {
                 hierarchyRepository.updateRank(fullPath, newRank);
             } else {
-                hierarchyRepository.insertLtreePath(fullPath, 0, userId, newRank, null);
+                hierarchyRepository.insertLtreePath(fullPath, null, userId, newRank, null);
             }
         }
     }

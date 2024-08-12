@@ -60,8 +60,9 @@ public class OrderStatusService {
                                     Statement statusStatement = connection.createStatement();
                                     ResultSet statusResult = statusStatement.executeQuery(query);
                                     if (statusResult.next()) {
-                                        int status = statusResult.getInt("status");
-                                        String message = String.format("Path: %s, Status: %d", path, status);
+                                        String status = statusResult.getString("status");
+                                        String statusMessage = (status != null) ? status : "null";
+                                        String message = String.format("Path: %s, Status: %s", path, statusMessage);
                                         webSocketOrderHandler.sendOrderUpdate(path, message);
                                     }
                                     statusResult.close();

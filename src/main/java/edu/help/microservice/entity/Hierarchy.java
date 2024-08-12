@@ -21,7 +21,7 @@ public class Hierarchy {
     private String path;
 
     @Column
-    private int status = 0; // Default to 0
+    private String status; 
 
     @Column(name = "user_id")
     private int userId;
@@ -34,7 +34,7 @@ public class Hierarchy {
 
     public Hierarchy() {}
 
-    public Hierarchy(String path, int status, int userId, int rank, String claimer) {
+    public Hierarchy(String path, String status, int userId, int rank, String claimer) {
         this.path = path;
         this.status = status;
         this.userId = userId;
@@ -51,11 +51,11 @@ public class Hierarchy {
         this.path = path;
     }
 
-    public int getStatus() {
+    public String getStatus() {
         return status;
     }
 
-    public void setStatus(int status) {
+    public void setStatus(String status) {
         this.status = status;
     }
 

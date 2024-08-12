@@ -32,5 +32,5 @@ public interface HierarchyRepository extends JpaRepository<Hierarchy, String> {
         value = "INSERT INTO hierarchy (path, status, user_id, rank, claimer) VALUES (CAST(:path AS ltree), :status, :userId, :rank, :claimer)",
         nativeQuery = true
     )
-    void insertLtreePath(@Param("path") String path, @Param("status") int status, @Param("userId") int userId, @Param("rank") int rank, @Param("claimer") String claimer);
+    void insertLtreePath(@Param("path") String path, @Param("status") String status, @Param("userId") int userId, @Param("rank") int rank, @Param("claimer") String claimer);
 }
