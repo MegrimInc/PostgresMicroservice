@@ -1,8 +1,21 @@
 package edu.help.microservice.controller;
 
+import java.util.Properties;
+import java.util.Random;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.mail.MailException;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import edu.help.microservice.dto.AcceptTOSRequest;
 import edu.help.microservice.dto.LoginRequest;
-import edu.help.microservice.dto.RegistrationRequest;
 import edu.help.microservice.dto.VerificationRequest;
 import edu.help.microservice.entity.Bar;
 import edu.help.microservice.entity.Registration;
@@ -10,21 +23,6 @@ import edu.help.microservice.entity.UserData;
 import edu.help.microservice.service.BarService;
 import edu.help.microservice.service.RegistrationService;
 import edu.help.microservice.service.UserDataService;
-import org.springframework.mail.javamail.JavaMailSenderImpl;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.mail.MailException;
-import org.springframework.mail.MailSender;
-import org.springframework.mail.SimpleMailMessage;
-import java.util.Properties;
-
-import java.util.Random;
-import java.util.UUID;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/signup")
 public class SignUpController {
