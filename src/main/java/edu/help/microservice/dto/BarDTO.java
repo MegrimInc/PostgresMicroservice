@@ -7,6 +7,7 @@ public class BarDTO {
     private String address;
     private String tagImage;
     private String barImage;
+    private String openHours;
 
     // Getters and Setters
     public Integer getId() {
@@ -55,5 +56,12 @@ public class BarDTO {
 
     public void setBarImage(String barImage) {
         this.barImage = barImage;
+    }
+    public String getOpenHours() {
+        return openHours;
+    }
+
+    public void setOpenHours(String openHours) {
+        this.openHours = openHours;
     }
 }

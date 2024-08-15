@@ -1,7 +1,13 @@
 package edu.help.microservice.entity;
 
-import jakarta.persistence.*;
 import java.io.Serializable;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "bars")
@@ -44,6 +50,10 @@ public class Bar implements Serializable {
 
     @Column(name = "bar_tag", nullable = false, length = 255)
     private String barTag;
+
+    @Column(name = "open_hours", length = 255)
+    private String openHours;
+
 
     // Getters and Setters
     public Integer getBarId() {
@@ -140,5 +150,13 @@ public class Bar implements Serializable {
 
     public void setBarTag(String barTag) {
         this.barTag = barTag;
+    }
+
+    public String getOpenHours() {
+        return openHours;
+    }
+
+    public void setOpenHours(String openHours) {
+        this.openHours = openHours;
     }
 }

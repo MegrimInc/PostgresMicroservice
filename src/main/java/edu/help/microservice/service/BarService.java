@@ -1,5 +1,6 @@
 package edu.help.microservice.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -7,6 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import edu.help.microservice.dto.BarDTO;
+import edu.help.microservice.dto.OrderRequest;
+import edu.help.microservice.dto.OrderResponse;
+import edu.help.microservice.dto.OrderResponse.DrinkOrder;
 import edu.help.microservice.dto.ResponseDTO;
 import edu.help.microservice.dto.TagDTO;
 import edu.help.microservice.entity.Bar;
@@ -74,6 +78,37 @@ public class BarService {
 
     public Bar findByBarEmail(String bar_email) {
         return barRepository.findByBarEmail(bar_email).orElse(null);
+
     }
+
+    //REDIS STUFF LEFT ME LOCK
+
+    public OrderResponse processOrder(int barId, List<OrderRequest.DrinkOrder> drinkOrders) {
+    Bar bar = barRepository.findById(barId).orElseThrow(() -> new RuntimeException("Bar not found"));
+
+    // Check if the bar is open
+    if (!bar.getBarStatus()) {
+        return new OrderResponse("Bar is closed", 0.0, null);
+    }
+
+    boolean isHappyHour = bar.getBarDiscount();
+
+    // Calculate total price based on happy hour status and prepare drinks with their names and quantities
+    double totalPrice = 0;
+    List<DrinkOrder> finalDrinkOrders = new ArrayList<>();
+    
+    for (OrderRequest.DrinkOrder drinkOrder : drinkOrders) {
+        Drink drink = drinkRepository.findById(drinkOrder.getDrinkId()).orElseThrow(() -> new RuntimeException("Drink not found"));
+        double price = isHappyHour ? drink.getDrinkDiscount().doubleValue() : drink.getDrinkPrice();
+        totalPrice += price * drinkOrder.getQuantity();
+        System.out.println("Drink name: " + drink.getDrinkName() + ", Quantity: " + drinkOrder.getQuantity() + ", Price per unit: " + price);
+        finalDrinkOrders.add(new OrderResponse.DrinkOrder(drink.getDrinkId(), drink.getDrinkName(), drinkOrder.getQuantity()));
+    }
+    System.out.println("Total price calculated: " + totalPrice);
+    System.out.println("Final DrinkOrders: " + finalDrinkOrders);
+    return new OrderResponse("Order processed successfully", totalPrice, finalDrinkOrders);
+}
+
+
 
 }
