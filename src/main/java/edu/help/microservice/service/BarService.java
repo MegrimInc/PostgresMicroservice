@@ -88,7 +88,7 @@ public class BarService {
 
     // Check if the bar is open
     if (!bar.getBarStatus()) {
-        return new OrderResponse("Bar is closed", 0.0, null);
+        return new OrderResponse("Bar is closed", 0.0, null, "");
     }
 
     boolean isHappyHour = bar.getBarDiscount();
@@ -106,7 +106,7 @@ public class BarService {
     }
     System.out.println("Total price calculated: " + totalPrice);
     System.out.println("Final DrinkOrders: " + finalDrinkOrders);
-    return new OrderResponse("Order processed successfully", totalPrice, finalDrinkOrders);
+    return new OrderResponse("Order processed successfully", totalPrice, finalDrinkOrders, "");
 }
 
 
