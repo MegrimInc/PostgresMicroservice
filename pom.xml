@@ -17,6 +17,11 @@
 		<java.version>17</java.version>
 	</properties>
 	<dependencies>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -25,10 +30,20 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-rest</artifactId>
 		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
+
+
+		<!-- Spring Boot Starter for WebSocket support -->
+		<dependency> <!-- This is the WebSocket dependency -->
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-websocket</artifactId>
+		</dependency>
+		
+
 		<dependency>
     	<groupId>com.jcraft</groupId>
     	<artifactId>jsch</artifactId>
@@ -39,7 +54,10 @@
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
-			<scope>runtime</scope>
+			
+	<scope>compile</scope>
+			<!-- <scope>runtime</scope>  &  testing remove if doesnt work --> 
+
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -56,5 +74,13 @@
 			</plugin>
 		</plugins>
 	</build>
+
+
+	<repositories>
+		<repository>
+			<id>central</id>
+			<url>https://repo.maven.apache.org/maven2</url>
+		</repository>
+	</repositories>
 
 </project>

@@ -1,7 +1,6 @@
 package edu.help.microservice.controller;
 
-import java.util.Set;
-
+import java.util.Map; // Correct import statement
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,7 +18,7 @@ public class HierarchyController {
 
     @PostMapping("/create")
     public String createHierarchy(@RequestBody HierarchyRequest request) {
-        hierarchyService.createHierarchy(request.getBarId(), request.getUserId(), request.getOrderId(), request.getDrinkIds());
+        hierarchyService.createHierarchy(request.getBarId(), request.getUserId(), request.getOrderId(), request.getDrinkQuantities());
         return "Hierarchy created successfully";
     }
 
@@ -27,7 +26,7 @@ public class HierarchyController {
         private int barId;
         private int userId;
         private String orderId;
-        private Set<Integer> drinkIds;
+        private Map<Integer, Integer> drinkQuantities; // Change to Map
 
         // Getters and Setters
         public int getBarId() {
@@ -54,12 +53,12 @@ public class HierarchyController {
             this.orderId = orderId;
         }
 
-        public Set<Integer> getDrinkIds() {
-            return drinkIds;
+        public Map<Integer, Integer> getDrinkQuantities() { // Getter for Map
+            return drinkQuantities;
         }
 
-        public void setDrinkIds(Set<Integer> drinkIds) {
-            this.drinkIds = drinkIds;
+        public void setDrinkQuantities(Map<Integer, Integer> drinkQuantities) { // Setter for Map
+            this.drinkQuantities = drinkQuantities;
         }
     }
 }

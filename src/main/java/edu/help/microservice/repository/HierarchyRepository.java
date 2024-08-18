@@ -10,13 +10,27 @@ import org.springframework.transaction.annotation.Transactional;
 import edu.help.microservice.entity.Hierarchy;
 
 @Repository
-public interface HierarchyRepository extends JpaRepository<Hierarchy, Long> {
+public interface HierarchyRepository extends JpaRepository<Hierarchy, String> {
+
+    @Query(
+        value = "SELECT rank FROM hierarchy WHERE path = CAST(:path AS ltree)",
+        nativeQuery = true
+    )
+    Integer findRankByPath(@Param("path") String path);
 
     @Modifying
     @Transactional
     @Query(
-        value = "INSERT INTO hierarchy (path, status, user_id) VALUES (CAST(:path AS ltree), :status, :userId)",
+        value = "UPDATE hierarchy SET rank = :rank WHERE path = CAST(:path AS ltree)",
         nativeQuery = true
     )
-    void insertLtreePath(@Param("path") String path, @Param("status") int status, @Param("userId") int userId);
+    void updateRank(@Param("path") String path, @Param("rank") int rank);
+
+    @Modifying
+    @Transactional
+    @Query(
+        value = "INSERT INTO hierarchy (path, status, user_id, rank, claimer) VALUES (CAST(:path AS ltree), :status, :userId, :rank, :claimer)",
+        nativeQuery = true
+    )
+    void insertLtreePath(@Param("path") String path, @Param("status") String status, @Param("userId") int userId, @Param("rank") int rank, @Param("claimer") String claimer);
 }

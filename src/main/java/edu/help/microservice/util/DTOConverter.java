@@ -15,6 +15,7 @@ public class DTOConverter {
         barDTO.setAddress(bar.getBarAddress());
         barDTO.setTagImage(bar.getTagImage());
         barDTO.setBarImage(bar.getBarImage());
+        barDTO.setOpenHours(bar.getOpenHours());
         return barDTO;
     }
 

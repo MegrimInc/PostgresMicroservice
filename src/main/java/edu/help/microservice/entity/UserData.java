@@ -8,7 +8,7 @@ public class UserData {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long userID;
+    private Integer userID;
 
     @Column(nullable = false, unique = true)
     private String email;
@@ -25,11 +25,11 @@ public class UserData {
     private Boolean acceptedTOS = false;
 
     // Getters and Setters
-    public Long getUserID() {
+    public Integer getUserID() {
         return userID;
     }
 
-    public void setUserID(Long userID) {
+    public void setUserID(Integer userID) {
         this.userID = userID;
     }
 

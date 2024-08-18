@@ -7,7 +7,7 @@ import jakarta.persistence.*;
 public class Registration {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long registrationID;
+    private Integer registrationID;
 
     @Column(nullable = false, unique = true)
     private String email;
@@ -22,11 +22,12 @@ public class Registration {
     private UserData userData;
 
     // Getters and Setters
-    public Long getRegistrationID() {
+
+    public Integer getRegistrationID() {
         return registrationID;
     }
 
-    public void setRegistrationID(Long registrationID) {
+    public void setRegistrationID(Integer registrationID) {
         this.registrationID = registrationID;
     }
 
