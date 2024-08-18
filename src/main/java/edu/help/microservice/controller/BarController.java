@@ -52,4 +52,10 @@ public class BarController {
     {
         return barService.findDrinkById(id);
     }
+
+    @GetMapping("/bars/getSixDrinks")
+    public List<Drink> getSixDrinks(@RequestParam Integer barId)
+    {
+        return barService.findDrinksByBarId(barId); 
+    }
 }

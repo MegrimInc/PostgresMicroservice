@@ -70,4 +70,9 @@ public class BarService {
     public Drink findDrinkById(Integer drinkId) {
         return drinkRepository.findById(drinkId).orElse(null);
     }
+
+    public List<Drink> findDrinksByBarId(Integer barId)
+    {
+        return drinkRepository.findRandom6ByBarId(barId);
+    }
 }
