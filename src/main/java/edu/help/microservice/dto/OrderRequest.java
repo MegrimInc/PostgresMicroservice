@@ -6,6 +6,7 @@ public class OrderRequest {
     private int barId;
     private int userId;
     private List<DrinkOrder> drinks;
+    private boolean isHappyHour;
 
     // Getters and Setters
     public int getBarId() {
@@ -16,6 +17,15 @@ public class OrderRequest {
         this.barId = barId;
     }
 
+    public void setIsHappyHour(boolean isHappyHour)
+    {
+        this.isHappyHour = isHappyHour;
+    }
+
+    public boolean isHappyHour()
+    {
+        return isHappyHour;
+    }
     public int getUserId() {
         return userId;
     }

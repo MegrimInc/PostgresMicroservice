@@ -83,31 +83,24 @@ public class BarService {
 
     //REDIS STUFF LEFT ME LOCK
 
-    public OrderResponse processOrder(int barId, List<OrderRequest.DrinkOrder> drinkOrders) {
-    Bar bar = barRepository.findById(barId).orElseThrow(() -> new RuntimeException("Bar not found"));
-
-    // Check if the bar is open
-    if (!bar.getBarStatus()) {
-        return new OrderResponse("Bar is closed", 0.0, null, "");
+    public OrderResponse processOrder(int barId, List<OrderRequest.DrinkOrder> drinkOrders, boolean isHappyHour) {
+        // Calculate total price based on happy hour status from OrderRequest and prepare drinks with their names and quantities
+        double totalPrice = 0;
+        List<DrinkOrder> finalDrinkOrders = new ArrayList<>();
+        
+        for (OrderRequest.DrinkOrder drinkOrder : drinkOrders) {
+            Drink drink = drinkRepository.findById(drinkOrder.getDrinkId())
+                .orElseThrow(() -> new RuntimeException("Drink not found"));
+            double price = isHappyHour ? drink.getDrinkDiscount().doubleValue() : drink.getDrinkPrice();
+            totalPrice += price * drinkOrder.getQuantity();
+            System.out.println("Drink name: " + drink.getDrinkName() + ", Quantity: " + drinkOrder.getQuantity() + ", Price per unit: " + price);
+            finalDrinkOrders.add(new OrderResponse.DrinkOrder(drink.getDrinkId(), drink.getDrinkName(), drinkOrder.getQuantity()));
+        }
+        System.out.println("Total price calculated: " + totalPrice);
+        System.out.println("Final DrinkOrders: " + finalDrinkOrders);
+        return new OrderResponse("Order processed successfully", totalPrice, finalDrinkOrders, "");
     }
-
-    boolean isHappyHour = bar.getBarDiscount();
-
-    // Calculate total price based on happy hour status and prepare drinks with their names and quantities
-    double totalPrice = 0;
-    List<DrinkOrder> finalDrinkOrders = new ArrayList<>();
     
-    for (OrderRequest.DrinkOrder drinkOrder : drinkOrders) {
-        Drink drink = drinkRepository.findById(drinkOrder.getDrinkId()).orElseThrow(() -> new RuntimeException("Drink not found"));
-        double price = isHappyHour ? drink.getDrinkDiscount().doubleValue() : drink.getDrinkPrice();
-        totalPrice += price * drinkOrder.getQuantity();
-        System.out.println("Drink name: " + drink.getDrinkName() + ", Quantity: " + drinkOrder.getQuantity() + ", Price per unit: " + price);
-        finalDrinkOrders.add(new OrderResponse.DrinkOrder(drink.getDrinkId(), drink.getDrinkName(), drinkOrder.getQuantity()));
-    }
-    System.out.println("Total price calculated: " + totalPrice);
-    System.out.println("Final DrinkOrders: " + finalDrinkOrders);
-    return new OrderResponse("Order processed successfully", totalPrice, finalDrinkOrders, "");
-}
 
 
 
