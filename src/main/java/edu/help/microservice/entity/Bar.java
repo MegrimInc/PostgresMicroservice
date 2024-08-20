@@ -18,12 +18,6 @@ public class Bar implements Serializable {
     @Column(name = "bar_id", nullable = false)
     private Integer barId;
 
-    @Column(name = "bar_status")
-    private Boolean barStatus;
-
-    @Column(name = "bar_discount")
-    private Boolean barDiscount;
-
     @Column(name = "bar_city", nullable = false, length = 255)
     private String barCity;
 
@@ -64,21 +58,7 @@ public class Bar implements Serializable {
         this.barId = barId;
     }
 
-    public Boolean getBarStatus() {
-        return barStatus;
-    }
 
-    public void setBarStatus(Boolean barStatus) {
-        this.barStatus = barStatus;
-    }
-
-    public Boolean getBarDiscount() {
-        return barDiscount;
-    }
-
-    public void setBarDiscount(Boolean barDiscount) {
-        this.barDiscount = barDiscount;
-    }
 
     public String getBarCity() {
         return barCity;
