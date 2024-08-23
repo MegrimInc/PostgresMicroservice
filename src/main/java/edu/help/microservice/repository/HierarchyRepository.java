@@ -11,7 +11,23 @@ import edu.help.microservice.entity.Hierarchy;
 
 @Repository
 public interface HierarchyRepository extends JpaRepository<Hierarchy, String> {
+    @Query("SELECT h.quantity FROM HierarchyEntity h WHERE h.path = :path")
+    Integer findQuantityByPath(@Param("path") String path);
 
+    @Modifying
+    @Query("UPDATE HierarchyEntity h SET h.quantity = :newQuantity WHERE h.path = :path")
+    void updateQuantity(@Param("path") String path, @Param("newQuantity") int newQuantity);
+
+    @Modifying
+    @Query("INSERT INTO HierarchyEntity (path, status, user_id, claimer, quantity) VALUES (:path, :status, :userId, :claimer, :quantity)")
+    void insertHierarchy(@Param("path") String path, @Param("status") String status, @Param("userId") int userId, @Param("claimer") String claimer, @Param("quantity") int quantity);
+    @Query(value = "INSERT INTO hierarchy (path, status, user_id, rank, claimer) VALUES (:path, :status, :userId, 0, :claimer)", nativeQuery = true)
+    void insertHierarchy(@Param("path") String path,
+                         @Param("status") String status,
+                         @Param("userId") int userId,
+                         @Param("claimer") String claimer);
+
+                         
     @Query(
         value = "SELECT rank FROM hierarchy WHERE path = CAST(:path AS ltree)",
         nativeQuery = true

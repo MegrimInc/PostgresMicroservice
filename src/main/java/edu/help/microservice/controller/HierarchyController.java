@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import edu.help.microservice.dto.OrderToSave;
 import edu.help.microservice.service.HierarchyService;
 
 @RestController
@@ -22,6 +23,14 @@ public class HierarchyController {
         return "Hierarchy created successfully";
     }
 
+
+    @PostMapping("/save")
+    public String saveOrder(@RequestBody OrderToSave orderToSave) {
+        hierarchyService.saveOrderToHierarchy(orderToSave);
+        return "Order saved to hierarchy successfully.";
+ 
+ 
+    }
     public static class HierarchyRequest {
         private int barId;
         private int userId;
