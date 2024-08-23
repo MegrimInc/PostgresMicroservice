@@ -11,28 +11,34 @@ import edu.help.microservice.entity.Hierarchy;
 
 @Repository
 public interface HierarchyRepository extends JpaRepository<Hierarchy, String> {
-    @Query("SELECT h.quantity FROM HierarchyEntity h WHERE h.path = :path")
-    Integer findQuantityByPath(@Param("path") String path);
+
+    @Query("SELECT h FROM Hierarchy h WHERE h.path = :path")
+    Hierarchy findHierarchyByPath(@Param("path") String path);
 
     @Modifying
-    @Query("UPDATE HierarchyEntity h SET h.quantity = :newQuantity WHERE h.path = :path")
-    void updateQuantity(@Param("path") String path, @Param("newQuantity") int newQuantity);
+    @Transactional
+    @Query("UPDATE Hierarchy h SET h.rank = h.rank + 1 WHERE h.path = :path")
+    void incrementRank(@Param("path") String path);
 
     @Modifying
-    @Query("INSERT INTO HierarchyEntity (path, status, user_id, claimer, quantity) VALUES (:path, :status, :userId, :claimer, :quantity)")
-    void insertHierarchy(@Param("path") String path, @Param("status") String status, @Param("userId") int userId, @Param("claimer") String claimer, @Param("quantity") int quantity);
+    @Transactional
+    @Query(
+        value = "INSERT INTO hierarchy (path, status, user_id, rank, claimer) VALUES (CAST(:path AS ltree), :status, :userId, 0, :claimer)",
+        nativeQuery = true
+    )
+    void insertLtreePath(@Param("path") String path, @Param("status") String status, @Param("userId") int userId, @Param("claimer") String claimer);
+
     @Query(value = "INSERT INTO hierarchy (path, status, user_id, rank, claimer) VALUES (:path, :status, :userId, 0, :claimer)", nativeQuery = true)
-    void insertHierarchy(@Param("path") String path,
-                         @Param("status") String status,
-                         @Param("userId") int userId,
-                         @Param("claimer") String claimer);
+    void insertDefaultOrderHierarchyForCreateHierarchy(@Param("path") String path,
+                                                       @Param("status") String status,
+                                                       @Param("userId") int userId,
+                                                       @Param("claimer") String claimer);
 
-                         
     @Query(
         value = "SELECT rank FROM hierarchy WHERE path = CAST(:path AS ltree)",
         nativeQuery = true
     )
-    Integer findRankByPath(@Param("path") String path);
+    Integer findRankForCreateHierarchy(@Param("path") String path);
 
     @Modifying
     @Transactional
@@ -40,7 +46,7 @@ public interface HierarchyRepository extends JpaRepository<Hierarchy, String> {
         value = "UPDATE hierarchy SET rank = :rank WHERE path = CAST(:path AS ltree)",
         nativeQuery = true
     )
-    void updateRank(@Param("path") String path, @Param("rank") int rank);
+    void updateRankForCreateHierarchy(@Param("path") String path, @Param("rank") int rank);
 
     @Modifying
     @Transactional
@@ -48,5 +54,5 @@ public interface HierarchyRepository extends JpaRepository<Hierarchy, String> {
         value = "INSERT INTO hierarchy (path, status, user_id, rank, claimer) VALUES (CAST(:path AS ltree), :status, :userId, :rank, :claimer)",
         nativeQuery = true
     )
-    void insertLtreePath(@Param("path") String path, @Param("status") String status, @Param("userId") int userId, @Param("rank") int rank, @Param("claimer") String claimer);
+    void insertLtreePathForCreateHierarchy(@Param("path") String path, @Param("status") String status, @Param("userId") int userId, @Param("rank") int rank, @Param("claimer") String claimer);
 }
