@@ -17,20 +17,17 @@ public class HierarchyController {
     @Autowired
     private HierarchyService hierarchyService;
 
-    @PostMapping("/create")
-    public String createHierarchy(@RequestBody HierarchyRequest request) {
-        hierarchyService.createHierarchy(request.getBarId(), request.getUserId(), request.getOrderId(), request.getDrinkQuantities());
-        return "Hierarchy created successfully";
-    }
-
 
     @PostMapping("/save")
     public String saveOrder(@RequestBody OrderToSave orderToSave) {
+        System.out.println("....BeforeService...");
         hierarchyService.saveOrderToHierarchy(orderToSave);
+        System.out.println("...AfterService...");
+        
         return "Order saved to hierarchy successfully.";
     }
 
-    
+
     public static class HierarchyRequest {
         private int barId;
         private int userId;
