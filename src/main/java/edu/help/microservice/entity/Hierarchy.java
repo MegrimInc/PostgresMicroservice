@@ -10,7 +10,7 @@ import jakarta.persistence.NamedNativeQuery;
 @NamedNativeQueries({
     @NamedNativeQuery(
         name = "Hierarchy.insertLtreePath",
-        query = "INSERT INTO hierarchy (path, status, user_id, rank, claimer) VALUES (CAST(? AS ltree), ?, ?, ?, ?)",
+        query = "INSERT INTO hierarchy (path, status, user_id, claimer) VALUES (CAST(? AS ltree), ?, ?, ?, ?)",
         resultClass = Hierarchy.class
     )
 })
@@ -27,18 +27,14 @@ public class Hierarchy {
     private int userId;
 
     @Column
-    private int rank = 0; // Default to 0
-
-    @Column
     private String claimer; // Default to NULL
 
     public Hierarchy() {}
 
-    public Hierarchy(String path, String status, int userId, int rank, String claimer) {
+    public Hierarchy(String path, String status, int userId, String claimer) {
         this.path = path;
         this.status = status;
         this.userId = userId;
-        this.rank = rank;
         this.claimer = claimer;
     }
 
@@ -67,13 +63,6 @@ public class Hierarchy {
         this.userId = userId;
     }
 
-    public int getRank() {
-        return rank;
-    }
-
-    public void setRank(int rank) {
-        this.rank = rank;
-    }
 
     public String getClaimer() {
         return claimer;
