@@ -19,22 +19,37 @@ public class HierarchyService {
     @Transactional
     public void saveOrderToHierarchy(OrderToSave orderToSave) {
         String basePath = "root." + orderToSave.getBarId() + "." + orderToSave.getUserId() + "." + orderToSave.getTimestamp();
-
+        
         for (OrderToSave.DrinkOrder drink : orderToSave.getDrinks()) {
-            String path = basePath + "." + drink.getId() + "." + drink.getQuantity();
-
-            // Check if the path already exists
-            Hierarchy existingHierarchy = hierarchyRepository.findHierarchyByPath(path);
-
-            if (existingHierarchy != null) {
-                // If the path exists, you might want to update the rank
-                hierarchyRepository.incrementRank(path);
-            } else {
-                // If the path does not exist, insert a new row
-                hierarchyRepository.insertLtreePath(path, orderToSave.getStatus(), orderToSave.getUserId(), orderToSave.getClaimer());
+            String pathWithoutQuantity = basePath + "." + drink.getId();
+            
+            // Log the path we're working with
+            System.out.println("Checking path: " + pathWithoutQuantity);
+            
+            try {
+                // Check if a path for this drink already exists
+                Integer existingQuantity = hierarchyRepository.findQuantityByPath(pathWithoutQuantity);
+                
+                if (existingQuantity != null) {
+                    // If the path exists, update the quantity
+                    int newQuantity = existingQuantity + drink.getQuantity();
+                    String newPath = pathWithoutQuantity + "." + newQuantity;
+                    System.out.println("Updating path: " + newPath);
+                    hierarchyRepository.updateQuantityForSaveOrder(pathWithoutQuantity, newPath);
+                } else {
+                    // If the path does not exist, insert a new row with the initial quantity
+                    String fullPath = pathWithoutQuantity + "." + drink.getQuantity();
+                    System.out.println("Inserting new path: " + fullPath);
+                    hierarchyRepository.insertLtreePath2(fullPath, orderToSave.getStatus(), orderToSave.getUserId(), 0, orderToSave.getClaimer());
+                }
+            } catch (Exception e) {
+                System.err.println("Error processing path: " + pathWithoutQuantity);
+                e.printStackTrace();
+                throw e;  // Re-throw the exception after logging
             }
         }
     }
+
 
     @Transactional
     public void createHierarchy(int barId, int userId, String orderId, Map<Integer, Integer> drinkQuantities) {

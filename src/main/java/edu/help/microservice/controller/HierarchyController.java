@@ -28,9 +28,9 @@ public class HierarchyController {
     public String saveOrder(@RequestBody OrderToSave orderToSave) {
         hierarchyService.saveOrderToHierarchy(orderToSave);
         return "Order saved to hierarchy successfully.";
- 
- 
     }
+
+    
     public static class HierarchyRequest {
         private int barId;
         private int userId;
