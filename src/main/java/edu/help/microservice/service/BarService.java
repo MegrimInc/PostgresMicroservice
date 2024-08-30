@@ -11,24 +11,19 @@ import edu.help.microservice.dto.BarDTO;
 import edu.help.microservice.dto.OrderRequest;
 import edu.help.microservice.dto.OrderResponse;
 import edu.help.microservice.dto.OrderResponse.DrinkOrder;
-import edu.help.microservice.dto.ResponseDTO;
-import edu.help.microservice.dto.TagDTO;
 import edu.help.microservice.entity.Bar;
 import edu.help.microservice.entity.Drink;
-import edu.help.microservice.entity.Tag;
 import edu.help.microservice.repository.BarRepository;
 import edu.help.microservice.repository.DrinkRepository;
-import edu.help.microservice.repository.TagRepository;
 import edu.help.microservice.util.DTOConverter;
+
 
 @Service
 public class BarService {
 
     @Autowired
     private BarRepository barRepository;
-
-    @Autowired
-    private TagRepository tagRepository;
+   
 
     @Autowired
     private DrinkRepository drinkRepository;
@@ -40,45 +35,19 @@ public class BarService {
         return barDTOs;
     }
 
-    public List<TagDTO> findAllTags()
-    {
-        List<Tag> tags = tagRepository.findByCategoryPathPattern();
-        List<TagDTO> tagDTOs = tags.stream().map(DTOConverter::convertToTagDTO).collect(Collectors.toList());
-        return tagDTOs;
-    }
-
-    public List<Drink> findAllDrinks()
-    {
-        return drinkRepository.findAll();
-    }
-
-
-    public ResponseDTO findAllBarsAndTags() {
-        List<Bar> bars = barRepository.findAll();
-        List<Tag> tags = tagRepository.findByCategoryPathPattern();
-
-        List<BarDTO> barDTOs = bars.stream().map(DTOConverter::convertToBarDTO).collect(Collectors.toList());
-        List<TagDTO> tagDTOs = tags.stream().map(DTOConverter::convertToTagDTO).collect(Collectors.toList());
-
-        ResponseDTO responseDTO = new ResponseDTO();
-        responseDTO.setBars(barDTOs);
-        responseDTO.setTags(tagDTOs);
-
-        return responseDTO;
-    }
-
-    public List<Drink> findDrinksByCategoryIdAndBarId(Integer categoryId, Integer barId) {
-        List<Integer> drinkIds = tagRepository.findDrinkIdsByCategoryIdAndBarId(categoryId, barId);
-        return drinkRepository.findByDrinkIdIn(drinkIds);
-    }
-
-    public Drink findDrinkById(Integer drinkId) {
-        return drinkRepository.findById(drinkId).orElse(null);
-    }
-
+    
     public Bar findByBarEmail(String bar_email) {
         return barRepository.findByBarEmail(bar_email).orElse(null);
 
+    }
+
+
+    public List<Drink> findRandom6DrinksByCategoryIdAndBarId(Integer categoryId, Integer barId) {
+        // Fetch 6 random drink IDs
+        List<Integer> randomDrinkIds = drinkRepository.findRandom6DrinkIdsByCategoryAndBar(barId, categoryId);
+        
+        // Fetch the drink details using the IDs
+        return drinkRepository.findByDrinkIdIn(randomDrinkIds);
     }
 
     //REDIS STUFF LEFT ME LOCK
@@ -100,13 +69,5 @@ public class BarService {
         System.out.println("Final DrinkOrders: " + finalDrinkOrders);
         return new OrderResponse("Order processed successfully", totalPrice, finalDrinkOrders, "");
     }
-    
 
-
-
-
-    public List<Drink> findDrinksByBarId(Integer barId)
-    {
-        return drinkRepository.findRandom6ByBarId(barId);
-    }
 }
