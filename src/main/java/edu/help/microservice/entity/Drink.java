@@ -1,8 +1,16 @@
 package edu.help.microservice.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.*;
 import java.math.BigDecimal;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "drinks")
@@ -28,21 +36,29 @@ public class Drink {
     @Column(name = "drink_image")
     private String drinkImage;
 
-    @Column(name = "solo")
-    private String solo;
-
-    @Column(name = "mix")
-    private String mix;
-
-    @Column(name = "ss")
-    private boolean ss;
-
     @Column(name = "drink_discount")
     private BigDecimal drinkDiscount;
 
     @Column(name = "drink_tags")
     @Convert(converter = IntegerArrayConverter.class)
     private Integer[] drinkTags;
+
+    // Constructor matching the query fields
+    public Drink(Integer drinkId, Integer barId, String drinkName, Double drinkPrice, String alcoholContent,
+            String drinkImage, BigDecimal drinkDiscount, Integer[] drinkTags) {
+        this.drinkId = drinkId;
+        this.barId = barId;
+        this.drinkName = drinkName;
+        this.drinkPrice = drinkPrice;
+        this.alcoholContent = alcoholContent;
+        this.drinkImage = drinkImage;
+        this.drinkDiscount = drinkDiscount;
+        this.drinkTags = drinkTags;
+    }
+    
+    // Default constructor
+    public Drink() {}
+
 
     // Getters and Setters
     public Integer getDrinkId() {
@@ -93,29 +109,6 @@ public class Drink {
         this.drinkImage = drinkImage;
     }
 
-    public String getSolo() {
-        return solo;
-    }
-
-    public void setSolo(String solo) {
-        this.solo = solo;
-    }
-
-    public String getMix() {
-        return mix;
-    }
-
-    public void setMix(String mix) {
-        this.mix = mix;
-    }
-
-    public boolean isSs() {
-        return ss;
-    }
-
-    public void setSs(boolean ss) {
-        this.ss = ss;
-    }
 
     public BigDecimal getDrinkDiscount() {
         return drinkDiscount;

@@ -41,14 +41,10 @@ public class BarService {
 
     }
 
-
-    public List<Drink> findRandom6DrinksByCategoryIdAndBarId(Integer categoryId, Integer barId) {
-        // Fetch 6 random drink IDs
-        List<Integer> randomDrinkIds = drinkRepository.findRandom6DrinkIdsByCategoryAndBar(barId, categoryId);
-        
-        // Fetch the drink details using the IDs
-        return drinkRepository.findByDrinkIdIn(randomDrinkIds);
+    public List<Drink> getDrinksByBarId(Integer barId) {
+        return drinkRepository.findAllDrinksByBarIdExcludingFields(barId);
     }
+
 
     //REDIS STUFF LEFT ME LOCK
 

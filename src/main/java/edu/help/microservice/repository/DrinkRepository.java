@@ -13,8 +13,9 @@ public interface DrinkRepository extends JpaRepository<Drink, Integer> {
     List<Drink> findByDrinkIdIn(List<Integer> drinkIds);
 
 
-   // Query to find 6 random drink IDs for a specific bar and category
-   @Query(value = "SELECT drink_id FROM bar_inventory WHERE bar_id = :barId AND category_id = :categoryId ORDER BY RANDOM() LIMIT 6", nativeQuery = true)
-   List<Integer> findRandom6DrinkIdsByCategoryAndBar(@Param("barId") Integer barId, @Param("categoryId") Integer categoryId);
+   // Query to find all drinks by barId, excluding specific fields
+   @Query("SELECT new edu.help.microservice.entity.Drink(d.drinkId, d.barId, d.drinkName, d.drinkPrice, d.alcoholContent, d.drinkImage, d.drinkDiscount, d.drinkTags) " +
+   "FROM Drink d WHERE d.barId = :barId")
+List<Drink> findAllDrinksByBarIdExcludingFields(@Param("barId") Integer barId);
    
 }
