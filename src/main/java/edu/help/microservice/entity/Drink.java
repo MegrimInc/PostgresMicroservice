@@ -15,6 +15,7 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "drinks")
 public class Drink {
+
     @JsonIgnore
     @Column(name = "bar_id")
     private Integer barId;
@@ -43,9 +44,13 @@ public class Drink {
     @Convert(converter = IntegerArrayConverter.class)
     private Integer[] drinkTags;
 
-    // Constructor matching the query fields
+    // New description column
+    @Column(name = "description")
+    private String description;
+
+    // Constructor with the new description field
     public Drink(Integer drinkId, Integer barId, String drinkName, Double drinkPrice, String alcoholContent,
-            String drinkImage, BigDecimal drinkDiscount, Integer[] drinkTags) {
+                 String drinkImage, BigDecimal drinkDiscount, Integer[] drinkTags, String description) {
         this.drinkId = drinkId;
         this.barId = barId;
         this.drinkName = drinkName;
@@ -54,11 +59,11 @@ public class Drink {
         this.drinkImage = drinkImage;
         this.drinkDiscount = drinkDiscount;
         this.drinkTags = drinkTags;
+        this.description = description;
     }
-    
+
     // Default constructor
     public Drink() {}
-
 
     // Getters and Setters
     public Integer getDrinkId() {
@@ -109,7 +114,6 @@ public class Drink {
         this.drinkImage = drinkImage;
     }
 
-
     public BigDecimal getDrinkDiscount() {
         return drinkDiscount;
     }
@@ -124,5 +128,13 @@ public class Drink {
 
     public void setDrinkTags(Integer[] drinkTags) {
         this.drinkTags = drinkTags;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }
