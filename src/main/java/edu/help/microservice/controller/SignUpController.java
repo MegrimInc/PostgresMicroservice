@@ -7,8 +7,6 @@ import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mail.MailException;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.web.bind.annotation.*;
@@ -28,18 +26,12 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
 
+
 @RestController
 @RequestMapping("/signup")
 public class SignUpController {
 
-    private static final String SECRET_KEY = "ArchistructureKnowsThatLOLITSALEXHatesPotSpam";
-
-    private String generateHash(String email) throws NoSuchAlgorithmException {
-        String text = email + SECRET_KEY;
-        MessageDigest md = MessageDigest.getInstance("SHA-256");
-        byte[] hash = md.digest(text.getBytes());
-        return Base64.getEncoder().encodeToString(hash);
-    }
+    
 
     @Autowired
     private RegistrationService registrationService;
@@ -56,25 +48,27 @@ public class SignUpController {
 
         Registration existingRegistration = registrationService.findByEmail(email);
 
+        //CASE 1: No email exists
         if (existingRegistration == null) {
-            // Email does not exist
             Registration newRegistration = new Registration();
             newRegistration.setEmail(email);
             registrationService.save(newRegistration);
             String verificationCode = generateVerificationCode(); // Hardcoded for testing
             newRegistration.setPasscode(verificationCode);
             registrationService.save(newRegistration);
-            sendVerificationEmail(email, verificationCode); // Calling send verification email
-            return ResponseEntity.ok("sent email");
-        } else if (existingRegistration.getUserData() != null) {
-            // Email exists and first name exists
+            sendVerificationEmail(email, verificationCode); 
+            return ResponseEntity.ok("sent email");  
+        } 
+        //CASE 2: Email and name exists
+        else if (existingRegistration.getUserData() != null) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("email already exists");
-        } else {
-            // Email exists and first name does not exist
-            String verificationCode = generateVerificationCode(); // Hardcoded for testing
+        } 
+        //CASE 3: Email exists, name DNE
+        else {
+            String verificationCode = generateVerificationCode(); 
             existingRegistration.setPasscode(verificationCode);
             registrationService.save(existingRegistration);
-            sendVerificationEmail(email, verificationCode);  // Calling send verification email
+            sendVerificationEmail(email, verificationCode);  
             return ResponseEntity.ok("Re-sent email");
         }
     }
@@ -246,6 +240,15 @@ System.out.println("Email: " + email + ", Hash: " + hash);
             String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
             return email.matches(emailRegex);
         }
+
+        private static final String SECRET_KEY = "ArchistructureKnowsThatLOLITSALEXHatesPotSpam";
+
+    private String generateHash(String email) throws NoSuchAlgorithmException {
+        String text = email + SECRET_KEY;
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        byte[] hash = md.digest(text.getBytes());
+        return Base64.getEncoder().encodeToString(hash);
+    }
 }
 
 
