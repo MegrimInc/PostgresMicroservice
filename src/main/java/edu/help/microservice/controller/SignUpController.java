@@ -1,17 +1,22 @@
 package edu.help.microservice.controller;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 import java.util.Properties;
 import java.util.Random;
 
-import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mail.MailException;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import edu.help.microservice.dto.AcceptTOSRequest;
 import edu.help.microservice.dto.LoginRequest;
@@ -22,10 +27,7 @@ import edu.help.microservice.entity.UserData;
 import edu.help.microservice.service.BarService;
 import edu.help.microservice.service.RegistrationService;
 import edu.help.microservice.service.UserDataService;
-
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
+import jakarta.mail.internet.MimeMessage;
 
 
 @RestController
@@ -52,29 +54,50 @@ public class SignUpController {
 
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody AcceptTOSRequest request) {
+        // Print incoming registration data
+        System.out.println("Received registration request for email: " + request.getEmail());
+    
         String email = request.getEmail();
-
+    
+        // Check if the email is already registered
         Registration existingRegistration = registrationService.findByEmail(email);
-
+        System.out.println("Existing registration found: " + (existingRegistration != null));
+    
         if (existingRegistration == null) {
-            // Email does not exist
+            // Email does not exist, create new registration
             Registration newRegistration = new Registration();
             newRegistration.setEmail(email);
+            System.out.println("Creating new registration for email: " + email);
+    
             registrationService.save(newRegistration);
             String verificationCode = generateVerificationCode(); // Hardcoded for testing
             newRegistration.setPasscode(verificationCode);
+            System.out.println("Generated verification code: " + verificationCode);
+            
             registrationService.save(newRegistration);
+            System.out.println("New registration saved for email: " + email);
+    
             sendVerificationEmail(email, verificationCode); // Calling send verification email
+            System.out.println("Verification email sent to: " + email);
+            
             return ResponseEntity.ok("sent email");
         } else if (existingRegistration.getUserData() != null) {
-            // Email exists and first name exists
+            // Email exists and user data is already set
+            System.out.println("Email already exists with user data: " + email);
             return ResponseEntity.status(HttpStatus.CONFLICT).body("email already exists");
         } else {
-            // Email exists and first name does not exist
+            // Email exists, but no user data
+            System.out.println("Email exists, but no user data. Resending verification code.");
             String verificationCode = generateVerificationCode(); // Hardcoded for testing
+            System.out.println("Generated new verification code: " + verificationCode);
+    
             existingRegistration.setPasscode(verificationCode);
             registrationService.save(existingRegistration);
-            sendVerificationEmail(email, verificationCode);  // Calling send verification email
+            System.out.println("Updated registration with new passcode for email: " + email);
+    
+            sendVerificationEmail(email, verificationCode); // Calling send verification email
+            System.out.println("Re-sent verification email to: " + email);
+            
             return ResponseEntity.ok("Re-sent email");
         }
     }
@@ -140,21 +163,54 @@ public class SignUpController {
 
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
+        // Print incoming request data
+        System.out.println("Received login request for email: " + loginRequest.getEmail());
+        System.out.println("Password provided: " + loginRequest.getPassword());
+
         String email = loginRequest.getEmail();
         String password = loginRequest.getPassword();
-//ACCEPT TOS HAS TO BE TRUE
-        Registration registeredUser = registrationService.findByEmail(email);
-        UserData user = userDataService.findByEmail(email);
-        Bar testBar = barService.findByBarEmail(email);
 
-        if (user != null && user.getPassword().equals(password)) {
-            return ResponseEntity.ok(user.getUserID().toString());
-        } else if (registeredUser != null && registeredUser.getPasscode().equals(password) && registeredUser.getIsBar()) {
-            return ResponseEntity.ok("" + (testBar.getBarId()*-1));
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("LOGIN FAILED");
+        // Retrieve data for debugging
+        Registration registeredUser = registrationService.findByEmail(email);
+        System.out.println("Registered user found: " + (registeredUser != null));
+
+        UserData user = userDataService.findByEmail(email);
+        System.out.println("User data found: " + (user != null));
+
+        Bar testBar = barService.findByBarEmail(email);
+        System.out.println("Bar data found: " + (testBar != null));
+
+        // Debug the password check
+        if (user != null) {
+            System.out.println("Checking user password for email: " + email);
+            System.out.println("User password: " + user.getPassword() + " | Entered password: " + password);
+            if (user.getPassword().equals(password)) {
+                System.out.println("Login successful for user: " + user.getUserID());
+                return ResponseEntity.ok(user.getUserID().toString());
+            } else {
+                System.out.println("Password mismatch for user: " + email);
+            }
         }
+
+        // Debug passcode check for bar users
+        if (registeredUser != null) {
+            System.out.println("Checking passcode for registered user email: " + email);
+            System.out.println(
+                    "Registered passcode: " + registeredUser.getPasscode() + " | Entered passcode: " + password);
+            System.out.println("Is bar account: " + registeredUser.getIsBar());
+            if (registeredUser.getPasscode().equals(password) && registeredUser.getIsBar()) {
+                System.out.println("Login successful for bar: " + testBar.getBarId());
+                return ResponseEntity.ok("" + (testBar.getBarId() * -1));
+            } else {
+                System.out.println("Passcode mismatch or user is not a bar: " + email);
+            }
+        }
+
+        // Print failure message if login did not succeed
+        System.out.println("Login failed for email: " + email);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("LOGIN FAILED");
     }
+
 
 
 
