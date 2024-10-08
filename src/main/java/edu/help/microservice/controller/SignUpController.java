@@ -119,47 +119,50 @@ public class SignUpController {
     }
 
     @PostMapping("/deleteaccount")
-    public ResponseEntity<String> deleteAccount(@RequestBody LoginRequest request) {
-        String email = request.getEmail();
-        String password = request.getPassword();
+public ResponseEntity<String> deleteAccount(@RequestBody LoginRequest request) {
+    String email = request.getEmail();
+    String password = request.getPassword();
 
-        // Find Registration by email
-        Registration registration = registrationService.findByEmail(email);
+    // Find Registration by email
+    Registration registration = registrationService.findByEmail(email);
 
-        if (registration != null) {
-            // Check if it's a user account with UserData
-            UserData userData = registration.getUserData();
+    if (registration != null) {
+        // Check if it's a user account with UserData
+        UserData userData = registration.getUserData();
 
-            if (userData != null) {
-                // Verify password for UserData
-                if (userData.getPassword().equals(password)) {
-                    // Delete UserData
-                    userDataService.delete(userData);
-                    // Delete Registration
-                    registrationService.delete(registration);
-                    return ResponseEntity.ok("deleted");
-                } else {
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("incorrect password");
-                }
-            } else if (registration.getIsBar() != null && registration.getIsBar()) {
-                // It's a bar account
-                // Verify password (assuming password is stored in passcode)
-                if (registration.getPasscode().equals(password)) {
-                    // Delete Registration
-                    registrationService.delete(registration);
-                    return ResponseEntity.ok("deleted");
-                } else {
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("incorrect password");
-                }
+        if (userData != null) {
+            // Verify password for UserData
+            if (userData.getPassword().equals(password)) {
+                // Delete Registration first
+                registrationService.delete(registration);
+                // Then delete UserData
+                userDataService.delete(userData);
+                return ResponseEntity.ok("deleted");
             } else {
-                // Registration exists but no associated UserData or Bar
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("not found");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("incorrect password");
+            }
+        } else if (registration.getIsBar() != null && registration.getIsBar()) {
+            // It's a bar account
+            // Verify password (assuming password is stored in passcode)
+            if (registration.getPasscode().equals(password)) {
+                // Delete Registration
+                registrationService.delete(registration);
+                return ResponseEntity.ok("deleted");
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("incorrect password");
             }
         } else {
-            // Registration not found
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("not found");
+            // Registration exists but no associated UserData or Bar
+            // Delete Registration
+            registrationService.delete(registration);
+            return ResponseEntity.ok("deleted");
         }
+    } else {
+        // Registration not found
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("not found");
     }
+}
+
 
     @PostMapping("/verify")
     public ResponseEntity<String> verify(@RequestBody VerificationRequest verificationRequest) {
