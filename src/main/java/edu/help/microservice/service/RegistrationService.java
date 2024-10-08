@@ -17,5 +17,9 @@ public class RegistrationService {
     public Registration save(Registration registration) {
         return registrationRepository.save(registration);
     }
+
+    public void delete(Registration registration) {
+        registrationRepository.delete(registration);
+    }
 }
 
