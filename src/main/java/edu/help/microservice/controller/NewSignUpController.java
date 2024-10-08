@@ -114,43 +114,52 @@ public class NewSignUpController {
 
     // ENDPOINT #3: Verify the user's signup
     @PostMapping("/verify")
-    public ResponseEntity<String> verify(@RequestBody VerificationRequest verificationRequest) {
-        String email = verificationRequest.getEmail();
-        String verificationCode = verificationRequest.getVerificationCode();
-        String password = verificationRequest.getPassword();
-        String firstName = verificationRequest.getFirstName();
-        String lastName = verificationRequest.getLastName();
+public ResponseEntity<String> verify(@RequestBody VerificationRequest verificationRequest) {
+    String email = verificationRequest.getEmail();
+    String verificationCode = verificationRequest.getVerificationCode();
+    String password = verificationRequest.getPassword();
+    String firstName = verificationRequest.getFirstName();
+    String lastName = verificationRequest.getLastName();
 
-        SignUp signUp = signUpService.findByEmail(email);
+    System.out.println("Received firstName: " + firstName);
+    System.out.println("Received lastName: " + lastName);
 
-        if (signUp != null && signUp.getCustomer() == null) {
-            if (isVerificationCodeExpired(signUp.getExpiryTimestamp())) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("REGISTRATION FAILED");
-            }
-            try {
-                String hashedCode = hash(verificationCode);
-                if (signUp.getPasscode().equals(hashedCode)) {
-                    // Verification successful
-                    Customer customer = new Customer();
-                    customer.setFirstName(firstName);
-                    customer.setLastName(lastName);
-                    customerService.save(customer);
-
-                    signUp.setCustomer(customer);
-                    signUp.setPasscode(hash(password)); // Store hashed password
-                    signUpService.save(signUp);
-
-                    return ResponseEntity.ok("REGISTRATION SUCCEEDED");
-                } else {
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("REGISTRATION FAILED");
-                }
-            } catch (NoSuchAlgorithmException e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing verification");
-            }
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("REGISTRATION FAILED");
-        }
+    // Ensure firstName and lastName are not null or empty
+    if (firstName == null || firstName.isEmpty() || lastName == null || lastName.isEmpty()) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("First name and Last name are required.");
     }
+
+    SignUp signUp = signUpService.findByEmail(email);
+
+    if (signUp != null && signUp.getCustomer() == null) {
+        if (isVerificationCodeExpired(signUp.getExpiryTimestamp())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Verification code expired");
+        }
+        try {
+            String hashedCode = hash(verificationCode);
+            if (signUp.getPasscode().equals(hashedCode)) {
+                // Verification successful
+                Customer customer = new Customer();
+                customer.setFirstName(firstName);
+                customer.setLastName(lastName);
+                customerService.save(customer);  // Save customer
+
+                signUp.setCustomer(customer);
+                signUp.setPasscode(hash(password)); // Store hashed password for future logins
+                signUpService.save(signUp);  // Save sign-up details with linked customer
+
+                return ResponseEntity.ok("REGISTRATION SUCCEEDED");
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid verification code");
+            }
+        } catch (NoSuchAlgorithmException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing verification");
+        }
+    } else {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Verification failed");
+    }
+}
+
 
     // ENDPOINT #4: Accept terms of service
     @PostMapping("/accept-tos")
