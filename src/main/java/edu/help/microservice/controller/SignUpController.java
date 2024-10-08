@@ -106,7 +106,7 @@ public class SignUpController {
     public ResponseEntity<String> sendVerification(@RequestBody AcceptTOSRequest request) {
         String email = request.getEmail();
         Registration registration = registrationService.findByEmail(email);
-//AcceptedTOS needs to be FALSE
+        //AcceptedTOS needs to be FALSE
         if (registration != null) {
             String verificationCode = generateVerificationCode(); // Hardcoded for testing
             registration.setPasscode(verificationCode);
@@ -293,9 +293,6 @@ System.out.println("Email: " + email + ", Hash: " + hash);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing request");
         }
     }
-
-
-
 
         // Helper method to validate email format
         private boolean isValidEmail(String email) {
