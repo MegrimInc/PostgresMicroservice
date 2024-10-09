@@ -25,7 +25,7 @@ public class SignUp {
     @Column(name = "is_bar", nullable = false)
     private Boolean isBar = false;
 
-    @Column(name = "expiryTimestamp")
+    @Column(name = "expiry_Timestamp")
     private Timestamp expiryTimestamp;
 
     // One-to-one relationship with Customer
