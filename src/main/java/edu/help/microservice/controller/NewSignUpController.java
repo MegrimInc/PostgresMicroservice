@@ -29,7 +29,7 @@ public class NewSignUpController {
 
     private static final String SECRET_KEY = "YourSecretKey";
 
-    private String hash(String input) throws NoSuchAlgorithmException {
+    private String hash(String input) throws NoSuchAlgorithmExceptiosn {
         String text = input + SECRET_KEY;
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         byte[] hash = md.digest(text.getBytes());
@@ -63,13 +63,11 @@ public class NewSignUpController {
             SignUp newSignUp = new SignUp();
             newSignUp.setEmail(email);
             String verificationCode = generateVerificationCode();
-            try {
-                newSignUp.setPasscode(hash(verificationCode));
-            } catch (NoSuchAlgorithmException e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error generating verification code");
-            }
+            newSignUp.setPasscode(hash(verificationCode));
             newSignUp.setExpiryTimestamp(generateExpiryTimestamp());
             signUpService.save(newSignUp);
+            //Saved Signup
+
             sendVerificationEmail(email, verificationCode);
             return ResponseEntity.ok("sent email");
         } else if (existingSignUp.getCustomer() != null) {
@@ -112,7 +110,7 @@ public class NewSignUpController {
         }
     }
 
-    // ENDPOINT #3: Verify the user's signup
+//ENDPOINT #3: VERIFICATION
     @PostMapping("/verify")
 public ResponseEntity<String> verify(@RequestBody VerificationRequest verificationRequest) {
     String email = verificationRequest.getEmail();
@@ -121,19 +119,11 @@ public ResponseEntity<String> verify(@RequestBody VerificationRequest verificati
     String firstName = verificationRequest.getFirstName();
     String lastName = verificationRequest.getLastName();
 
-    System.out.println("Received firstName: " + firstName);
-    System.out.println("Received lastName: " + lastName);
-
-    // Ensure firstName and lastName are not null or empty
-    if (firstName == null || firstName.isEmpty() || lastName == null || lastName.isEmpty()) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("First name and Last name are required.");
-    }
-
     SignUp signUp = signUpService.findByEmail(email);
 
     if (signUp != null && signUp.getCustomer() == null) {
         if (isVerificationCodeExpired(signUp.getExpiryTimestamp())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Verification code expired");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("REGISTRATION FAILED");
         }
         try {
             String hashedCode = hash(verificationCode);
@@ -145,18 +135,18 @@ public ResponseEntity<String> verify(@RequestBody VerificationRequest verificati
                 customerService.save(customer);  // Save customer
 
                 signUp.setCustomer(customer);
-                signUp.setPasscode(hash(password)); // Store hashed password for future logins
                 signUpService.save(signUp);  // Save sign-up details with linked customer
 
-                return ResponseEntity.ok("REGISTRATION SUCCEEDED");
+                // Return customerID (mapped to userID in old code)
+                return ResponseEntity.ok(customer.getCustomerID().toString());
             } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid verification code");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("REGISTRATION FAILED");
             }
         } catch (NoSuchAlgorithmException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing verification");
         }
     } else {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Verification failed");
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("REGISTRATION FAILED");
     }
 }
 

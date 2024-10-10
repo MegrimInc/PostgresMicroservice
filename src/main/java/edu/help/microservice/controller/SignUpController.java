@@ -54,8 +54,6 @@ public class SignUpController {
 
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody AcceptTOSRequest request) {
-        // Print incoming registration data
-        System.out.println("Received registration request for email: " + request.getEmail());
     
         String email = request.getEmail();
     
@@ -106,7 +104,7 @@ public class SignUpController {
     public ResponseEntity<String> sendVerification(@RequestBody AcceptTOSRequest request) {
         String email = request.getEmail();
         Registration registration = registrationService.findByEmail(email);
-        //AcceptedTOS needs to be FALSE
+        
         if (registration != null) {
             String verificationCode = generateVerificationCode(); // Hardcoded for testing
             registration.setPasscode(verificationCode);
