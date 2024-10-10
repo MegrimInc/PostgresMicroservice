@@ -29,7 +29,7 @@ public class NewSignUpController {
 
     private static final String SECRET_KEY = "YourSecretKey";
 
-    private String hash(String input) throws NoSuchAlgorithmExceptiosn {
+    private String hash(String input) throws NoSuchAlgorithmException {
         String text = input + SECRET_KEY;
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         byte[] hash = md.digest(text.getBytes());
@@ -63,10 +63,13 @@ public class NewSignUpController {
             SignUp newSignUp = new SignUp();
             newSignUp.setEmail(email);
             String verificationCode = generateVerificationCode();
-            newSignUp.setPasscode(hash(verificationCode));
+            try {
+                newSignUp.setPasscode(hash(verificationCode));
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            }
             newSignUp.setExpiryTimestamp(generateExpiryTimestamp());
             signUpService.save(newSignUp);
-            //Saved Signup
 
             sendVerificationEmail(email, verificationCode);
             return ResponseEntity.ok("sent email");
@@ -110,46 +113,50 @@ public class NewSignUpController {
         }
     }
 
-//ENDPOINT #3: VERIFICATION
+    // ENDPOINT #3: Verification
     @PostMapping("/verify")
-public ResponseEntity<String> verify(@RequestBody VerificationRequest verificationRequest) {
-    String email = verificationRequest.getEmail();
-    String verificationCode = verificationRequest.getVerificationCode();
-    String password = verificationRequest.getPassword();
-    String firstName = verificationRequest.getFirstName();
-    String lastName = verificationRequest.getLastName();
+    public ResponseEntity<String> verify(@RequestBody VerificationRequest verificationRequest) {
+        String email = verificationRequest.getEmail();
+        String verificationCode = verificationRequest.getVerificationCode();
+        String password = verificationRequest.getPassword();
+        String firstName = verificationRequest.getFirstName();
+        String lastName = verificationRequest.getLastName();
 
-    SignUp signUp = signUpService.findByEmail(email);
+        SignUp signUp = signUpService.findByEmail(email);
 
-    if (signUp != null && signUp.getCustomer() == null) {
-        if (isVerificationCodeExpired(signUp.getExpiryTimestamp())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("REGISTRATION FAILED");
-        }
-        try {
-            String hashedCode = hash(verificationCode);
-            if (signUp.getPasscode().equals(hashedCode)) {
-                // Verification successful
-                Customer customer = new Customer();
-                customer.setFirstName(firstName);
-                customer.setLastName(lastName);
-                customerService.save(customer);  // Save customer
-
-                signUp.setCustomer(customer);
-                signUpService.save(signUp);  // Save sign-up details with linked customer
-
-                // Return customerID (mapped to userID in old code)
-                return ResponseEntity.ok(customer.getCustomerID().toString());
-            } else {
+        if (signUp != null && signUp.getCustomer() == null) {
+            if (isVerificationCodeExpired(signUp.getExpiryTimestamp())) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("REGISTRATION FAILED");
             }
-        } catch (NoSuchAlgorithmException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing verification");
-        }
-    } else {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("REGISTRATION FAILED");
-    }
-}
+            try {
+                String hashedCode = hash(verificationCode);
+                if (signUp.getPasscode().equals(hashedCode)) {
+                    // Verification successful
+                    Customer customer = new Customer();
+                    customer.setFirstName(firstName);
+                    customer.setLastName(lastName);
 
+                    // @CHATGPT Set new hashed passcode here from veriRequest
+                    String hashedPassword = hash(password);
+                    signUp.setPasscode(hashedPassword);
+
+                    customerService.save(customer);  // Save customer
+
+                    signUp.setCustomer(customer);
+                    signUpService.save(signUp);  // Save sign-up details with linked customer
+
+                    // Return customerID (mapped to userID in old code)
+                    return ResponseEntity.ok(customer.getCustomerID().toString());
+                } else {
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("REGISTRATION FAILED");
+                }
+            } catch (NoSuchAlgorithmException e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing verification");
+            }
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("REGISTRATION FAILED");
+        }
+    }
 
     // ENDPOINT #4: Accept terms of service
     @PostMapping("/accept-tos")
@@ -179,7 +186,8 @@ public ResponseEntity<String> verify(@RequestBody VerificationRequest verificati
             try {
                 String hashedPassword = hash(password);
                 if (signUp.getPasscode().equals(hashedPassword)) {
-                    return ResponseEntity.ok("LOGIN SUCCEEDED");
+                    // Return customerID as in old code
+                    return ResponseEntity.ok(signUp.getCustomer().getCustomerID().toString());
                 } else {
                     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("LOGIN FAILED");
                 }
@@ -200,7 +208,6 @@ public ResponseEntity<String> verify(@RequestBody VerificationRequest verificati
 
     private void sendVerificationEmail(String email, String code) {
         JavaMailSenderImpl test = new JavaMailSenderImpl();
-
 
         test.setHost("email-smtp.us-east-1.amazonaws.com");
         test.setPort(587);
@@ -243,9 +250,6 @@ public ResponseEntity<String> verify(@RequestBody VerificationRequest verificati
             // Log any exceptions
             System.err.println(ex.getMessage());
         }
-
-
-
     }
 
     @GetMapping("/unsubscribe")
