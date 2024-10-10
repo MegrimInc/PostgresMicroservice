@@ -43,6 +43,11 @@ public class CustomerService {
         return customerRepository.findAll();
     }
 
+    public void delete(Customer customer) {
+        customerRepository.delete(customer);
+    }
+    
+
     /**
      * Deletes a Customer entity by its ID.
      *

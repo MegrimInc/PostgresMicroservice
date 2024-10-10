@@ -28,8 +28,14 @@ public class SignUp {
     @Column(name = "expiry_Timestamp")
     private Timestamp expiryTimestamp;
 
-    // One-to-one relationship with Customer
-    @OneToOne
+    // Optional one-to-one relationship with Customer
+    @OneToOne(optional = true, cascade = CascadeType.ALL)
     @JoinColumn(name = "customerID", referencedColumnName = "customerID")
     private Customer customer;
+
+    // Optional one-to-one relationship with Bar
+    @OneToOne(optional = true, cascade = CascadeType.ALL)
+    @JoinColumn(name = "bar_id", referencedColumnName = "bar_id")
+    private Bar bar;
 }
+

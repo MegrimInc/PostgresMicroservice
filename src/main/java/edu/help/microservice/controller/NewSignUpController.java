@@ -3,12 +3,16 @@ package edu.help.microservice.controller;
 import edu.help.microservice.dto.AcceptTOSRequest;
 import edu.help.microservice.dto.LoginRequest;
 import edu.help.microservice.dto.VerificationRequest;
+import edu.help.microservice.entity.Bar;
 import edu.help.microservice.entity.Customer;
 import edu.help.microservice.entity.SignUp;
 import edu.help.microservice.service.CustomerService;
 import edu.help.microservice.service.SignUpService;
+
+import edu.help.microservice.service.BarService;
 import jakarta.mail.internet.MimeMessage;
 
+import org.apache.catalina.connector.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -50,6 +54,56 @@ public class NewSignUpController {
 
     @Autowired
     private CustomerService customerService;
+
+    @Autowired
+    private BarService barService;
+
+    @PostMapping("/deleteaccount")
+    public ResponseEntity<String> deleteAccount(@RequestBody LoginRequest loginRequest) {
+    String email = loginRequest.getEmail();
+    String password = loginRequest.getPassword();
+
+    // Find the SignUp entity by email
+    SignUp signUp = signUpService.findByEmail(email);
+
+    if (signUp != null) {
+        try {
+            String hashedPassword = hash(password);
+            
+            // Verify the password
+            if (signUp.getPasscode().equals(hashedPassword)) {
+                // Check if it's a customer account
+                if (signUp.getCustomer() != null) {
+                    Customer customer = signUp.getCustomer();
+                    customerService.delete(customer);  // Delete the customer entity
+                    signUpService.delete(signUp);  // Delete the sign-up record
+                    return ResponseEntity.ok("Customer account deleted");
+                }
+
+                // Check if it's a bar account
+                else if (signUp.getBar() != null) {
+                    Bar bar = signUp.getBar();
+                    barService.delete(bar);  // Delete the bar entity
+                    signUpService.delete(signUp);  // Delete the sign-up record
+                    return ResponseEntity.ok("Bar account deleted");
+                }
+
+                // If no customer or bar is associated
+                else {
+                    signUpService.delete(signUp);
+                    return ResponseEntity.ok("Account deleted");
+                }
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Incorrect password");
+            }
+        } catch (NoSuchAlgorithmException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing request");
+        }
+    } else {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account not found");
+    }
+}
+
 
     // ENDPOINT #1: Register a new user
     @PostMapping("/register")
@@ -176,28 +230,39 @@ public class NewSignUpController {
 
     // ENDPOINT #5: Login with email and password
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
-        String email = loginRequest.getEmail();
-        String password = loginRequest.getPassword();
+public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
+    String email = loginRequest.getEmail();
+    String password = loginRequest.getPassword();
 
-        SignUp signUp = signUpService.findByEmail(email);
+    SignUp signUp = signUpService.findByEmail(email);
 
-        if (signUp != null && signUp.getCustomer() != null) {
-            try {
-                String hashedPassword = hash(password);
-                if (signUp.getPasscode().equals(hashedPassword)) {
-                    // Return customerID as in old code
+    if (signUp != null) {
+        try {
+            String hashedPassword = hash(password);
+            if (signUp.getPasscode().equals(hashedPassword)) {
+                if (signUp.getBar() != null) {
+                    // Bar login
+                    return ResponseEntity.ok("" + signUp.getBar().getBarId() * -1);
+                } else if (signUp.getCustomer() != null) {
+                    // Customer login
                     return ResponseEntity.ok(signUp.getCustomer().getCustomerID().toString());
                 } else {
+                    // No associated customer or bar
                     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("LOGIN FAILED");
                 }
-            } catch (NoSuchAlgorithmException e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing login");
+            } else {
+                // Password mismatch
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("LOGIN FAILED");
             }
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("LOGIN FAILED");
+        } catch (NoSuchAlgorithmException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing login");
         }
+    } else {
+        // SignUp not found
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("LOGIN FAILED");
     }
+}
+
 
     // Helper methods
     private String generateVerificationCode() {

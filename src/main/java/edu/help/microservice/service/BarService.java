@@ -2,6 +2,7 @@ package edu.help.microservice.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,9 +42,21 @@ public class BarService {
 
     }
 
+
+    public Bar findBarById(Integer id) {
+        Optional<Bar> bar = barRepository.findById(id);
+        return bar.orElse(null);  // Returns the Bar if found, otherwise returns null
+    }
+
+    
     public List<Drink> getDrinksByBarId(Integer barId) {
         return drinkRepository.findAllDrinksByBarIdExcludingFields(barId);
     }
+
+    public void delete(Bar bar) {
+        barRepository.delete(bar);
+    }
+    
 
 
     //REDIS STUFF LEFT ME LOCK

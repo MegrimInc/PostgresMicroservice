@@ -71,4 +71,9 @@ public class SignUpService {
     public boolean existsByEmail(String email) {
         return signUpRepository.findByEmail(email) != null;
     }
+
+    public void delete(SignUp signUp) {
+        signUpRepository.delete(signUp);
+    }
+    
 }

@@ -10,4 +10,6 @@ import java.util.Optional;
 @Repository
 public interface BarRepository extends JpaRepository<Bar, Integer> {
     Optional<Bar> findByBarEmail(String bar_email);
+
+    
 }
