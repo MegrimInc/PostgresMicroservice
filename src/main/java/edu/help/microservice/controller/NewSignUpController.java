@@ -31,21 +31,6 @@ import edu.help.microservice.service.SignUpService;
 import edu.help.microservice.service.BarService;
 import jakarta.mail.internet.MimeMessage;
 
-import org.apache.catalina.connector.Response;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.mail.javamail.JavaMailSenderImpl;
-import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.web.bind.annotation.*;
-
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.sql.Timestamp;
-import java.util.Base64;
-import java.util.Properties;
-import java.util.Random;
-
 @RestController
 @RequestMapping("/newsignup")
 public class NewSignUpController {
