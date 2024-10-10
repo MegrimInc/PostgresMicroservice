@@ -34,24 +34,8 @@ import jakarta.mail.internet.MimeMessage;
 @RestController
 @RequestMapping("/newsignup")
 public class NewSignUpController {
-
+    
     private static final String SECRET_KEY = "YourSecretKey";
-
-    private String hash(String input) throws NoSuchAlgorithmException {
-        String text = input + SECRET_KEY;
-        MessageDigest md = MessageDigest.getInstance("SHA-256");
-        byte[] hash = md.digest(text.getBytes());
-        return Base64.getEncoder().encodeToString(hash);
-    }
-
-    private Timestamp generateExpiryTimestamp() {
-        long expiryTime = System.currentTimeMillis() + 15 * 60 * 1000; // 15 minutes from now
-        return new Timestamp(expiryTime);
-    }
-
-    private boolean isVerificationCodeExpired(Timestamp expiryTimestamp) {
-        return expiryTimestamp.before(new Timestamp(System.currentTimeMillis()));
-    }
 
     @Autowired
     private SignUpService signUpService;
@@ -66,8 +50,6 @@ public class NewSignUpController {
     public ResponseEntity<String> deleteAccount(@RequestBody LoginRequest loginRequest) {
     String email = loginRequest.getEmail();
     String password = loginRequest.getPassword();
-
-    // Find the SignUp entity by email
     SignUp signUp = signUpService.findByEmail(email);
 
     if (signUp != null) {
@@ -234,7 +216,7 @@ public class NewSignUpController {
 
     // ENDPOINT #5: Login with email and password
     @PostMapping("/login")
-public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
     String email = loginRequest.getEmail();
     String password = loginRequest.getPassword();
 
@@ -343,5 +325,22 @@ public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         byte[] hashBytes = md.digest(text.getBytes());
         return Base64.getEncoder().encodeToString(hashBytes);
+    }
+
+
+    private String hash(String input) throws NoSuchAlgorithmException {
+        String text = input + SECRET_KEY;
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        byte[] hash = md.digest(text.getBytes());
+        return Base64.getEncoder().encodeToString(hash);
+    }
+
+    private Timestamp generateExpiryTimestamp() {
+        long expiryTime = System.currentTimeMillis() + 15 * 60 * 1000; // 15 minutes from now
+        return new Timestamp(expiryTime);
+    }
+
+    private boolean isVerificationCodeExpired(Timestamp expiryTimestamp) {
+        return expiryTimestamp.before(new Timestamp(System.currentTimeMillis()));
     }
 }
