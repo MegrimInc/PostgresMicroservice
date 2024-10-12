@@ -48,9 +48,13 @@ public class Drink {
     @Column(name = "description")
     private String description;
 
+    @Column(name = "point_price")
+    private Integer point;
+
+
     // Constructor with the new description field
     public Drink(Integer drinkId, Integer barId, String drinkName, Double drinkPrice, String alcoholContent,
-                 String drinkImage, BigDecimal drinkDiscount, Integer[] drinkTags, String description) {
+                 String drinkImage, BigDecimal drinkDiscount, Integer[] drinkTags, String description, Integer point) {
         this.drinkId = drinkId;
         this.barId = barId;
         this.drinkName = drinkName;
@@ -60,6 +64,7 @@ public class Drink {
         this.drinkDiscount = drinkDiscount;
         this.drinkTags = drinkTags;
         this.description = description;
+        this.point = point;
     }
 
     // Default constructor
@@ -136,5 +141,13 @@ public class Drink {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Integer getPoint() {
+        return point;
+    }
+
+    public void setPoint(Integer point) {
+        this.point = point;
     }
 }

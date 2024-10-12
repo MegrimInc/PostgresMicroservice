@@ -1,11 +1,21 @@
 package edu.help.microservice.entity;
 
-import jakarta.persistence.*;
-import lombok.NoArgsConstructor;
+import java.util.Map;
+
+import org.hibernate.annotations.Type;
+
+import io.hypersistence.utils.hibernate.type.json.JsonType;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "customer")
-@NoArgsConstructor
 public class Customer {
 
     @Id
@@ -23,6 +33,10 @@ public class Customer {
 
     @OneToOne(mappedBy = "customer", cascade = CascadeType.ALL)
     private SignUp signUp;
+
+    @Type(JsonType.class)
+    @Column(name = "points", columnDefinition = "jsonb")
+    private Map<Integer, Map<Integer, Integer>> points;
 
     // Getters and Setters
     public Integer getCustomerID() {
@@ -46,7 +60,6 @@ public class Customer {
     }
 
     public void setFirstName(String firstName) {
-        System.out.println("Setting first name: " + firstName);  // Debugging line
         this.firstName = firstName;
     }
 
@@ -55,7 +68,6 @@ public class Customer {
     }
 
     public void setLastName(String lastName) {
-        System.out.println("Setting last name: " + lastName);  // Debugging line
         this.lastName = lastName;
     }
 
@@ -65,5 +77,13 @@ public class Customer {
 
     public void setSignUp(SignUp signUp) {
         this.signUp = signUp;
+    }
+
+    public Map<Integer, Map<Integer, Integer>> getPoints() {
+        return points;
+    }
+
+    public void setPoints(Map<Integer, Map<Integer, Integer>> points) {
+        this.points = points;
     }
 }
