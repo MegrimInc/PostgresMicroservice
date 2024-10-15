@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import edu.help.microservice.dto.AcceptTOSRequest;
 import edu.help.microservice.dto.LoginRequest;
+import edu.help.microservice.dto.VerificationBarRequest;
 import edu.help.microservice.dto.VerificationRequest;
 import edu.help.microservice.entity.Bar;
 import edu.help.microservice.entity.Customer;
@@ -91,7 +92,7 @@ public class NewSignUpController {
 }
 
 
-    // ENDPOINT #1: Register a new user
+    // ENDPOINT #1: Register a new Customer
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody AcceptTOSRequest request) {
         String email = request.getEmail();
@@ -102,6 +103,7 @@ public class NewSignUpController {
             // Email does not exist
             SignUp newSignUp = new SignUp();
             newSignUp.setEmail(email);
+            newSignUp.setIsBar(false);
             String verificationCode = generateVerificationCode();
             try {
                 newSignUp.setPasscode(hash(verificationCode));
@@ -122,12 +124,60 @@ public class NewSignUpController {
             try {
                 existingSignUp.setPasscode(hash(verificationCode));
             } catch (NoSuchAlgorithmException e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error generating verification code");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("error generating verification code");
             }
             existingSignUp.setExpiryTimestamp(generateExpiryTimestamp());
             signUpService.save(existingSignUp);
             sendVerificationEmail(email, verificationCode);
-            return ResponseEntity.ok("Re-sent email");
+            return ResponseEntity.ok("re-sent email");
+        }
+    }
+
+    //ENDPOINT #1b: Register a new Bar
+    @PostMapping("/register/bar")
+    public ResponseEntity<String> registerBar(@RequestBody AcceptTOSRequest request)
+    {
+        String email = request.getEmail();
+        SignUp existingSignUp = signUpService.findByEmail(email);
+
+        if (existingSignUp == null)
+        {
+            SignUp newSignUp = new SignUp();
+            newSignUp.setEmail(email);
+            newSignUp.setIsBar(true);
+            String verificationCode = generateVerificationCode();
+            try{
+                newSignUp.setPasscode(hash(verificationCode));
+            }
+            catch(Exception e){
+                e.printStackTrace();
+            }
+            newSignUp.setExpiryTimestamp(generateExpiryTimestamp());
+            signUpService.save(newSignUp);
+
+            sendVerificationEmail(email, verificationCode);
+            return ResponseEntity.ok("sent email");
+        }
+        else if (existingSignUp.getBar() != null)
+        {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("email already exists");
+        }
+        else if (existingSignUp.getCustomer() != null) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("email is already registered as a customer");
+        }
+        
+        else
+        {
+            String verificationCode = generateVerificationCode();
+            try {
+                existingSignUp.setPasscode(hash(verificationCode));
+            } catch (NoSuchAlgorithmException e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("error generating verification code");
+            }
+            existingSignUp.setExpiryTimestamp(generateExpiryTimestamp());
+            signUpService.save(existingSignUp);
+            sendVerificationEmail(email, verificationCode);
+            return ResponseEntity.ok("re-sent email");    
         }
     }
 
@@ -142,18 +192,18 @@ public class NewSignUpController {
             try {
                 signUp.setPasscode(hash(verificationCode));
             } catch (NoSuchAlgorithmException e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error generating verification code");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("error generating verification code");
             }
             signUp.setExpiryTimestamp(generateExpiryTimestamp());
             signUpService.save(signUp);
             sendVerificationEmail(email, verificationCode);
-            return ResponseEntity.ok("Verification email sent");
+            return ResponseEntity.ok("verification email sent");
         } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Email not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("email not found");
         }
     }
 
-    // ENDPOINT #3: Verification
+    // ENDPOINT #3: Verification for Customer
     @PostMapping("/verify")
     public ResponseEntity<String> verify(@RequestBody VerificationRequest verificationRequest) {
         String email = verificationRequest.getEmail();
@@ -166,7 +216,7 @@ public class NewSignUpController {
 
         if (signUp != null && signUp.getCustomer() == null) {
             if (isVerificationCodeExpired(signUp.getExpiryTimestamp())) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("REGISTRATION FAILED");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("registration failed");
             }
             try {
                 String hashedCode = hash(verificationCode);
@@ -188,13 +238,64 @@ public class NewSignUpController {
                     // Return customerID (mapped to userID in old code)
                     return ResponseEntity.ok(customer.getCustomerID().toString());
                 } else {
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("REGISTRATION FAILED");
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("registration failed");
                 }
             } catch (NoSuchAlgorithmException e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing verification");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("error processing verification");
             }
         } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("REGISTRATION FAILED");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("registration failed");
+        }
+    }
+
+    // ENDPOINT: Verify Bar Registration
+    @PostMapping("/verify/bar")
+    public ResponseEntity<String> verifyBar(@RequestBody VerificationBarRequest verificationRequest) {
+        String email = verificationRequest.getEmail();
+        String verificationCode = verificationRequest.getVerificationCode();
+        String password = verificationRequest.getPassword();
+
+        SignUp signUp = signUpService.findByEmail(email);
+
+        if (signUp != null && signUp.getBar() == null && signUp.getIsBar()) {
+            if (isVerificationCodeExpired(signUp.getExpiryTimestamp())) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("registration failed: verification code expired");
+            }
+            try {
+                String hashedCode = hash(verificationCode);
+                if (signUp.getPasscode().equals(hashedCode)) {
+                    // Verification successful
+                    Bar bar = new Bar();
+                    bar.setBarEmail(email);
+                    bar.setBarName(verificationRequest.getCompanyName());
+                    bar.setBarTag(verificationRequest.getCompanyNickname());
+                    bar.setBarCountry(verificationRequest.getCountry());
+                    bar.setBarState(verificationRequest.getRegion());
+                    bar.setBarCity(verificationRequest.getCity());
+                    bar.setBarAddress(verificationRequest.getAddress());
+                    bar.setTagImage(""); // Set default or handle accordingly
+                    bar.setBarImage(""); // Set default or handle accordingly
+                    bar.setOpenHours(verificationRequest.getOpenTime() + " - " + verificationRequest.getCloseTime());
+
+                    // Hash the password from verificationRequest and update passcode
+                    String hashedPassword = hash(password);
+                    signUp.setPasscode(hashedPassword);
+
+                    barService.save(bar);  // Save the Bar entity
+
+                    signUp.setBar(bar);  // Associate the Bar with SignUp
+                    signUpService.save(signUp);  // Save SignUp with the associated Bar
+
+                    // Return negative Bar ID to differentiate from customer IDs
+                    return ResponseEntity.ok("-" + bar.getBarId().toString());
+                } else {
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("registration failed: incorrect verification code");
+                }
+            } catch (NoSuchAlgorithmException e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("error processing verification");
+            }
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("registration failed");
         }
     }
 
