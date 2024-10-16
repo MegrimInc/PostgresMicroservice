@@ -56,6 +56,11 @@ public class BarService {
     public void delete(Bar bar) {
         barRepository.delete(bar);
     }
+
+    public Bar save(Bar bar)
+    {
+        return barRepository.save(bar);
+    }
     
 
 
