@@ -24,10 +24,12 @@ public class BarService {
 
     @Autowired
     private BarRepository barRepository;
-   
 
     @Autowired
     private DrinkRepository drinkRepository;
+
+    @Autowired  // Inject PointService dependency
+    private PointService pointService;
 
     public List<BarDTO> findAllBars()
     {
@@ -66,22 +68,83 @@ public class BarService {
 
     //REDIS STUFF LEFT ME LOCK
 
-    public OrderResponse processOrder(int barId, List<OrderRequest.DrinkOrder> drinkOrders, boolean isHappyHour) {
-        // Calculate total price based on happy hour status from OrderRequest and prepare drinks with their names and quantities
-        double totalPrice = 0;
-        List<DrinkOrder> finalDrinkOrders = new ArrayList<>();
-        
-        for (OrderRequest.DrinkOrder drinkOrder : drinkOrders) {
-            Drink drink = drinkRepository.findById(drinkOrder.getDrinkId())
-                .orElseThrow(() -> new RuntimeException("Drink not found"));
-            double price = isHappyHour ? drink.getDrinkDiscount().doubleValue() : drink.getDrinkPrice();
-            totalPrice += price * drinkOrder.getQuantity();
-            System.out.println("Drink name: " + drink.getDrinkName() + ", Quantity: " + drinkOrder.getQuantity() + ", Price per unit: " + price);
-            finalDrinkOrders.add(new OrderResponse.DrinkOrder(drink.getDrinkId(), drink.getDrinkName(), drinkOrder.getQuantity()));
-        }
-        System.out.println("Total price calculated: " + totalPrice);
-        System.out.println("Final DrinkOrders: " + finalDrinkOrders);
-        return new OrderResponse("Order processed successfully", totalPrice, finalDrinkOrders, "");
+    // public OrderResponse processOrder(int barId, List<OrderRequest.DrinkOrder> drinkOrders, boolean isHappyHour, boolean points) {
+    //     // Calculate total price based on happy hour status from OrderRequest and prepare drinks with their names and quantities
+    //     double totalPrice = 0;
+    //     List<DrinkOrder> finalDrinkOrders = new ArrayList<>();
+
+    //     for (OrderRequest.DrinkOrder drinkOrder : drinkOrders) {
+    //         Drink drink = drinkRepository.findById(drinkOrder.getDrinkId())
+    //                 .orElseThrow(() -> new RuntimeException("Drink not found"));
+    //         double price = isHappyHour ? drink.getDrinkDiscount().doubleValue() : drink.getDrinkPrice();
+    //         totalPrice += price * drinkOrder.getQuantity();
+    //         System.out.println("Drink name: " + drink.getDrinkName() + ", Quantity: " + drinkOrder.getQuantity()
+    //                 + ", Price per unit: " + price);
+    //         finalDrinkOrders.add(
+    //                 new OrderResponse.DrinkOrder(drink.getDrinkId(), drink.getDrinkName(), drinkOrder.getQuantity()));
+    //     }
+    //     System.out.println("Total price calculated: " + totalPrice);
+    //     System.out.println("Final DrinkOrders: " + finalDrinkOrders);
+    //     return new OrderResponse("Order processed successfully", totalPrice, finalDrinkOrders, "");
+    // }
+    
+
+    public OrderResponse processOrder(
+    int barId, 
+    List<OrderRequest.DrinkOrder> drinkOrders, 
+    boolean isHappyHour, 
+    boolean points, 
+    int userId) {
+
+    double totalPrice = 0;
+    int totalQuantity = 0;  // Track total quantity
+    List<DrinkOrder> finalDrinkOrders = new ArrayList<>();
+
+    // Calculate the total price or points required
+    for (OrderRequest.DrinkOrder drinkOrder : drinkOrders) {
+        Drink drink = drinkRepository.findById(drinkOrder.getDrinkId())
+            .orElseThrow(() -> new RuntimeException("Drink not found"));
+
+        double price = points ? drink.getPoint().doubleValue() :
+            (isHappyHour ? drink.getDrinkDiscount().doubleValue() : drink.getDrinkPrice());
+
+        totalPrice += price * drinkOrder.getQuantity();
+        totalQuantity += drinkOrder.getQuantity();
+
+        System.out.println("Drink: " + drink.getDrinkName() + 
+                           ", Quantity: " + drinkOrder.getQuantity() + 
+                           ", Price per unit: " + price);
+
+        finalDrinkOrders.add(new OrderResponse.DrinkOrder(
+            drink.getDrinkId(), 
+            drink.getDrinkName(), 
+            drinkOrder.getQuantity()));
     }
 
+    if (points) {
+        boolean success = pointService.charge(userId, barId, (int) totalPrice, totalQuantity);
+        if (!success) {
+            System.out.println("Insufficient points. Transaction canceled.");
+            return new OrderResponse(
+                "Insufficient points. Would you like to proceed with regular pricing?", 
+                totalPrice,  // Show the calculated price
+                finalDrinkOrders,
+                "broke"
+            );
+        }
+    } else {
+        // If points are not used, add points as a reward
+        pointService.addPoints(userId, barId, totalQuantity);
+    }
+
+    System.out.println("Total price: " + totalPrice);
+    System.out.println("Final Drink Orders: " + finalDrinkOrders);
+
+    return new OrderResponse(
+        "Order processed successfully", 
+        totalPrice, 
+        finalDrinkOrders, 
+        "success"
+    );
+}
 }

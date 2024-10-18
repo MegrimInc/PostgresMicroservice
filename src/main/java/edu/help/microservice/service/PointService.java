@@ -17,12 +17,64 @@ public class PointService {
     @Autowired
     private CustomerRepository customerRepository;
 
-    // Retrieve the entire points Map for a given user ID
+
     @Transactional(readOnly = true)
-    public Map<Integer, Map<Integer, Integer>> getPointsForUser(int userId) {
+public Map<Integer, Map<Integer, Integer>> getPointsForUser(int userId) {
+    Optional<Customer> customerOpt = customerRepository.findById(userId);
+    return customerOpt.map(Customer::getPoints).orElse(new HashMap<>());
+}
+
+    // Charge points from a user with quantity-based adjustment
+    @Transactional
+    public boolean charge(int userId, int barId, int pointsToCharge, int totalQuantity) {
         Optional<Customer> customerOpt = customerRepository.findById(userId);
-        return customerOpt.map(Customer::getPoints).orElse(new HashMap<>());
+        if (customerOpt.isPresent()) {
+            Customer customer = customerOpt.get();
+            Map<Integer, Map<Integer, Integer>> pointsMap = getOrInitializePoints(customer);
+
+            int currentPoints = pointsMap.getOrDefault(userId, new HashMap<>()).getOrDefault(barId, 0);
+
+            if (currentPoints < pointsToCharge) {
+                System.out.println("Insufficient points for charge.");
+                return false;  // Not enough points, transaction fails
+            }
+
+            // Subtract pointsToCharge and add totalQuantity * 75 points back
+            int updatedPoints = currentPoints - pointsToCharge + (totalQuantity * 75);
+            pointsMap.get(userId).put(barId, updatedPoints);
+
+            customer.setPoints(pointsMap);
+            customerRepository.save(customer);  // Save updated customer entity
+
+            System.out.println("Points charged: " + pointsToCharge);
+            System.out.println("Points added from drinks: " + (totalQuantity * 75));
+            return true;  // Charge successful
+        }
+        return false;  // User not found, charge fails
     }
+
+    // Refund points with quantity-based adjustment
+    @Transactional
+    public void refund(int userId, int barId, int pointsToRefund, int totalQuantity) {
+        Optional<Customer> customerOpt = customerRepository.findById(userId);
+        if (customerOpt.isPresent()) {
+            Customer customer = customerOpt.get();
+            Map<Integer, Map<Integer, Integer>> pointsMap = getOrInitializePoints(customer);
+
+            int currentPoints = pointsMap.getOrDefault(userId, new HashMap<>()).getOrDefault(barId, 0);
+
+            // Add pointsToRefund and subtract totalQuantity * 75 points
+            int updatedPoints = currentPoints + pointsToRefund - (totalQuantity * 75);
+            pointsMap.get(userId).put(barId, updatedPoints);
+
+            customer.setPoints(pointsMap);
+            customerRepository.save(customer); // Save updated customer entity
+
+            System.out.println("Points refunded: " + pointsToRefund);
+            System.out.println("Points removed from drinks: " + (totalQuantity * 75));
+        }
+    }
+    
 
     // Add points for a given user ID and bar ID
     @Transactional
@@ -66,9 +118,10 @@ public class PointService {
         }
     }
 
+
     // Helper method to initialize points map if it is null
     private Map<Integer, Map<Integer, Integer>> getOrInitializePoints(Customer customer) {
         Map<Integer, Map<Integer, Integer>> pointsMap = customer.getPoints();
-        return (pointsMap != null) ? pointsMap : new HashMap<>();  // Return existing map or new empty map
+        return (pointsMap != null) ? pointsMap : new HashMap<>();
     }
 }

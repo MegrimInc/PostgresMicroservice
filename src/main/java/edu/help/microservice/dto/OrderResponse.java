@@ -8,22 +8,26 @@ public class OrderResponse {
     private double totalPrice;
     private List<DrinkOrder> drinks;
     private String messageType;
-
-    // Constructor with messageType
-    public OrderResponse(String message, double totalPrice, List<DrinkOrder> drinks, String messageType) {
-        this.message = message;
-        this.totalPrice = totalPrice;
-        this.drinks = drinks;
-        this.messageType = messageType;
+    
+    public OrderResponse() {
+        // Default constructor
     }
 
-    // Constructor without messageType (for backward compatibility)
-    public OrderResponse(String message, double totalPrice, List<DrinkOrder> drinks) {
-        this.message = message;
-        this.totalPrice = totalPrice;
-        this.drinks = drinks;
-        this.messageType = ""; // Default value if messageType is not provided
-    }
+   // Constructor
+   public OrderResponse(String message, double totalPrice, List<DrinkOrder> drinks, String messageType) {
+    this.message = message;
+    this.totalPrice = totalPrice;
+    this.drinks = drinks;
+    this.messageType = messageType;
+}
+
+// Constructor without messageType (for backward compatibility)
+public OrderResponse(String message, double totalPrice, List<DrinkOrder> drinks) {
+    this.message = message;
+    this.totalPrice = totalPrice;
+    this.drinks = drinks;
+    this.messageType = ""; // Default value if messageType is not provided
+}
 
     // Getters and Setters
     public String getMessage() {

@@ -7,6 +7,7 @@ public class OrderRequest {
     private int userId;
     private List<DrinkOrder> drinks;
     private boolean isHappyHour;
+    private boolean points;
 
     // Getters and Setters
     public int getBarId() {
@@ -40,6 +41,14 @@ public class OrderRequest {
 
     public void setDrinks(List<DrinkOrder> drinks) {
         this.drinks = drinks;
+    }
+
+    public boolean isPoints() {  // New getter
+        return points;
+    }
+
+    public void setPoints(boolean points) {  // New setter
+        this.points = points;
     }
 
     // Inner class representing a drink order
@@ -80,6 +89,7 @@ public class OrderRequest {
                 "barId=" + barId +
                 ", userId=" + userId +
                 ", drinks=" + drinks +
+                ", points=" + points +
                 '}';
     }
 }

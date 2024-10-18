@@ -34,12 +34,19 @@ public class BarController {
 }
 
 
-    @PostMapping("/{barId}/processOrder")
-    public OrderResponse processOrder(@PathVariable int barId, @RequestBody OrderRequest orderRequest) {
-        return barService.processOrder(barId, orderRequest.getDrinks(), orderRequest.isHappyHour());
+@PostMapping("/{barId}/processOrder")
+public OrderResponse processOrder(
+    @PathVariable int barId, 
+    @RequestBody OrderRequest orderRequest) {
 
-        //processOrder(orderRequest, boolean)
-    }
+    return barService.processOrder(
+        barId, 
+        orderRequest.getDrinks(), 
+        orderRequest.isHappyHour(), 
+        orderRequest.isPoints(), 
+        orderRequest.getUserId()
+    );
+}
     
 
 }
