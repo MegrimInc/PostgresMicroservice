@@ -468,7 +468,7 @@ public class NewSignUpController {
     }
 
     // Endpoint 3: Reset the password
-    @PostMapping("/reset-password")
+    @PostMapping("/reset-password-final")
     public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordConfirmRequest request) {
         String email = request.getEmail();
         String verificationCode = request.getCode();
