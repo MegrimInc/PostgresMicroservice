@@ -19,13 +19,16 @@ public class SignUp {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(name = "passcode")
-    private String passcode;
+    @Column(name = "passcode", nullable = true)
+    private String passcode;  // Password hash, nullable
+
+    @Column(name = "verification_code", nullable = true)
+    private String verificationCode;  // Verification code hash, nullable
 
     @Column(name = "is_bar", nullable = false)
     private Boolean isBar = false;
 
-    @Column(name = "expiry_Timestamp")
+    @Column(name = "expiry_Timestamp", nullable = true)
     private Timestamp expiryTimestamp;
 
     // Optional one-to-one relationship with Customer
@@ -38,4 +41,3 @@ public class SignUp {
     @JoinColumn(name = "bar_id", referencedColumnName = "bar_id")
     private Bar bar;
 }
-
