@@ -36,6 +36,11 @@ public class BarService {
         return barDTOs;
     }
 
+    public Bar save(Bar bar)
+    {
+        return barRepository.save(bar);
+    }
+
     
     public Bar findByBarEmail(String bar_email) {
         return barRepository.findByBarEmail(bar_email).orElse(null);
@@ -55,11 +60,6 @@ public class BarService {
 
     public void delete(Bar bar) {
         barRepository.delete(bar);
-    }
-
-    public Bar save(Bar bar)
-    {
-        return barRepository.save(bar);
     }
     
 
