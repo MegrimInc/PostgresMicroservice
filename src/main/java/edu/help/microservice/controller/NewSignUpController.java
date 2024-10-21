@@ -504,10 +504,6 @@ public class NewSignUpController {
         }
     }
 
-    // ... existing code ...
-
-}
-
 
     private String generateHash(String email) throws NoSuchAlgorithmException {
         String text = email + SECRET_KEY;
