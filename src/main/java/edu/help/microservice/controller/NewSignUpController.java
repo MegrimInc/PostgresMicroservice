@@ -12,9 +12,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import edu.help.microservice.dto.AcceptTOSRequest;
+import edu.help.microservice.dto.AcceptTOSRequest2;
 import edu.help.microservice.dto.LoginRequest;
 import edu.help.microservice.dto.ResetPasswordConfirmRequest;
 import edu.help.microservice.dto.VerificationBarRequest;
@@ -23,9 +29,9 @@ import edu.help.microservice.dto.VerifyResetCodeRequest;
 import edu.help.microservice.entity.Bar;
 import edu.help.microservice.entity.Customer;
 import edu.help.microservice.entity.SignUp;
+import edu.help.microservice.service.BarService;
 import edu.help.microservice.service.CustomerService;
 import edu.help.microservice.service.SignUpService;
-import edu.help.microservice.service.BarService;
 import jakarta.mail.internet.MimeMessage;
 
 @RestController
@@ -43,7 +49,7 @@ public class NewSignUpController {
     @Autowired
     private BarService barService;
 
-    // ENDPOINT #1: Register a new Customer
+    //ENDPOINT #1: Register a new Customer
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody AcceptTOSRequest request) {
         String email = request.getEmail();
@@ -84,6 +90,44 @@ public class NewSignUpController {
         }
     }
 
+    // ENDPOINT #1: Register a new Customer
+    @PostMapping("/register2")
+    public ResponseEntity<String> register(@RequestBody AcceptTOSRequest2 request) {
+    String email = request.getEmail();
+    SignUp existingSignUp = signUpService.findByEmail(email);
+
+    if (existingSignUp == null) {
+        // Create new sign-up and customer
+        SignUp newSignUp = new SignUp();
+        newSignUp.setEmail(email);
+        newSignUp.setIsBar(false);
+
+        Customer customer = new Customer();
+        customer.setFirstName(request.getFirstName());
+        customer.setLastName(request.getLastName());
+
+        // Hash and store the password immediately
+        try {
+            String hashedPassword = hash(request.getPassword());
+            newSignUp.setPasscode(hashedPassword);
+        } catch (NoSuchAlgorithmException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error hashing password");
+        }
+
+        // Save customer and link with sign-up
+        customerService.save(customer);
+        newSignUp.setCustomer(customer);
+        signUpService.save(newSignUp);
+
+        // Return the customer ID as a string
+        return ResponseEntity.ok(String.valueOf(customer.getCustomerID()));
+    } else {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
+    }
+}
+
+
     // ENDPOINT #1b: Register a new Bar
     @PostMapping("/register/bar")
     public ResponseEntity<String> registerBar(@RequestBody AcceptTOSRequest request) {
@@ -114,7 +158,8 @@ public class NewSignUpController {
             try {
                 existingSignUp.setVerificationCode(hash(verificationCode));
             } catch (NoSuchAlgorithmException e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("error generating verification code");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("error generating verification code");
             }
             existingSignUp.setExpiryTimestamp(generateExpiryTimestamp());
             signUpService.save(existingSignUp);
@@ -134,7 +179,8 @@ public class NewSignUpController {
             try {
                 signUp.setVerificationCode(hash(verificationCode));
             } catch (NoSuchAlgorithmException e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("error generating verification code");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("error generating verification code");
             }
             signUp.setExpiryTimestamp(generateExpiryTimestamp());
             signUpService.save(signUp);
@@ -158,7 +204,8 @@ public class NewSignUpController {
 
         if (signUp != null && signUp.getCustomer() == null) {
             if (isVerificationCodeExpired(signUp.getExpiryTimestamp())) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("registration failed: verification code expired");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("registration failed: verification code expired");
             }
             try {
                 String hashedCode = hash(verificationCode);
@@ -176,15 +223,16 @@ public class NewSignUpController {
                     signUp.setVerificationCode(null);
                     signUp.setExpiryTimestamp(null);
 
-                    customerService.save(customer);  // Save customer
+                    customerService.save(customer); // Save customer
 
                     signUp.setCustomer(customer);
-                    signUpService.save(signUp);  // Save sign-up details with linked customer
+                    signUpService.save(signUp); // Save sign-up details with linked customer
 
                     // Return customerID
                     return ResponseEntity.ok(customer.getCustomerID().toString());
                 } else {
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("registration failed: incorrect verification code");
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body("registration failed: incorrect verification code");
                 }
             } catch (NoSuchAlgorithmException e) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("error processing verification");
@@ -205,7 +253,8 @@ public class NewSignUpController {
 
         if (signUp != null && signUp.getBar() == null && signUp.getIsBar()) {
             if (isVerificationCodeExpired(signUp.getExpiryTimestamp())) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("registration failed: verification code expired");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("registration failed: verification code expired");
             }
             try {
                 String hashedCode = hash(verificationCode);
@@ -231,15 +280,16 @@ public class NewSignUpController {
                     signUp.setVerificationCode(null);
                     signUp.setExpiryTimestamp(null);
 
-                    barService.save(bar);  // Save the Bar entity
+                    barService.save(bar); // Save the Bar entity
 
-                    signUp.setBar(bar);  // Associate the Bar with SignUp
-                    signUpService.save(signUp);  // Save SignUp with the associated Bar
+                    signUp.setBar(bar); // Associate the Bar with SignUp
+                    signUpService.save(signUp); // Save SignUp with the associated Bar
 
                     // Return negative Bar ID to differentiate from customer IDs
                     return ResponseEntity.ok("-" + bar.getBarId().toString());
                 } else {
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("registration failed: incorrect verification code");
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body("registration failed: incorrect verification code");
                 }
             } catch (NoSuchAlgorithmException e) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("error processing verification");
@@ -316,15 +366,15 @@ public class NewSignUpController {
                     // Check if it's a customer account
                     if (signUp.getCustomer() != null) {
                         Customer customer = signUp.getCustomer();
-                        customerService.delete(customer);  // Delete the customer entity
-                        signUpService.delete(signUp);  // Delete the sign-up record
+                        customerService.delete(customer); // Delete the customer entity
+                        signUpService.delete(signUp); // Delete the sign-up record
                         return ResponseEntity.ok("customer account deleted");
                     }
                     // Check if it's a bar account
                     else if (signUp.getBar() != null) {
                         Bar bar = signUp.getBar();
-                        barService.delete(bar);  // Delete the bar entity
-                        signUpService.delete(signUp);  // Delete the sign-up record
+                        barService.delete(bar); // Delete the bar entity
+                        signUpService.delete(signUp); // Delete the sign-up record
                         return ResponseEntity.ok("bar account deleted");
                     }
                     // If no customer or bar is associated
@@ -377,14 +427,16 @@ public class NewSignUpController {
 
             // Generate hash for the email
             String unsubscribeHash = generateHash(email);
-            String unsubscribeUrl = "https://www.barzzy.site/signup/unsubscribe?email=" + email + "&hash=" + unsubscribeHash;
+            String unsubscribeUrl = "https://www.barzzy.site/signup/unsubscribe?email=" + email + "&hash="
+                    + unsubscribeHash;
 
             // HTML content with clickable link
             String htmlContent = "<p>Your verification code is: <strong>" + code + "</strong>.</p>"
-                    + "<p>If you did not wish to receive this email, click here to <a href='" + unsubscribeUrl + "'>unsubscribe from all emails</a>.</p>";
+                    + "<p>If you did not wish to receive this email, click here to <a href='" + unsubscribeUrl
+                    + "'>unsubscribe from all emails</a>.</p>";
 
             // Set the email content as HTML
-            helper.setText(htmlContent, true);  // Set 'true' to indicate HTML content
+            helper.setText(htmlContent, true); // Set 'true' to indicate HTML content
 
             // Send the email
             test.send(message);
@@ -397,7 +449,7 @@ public class NewSignUpController {
 
     @GetMapping("/unsubscribe")
     public ResponseEntity<String> unsubscribe(@RequestParam("email") String email,
-                                              @RequestParam("hash") String hash) {
+            @RequestParam("hash") String hash) {
         try {
             String expectedHash = generateHash(email);
             if (expectedHash.equals(hash)) {
@@ -426,7 +478,8 @@ public class NewSignUpController {
             try {
                 signUp.setVerificationCode(hash(verificationCode));
             } catch (NoSuchAlgorithmException e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("error generating verification code");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("error generating verification code");
             }
             signUp.setExpiryTimestamp(generateExpiryTimestamp());
             signUpService.save(signUp);
@@ -439,7 +492,7 @@ public class NewSignUpController {
     }
 
     // Endpoint 2: Verify the verification code
-    @PostMapping("/reset-password-verify-code")
+    @PostMapping("/reset-password-validate-code")
     public ResponseEntity<String> resetPasswordVerifyCode(@RequestBody VerifyResetCodeRequest request) {
         String email = request.getEmail();
         String verificationCode = request.getCode();
@@ -503,7 +556,6 @@ public class NewSignUpController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("email not found");
         }
     }
-
 
     private String generateHash(String email) throws NoSuchAlgorithmException {
         String text = email + SECRET_KEY;
