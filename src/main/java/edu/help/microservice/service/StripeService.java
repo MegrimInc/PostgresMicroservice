@@ -2,8 +2,10 @@ package edu.help.microservice.service;
 
 import com.stripe.StripeClient;
 import com.stripe.exception.StripeException;
+import com.stripe.model.PaymentMethodCollection;
 import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.PaymentIntentCreateParams;
+import com.stripe.param.PaymentMethodListParams;
 import com.stripe.param.TransferCreateParams;
 import edu.help.microservice.entity.Bar;
 import edu.help.microservice.entity.Customer;
@@ -36,6 +38,15 @@ public class StripeService {
         var barOptional = barRepository.findById(barId);
         if (barOptional.isEmpty())
             throw new BarNotFoundException(barId);
+
+        PaymentMethodListParams listParams = PaymentMethodListParams.builder()
+                .setCustomer(customerOptional.get().getStripeId())
+                .setType(PaymentMethodListParams.Type.CARD) // Specify the type (e.g., CARD)
+                .build();
+
+        var paymentMethods = stripeClient.paymentMethods().list(listParams);
+        paymentMethods.getData().stream()
+                        .forEach(p -> System.out.println(p.toString()));
 
         chargeCustomer(customerOptional.get(), priceInCents);
         payBar(barOptional.get(), priceInCents);
