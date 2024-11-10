@@ -80,7 +80,7 @@ public class BarService {
             totalPrice += price * drinkOrder.getQuantity();
             totalQuantity += drinkOrder.getQuantity();
 
-            System.out.println("Drink: " + drink.getDrinkName() +
+            System.out.println("Drink Name: " + drink.getDrinkName() +
                     ", Quantity: " + drinkOrder.getQuantity() +
                     ", Price per unit: " + price);
 

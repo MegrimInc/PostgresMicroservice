@@ -15,6 +15,8 @@ import edu.help.microservice.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 @Service
 @RequiredArgsConstructor
 public class StripeService {
@@ -55,6 +57,12 @@ public class StripeService {
                         .setAmount(priceInCents)
                         .setCurrency(CURRENCY_TYPE)
                         .setCustomer(customer.getStripeId())
+                        .setAutomaticPaymentMethods(
+                                PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
+                                        .setEnabled(true)
+                                        .setAllowRedirects(PaymentIntentCreateParams.AutomaticPaymentMethods.AllowRedirects.NEVER)
+                                        .build()
+                        )
                         .setConfirm(true)
                         .build());
     }
