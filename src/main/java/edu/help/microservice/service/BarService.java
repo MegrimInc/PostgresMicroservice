@@ -5,6 +5,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.stripe.exception.StripeException;
+import com.stripe.model.climate.Order;
+import lombok.AllArgsConstructor;
+import org.aspectj.weaver.ast.Or;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,16 +24,12 @@ import edu.help.microservice.util.DTOConverter;
 
 
 @Service
+@AllArgsConstructor
 public class BarService {
-
-    @Autowired
-    private BarRepository barRepository;
-
-    @Autowired
-    private DrinkRepository drinkRepository;
-
-    @Autowired // Inject PointService dependency
-    private PointService pointService;
+    private final BarRepository barRepository;
+    private final DrinkRepository drinkRepository;
+    private final PointService pointService;
+    private final StripeService stripeService;
 
     public List<BarDTO> findAllBars() {
         List<Bar> bars = barRepository.findAll();
@@ -39,7 +39,6 @@ public class BarService {
 
     public Bar findByBarEmail(String bar_email) {
         return barRepository.findByBarEmail(bar_email).orElse(null);
-
     }
 
     public Bar findBarById(Integer id) {
@@ -91,6 +90,7 @@ public class BarService {
                     drinkOrder.getQuantity()));
         }
 
+        // Validate Points
         if (points) {
             boolean success = pointService.charge(userId, barId, (int) totalPrice, totalQuantity);
             if (!success) {
@@ -101,8 +101,24 @@ public class BarService {
                         finalDrinkOrders,
                         "broke");
             }
-        } else {
-            // If points are not used, add points as a reward
+        }
+
+        // Process payment
+        try {
+            stripeService.processOrder(totalPrice, userId, barId);
+        } catch (StripeException exception) {
+            System.out.println(exception.getMessage());
+            return new OrderResponse(
+                    "Payment failed: " + exception.getStripeError().getMessage(),
+                    totalPrice,
+                    finalDrinkOrders,
+                    "broke"
+            );
+        }
+
+        // After payment is confirmed, reward user with points
+        // if they didn't spend points
+        if (!points) {
             pointService.addPoints(userId, barId, totalQuantity);
         }
 
@@ -115,9 +131,6 @@ public class BarService {
                 finalDrinkOrders,
                 "success");
     }
-
-
-
     
     public OrderResponse refundOrder(
             int barId,

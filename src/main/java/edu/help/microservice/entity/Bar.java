@@ -8,7 +8,15 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Entity
 @Table(name = "bars")
 public class Bar implements Serializable {
@@ -48,95 +56,9 @@ public class Bar implements Serializable {
     @Column(name = "open_hours", length = 255)
     private String openHours;
 
+    @Column(name = "account_id", length = 255)
+    private String accountId;
 
-    // Getters and Setters
-    public Integer getBarId() {
-        return barId;
-    }
-
-    public void setBarId(Integer barId) {
-        this.barId = barId;
-    }
-
-
-
-    public String getBarCity() {
-        return barCity;
-    }
-
-    public void setBarCity(String barCity) {
-        this.barCity = barCity;
-    }
-
-    public String getBarState() {
-        return barState;
-    }
-
-    public void setBarState(String barState) {
-        this.barState = barState;
-    }
-
-    public String getBarAddress() {
-        return barAddress;
-    }
-
-    public void setBarAddress(String barAddress) {
-        this.barAddress = barAddress;
-    }
-
-    public String getBarCountry() {
-        return barCountry;
-    }
-
-    public void setBarCountry(String barCountry) {
-        this.barCountry = barCountry;
-    }
-
-    public String getTagImage() {
-        return tagImage;
-    }
-
-    public void setTagImage(String tagImage) {
-        this.tagImage = tagImage;
-    }
-
-    public String getBarImage() {
-        return barImage;
-    }
-
-    public void setBarImage(String barImage) {
-        this.barImage = barImage;
-    }
-
-    public String getBarEmail() {
-        return barEmail;
-    }
-
-    public void setBarEmail(String barEmail) {
-        this.barEmail = barEmail;
-    }
-
-    public String getBarName() {
-        return barName;
-    }
-
-    public void setBarName(String barName) {
-        this.barName = barName;
-    }
-
-    public String getBarTag() {
-        return barTag;
-    }
-
-    public void setBarTag(String barTag) {
-        this.barTag = barTag;
-    }
-
-    public String getOpenHours() {
-        return openHours;
-    }
-
-    public void setOpenHours(String openHours) {
-        this.openHours = openHours;
-    }
+    @Column(name = "sub_id", length = 255)
+    private String subId;
 }

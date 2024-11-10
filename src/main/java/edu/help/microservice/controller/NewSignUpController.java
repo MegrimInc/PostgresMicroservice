@@ -7,7 +7,9 @@ import java.util.Base64;
 import java.util.Properties;
 import java.util.Random;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.stripe.exception.StripeException;
+import edu.help.microservice.service.StripeService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
@@ -34,20 +36,16 @@ import edu.help.microservice.service.CustomerService;
 import edu.help.microservice.service.SignUpService;
 import jakarta.mail.internet.MimeMessage;
 
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/newsignup")
 public class NewSignUpController {
-
     private static final String SECRET_KEY = "YourSecretKey";
 
-    @Autowired
-    private SignUpService signUpService;
-
-    @Autowired
-    private CustomerService customerService;
-
-    @Autowired
-    private BarService barService;
+    private final SignUpService signUpService;
+    private final CustomerService customerService;
+    private final BarService barService;
+    private final StripeService stripeService;
 
     //ENDPOINT #1: Register a new Customer
     @PostMapping("/register")
@@ -89,44 +87,6 @@ public class NewSignUpController {
             return ResponseEntity.ok("re-sent email");
         }
     }
-
-    // ENDPOINT #1: Register a new Customer
-    @PostMapping("/register2")
-    public ResponseEntity<String> register(@RequestBody AcceptTOSRequest2 request) {
-    String email = request.getEmail();
-    SignUp existingSignUp = signUpService.findByEmail(email);
-
-    if (existingSignUp == null) {
-        // Create new sign-up and customer
-        SignUp newSignUp = new SignUp();
-        newSignUp.setEmail(email);
-        newSignUp.setIsBar(false);
-
-        Customer customer = new Customer();
-        customer.setFirstName(request.getFirstName());
-        customer.setLastName(request.getLastName());
-
-        // Hash and store the password immediately
-        try {
-            String hashedPassword = hash(request.getPassword());
-            newSignUp.setPasscode(hashedPassword);
-        } catch (NoSuchAlgorithmException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error hashing password");
-        }
-
-        // Save customer and link with sign-up
-        customerService.save(customer);
-        newSignUp.setCustomer(customer);
-        signUpService.save(newSignUp);
-
-        // Return the customer ID as a string
-        return ResponseEntity.ok(String.valueOf(customer.getCustomerID()));
-    } else {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
-    }
-}
-
 
     // ENDPOINT #1b: Register a new Bar
     @PostMapping("/register/bar")
@@ -240,6 +200,55 @@ public class NewSignUpController {
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("registration failed");
         }
+    }
+
+    @PostMapping("/register2")
+    public ResponseEntity<String> register(@RequestBody AcceptTOSRequest2 request) {
+        String email = request.getEmail();
+        SignUp existingSignUp = signUpService.findByEmail(email);
+
+        if (existingSignUp != null)
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
+
+        // Create new sign-up and customer
+        SignUp newSignUp = new SignUp();
+        newSignUp.setEmail(email);
+        newSignUp.setIsBar(false);
+
+        Customer customer = new Customer();
+        customer.setFirstName(request.getFirstName());
+        customer.setLastName(request.getLastName());
+
+        // Hash and store the password immediately
+        try {
+            String hashedPassword = hash(request.getPassword());
+            newSignUp.setPasscode(hashedPassword);
+        } catch (NoSuchAlgorithmException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error hashing password");
+        }
+
+        // Create Stripe customer and save the customer ID
+        try {
+            stripeService.createStripeCustomer(customer, newSignUp);
+        } catch (StripeException e) {
+            System.out.println("Error creating Stripe customer:");
+            System.out.println("    Message: " + e.getMessage());
+            System.out.println("    Status Code: " + e.getStatusCode());
+            System.out.println("    Type: " + e.getCause());
+            System.out.println("    Request ID: " + e.getRequestId());
+            e.printStackTrace();  // Prints the full stack trace for further diagnosis
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error creating Stripe customer");
+        }
+
+        // Save customer and link with sign-up
+        customerService.save(customer);
+        newSignUp.setCustomer(customer);
+        signUpService.save(newSignUp);
+
+        // Return the customer ID as a string
+        return ResponseEntity.ok(String.valueOf(customer.getCustomerID()));
     }
 
     // ENDPOINT: Verify Bar Registration

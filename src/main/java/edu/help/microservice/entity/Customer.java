@@ -2,6 +2,10 @@ package edu.help.microservice.entity;
 
 import java.util.Map;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Type;
 
 import io.hypersistence.utils.hibernate.type.json.JsonType;
@@ -14,6 +18,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Entity
 @Table(name = "customer")
 public class Customer {
@@ -34,56 +42,10 @@ public class Customer {
     @OneToOne(mappedBy = "customer", cascade = CascadeType.ALL)
     private SignUp signUp;
 
+    @Column(name = "stripe_id", nullable = false)
+    private String stripeId;
+
     @Type(JsonType.class)
     @Column(name = "points", columnDefinition = "jsonb")
     private Map<Integer, Map<Integer, Integer>> points;
-
-    // Getters and Setters
-    public Integer getCustomerID() {
-        return customerID;
-    }
-
-    public void setCustomerID(Integer customerID) {
-        this.customerID = customerID;
-    }
-
-    public Boolean getAcceptedTOS() {
-        return acceptedTOS;
-    }
-
-    public void setAcceptedTOS(Boolean acceptedTOS) {
-        this.acceptedTOS = acceptedTOS;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
-    public SignUp getSignUp() {
-        return signUp;
-    }
-
-    public void setSignUp(SignUp signUp) {
-        this.signUp = signUp;
-    }
-
-    public Map<Integer, Map<Integer, Integer>> getPoints() {
-        return points;
-    }
-
-    public void setPoints(Map<Integer, Map<Integer, Integer>> points) {
-        this.points = points;
-    }
 }

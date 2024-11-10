@@ -2,6 +2,7 @@ package edu.help.microservice.controller;
 
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,52 +16,29 @@ import edu.help.microservice.dto.OrderResponse;
 import edu.help.microservice.entity.Drink;
 import edu.help.microservice.service.BarService;
 
+@RequiredArgsConstructor
 @RestController
 public class BarController {
-
-    @Autowired
-    private BarService barService;
+    private final BarService barService;
 
     @GetMapping("/bars/seeAllBars")
-    public List<BarDTO> seeAllBars()
-    {
+    public List<BarDTO> seeAllBars() {
         return barService.findAllBars();        
     }
 
     @GetMapping("/bars/getAllDrinksByBar/{barId}")
     public List<Drink> getAllDrinksByBar(@PathVariable Integer barId) {
-    return barService.getDrinksByBarId(barId);
-    
-}
+        return barService.getDrinksByBarId(barId);
+    }
 
-
-@PostMapping("/{barId}/processOrder")
-public OrderResponse processOrder(
-    @PathVariable int barId, 
-        @RequestBody OrderRequest orderRequest) {
-
-    return barService.processOrder(
+    @PostMapping("/{barId}/processOrder")
+    public OrderResponse processOrder(@PathVariable int barId, @RequestBody OrderRequest orderRequest) {
+        return barService.processOrder(
             barId,
             orderRequest.getDrinks(),
             orderRequest.isHappyHour(),
             orderRequest.isPoints(),
-            orderRequest.getUserId());
-}
-
-
-@PostMapping("/{barId}/refundOrder")
-public OrderResponse refundOrder(
-    @PathVariable int barId,
-    @RequestBody OrderRequest orderRequest) {
-
-    return barService.refundOrder(
-        barId,
-        orderRequest.getDrinks(),
-        orderRequest.isHappyHour(),
-        orderRequest.isPoints(),
-        orderRequest.getUserId()
-    );
-}
-    
-
+            orderRequest.getUserId()
+        );
+    }
 }

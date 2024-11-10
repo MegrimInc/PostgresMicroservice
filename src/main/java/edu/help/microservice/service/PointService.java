@@ -17,12 +17,11 @@ public class PointService {
     @Autowired
     private CustomerRepository customerRepository;
 
-
     @Transactional(readOnly = true)
-public Map<Integer, Map<Integer, Integer>> getPointsForUser(int userId) {
-    Optional<Customer> customerOpt = customerRepository.findById(userId);
-    return customerOpt.map(Customer::getPoints).orElse(new HashMap<>());
-}
+    public Map<Integer, Map<Integer, Integer>> getPointsForUser(int userId) {
+        Optional<Customer> customerOpt = customerRepository.findById(userId);
+        return customerOpt.map(Customer::getPoints).orElse(new HashMap<>());
+    }
 
     // Charge points from a user with quantity-based adjustment
     @Transactional

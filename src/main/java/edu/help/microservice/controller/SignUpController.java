@@ -6,7 +6,10 @@ import java.util.Base64;
 import java.util.Properties;
 import java.util.Random;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import edu.help.microservice.dto.AcceptTOSRequest2;
+import edu.help.microservice.entity.*;
+import edu.help.microservice.service.SignUpService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
@@ -21,19 +24,15 @@ import org.springframework.web.bind.annotation.RestController;
 import edu.help.microservice.dto.AcceptTOSRequest;
 import edu.help.microservice.dto.LoginRequest;
 import edu.help.microservice.dto.VerificationRequest;
-import edu.help.microservice.entity.Bar;
-import edu.help.microservice.entity.Registration;
-import edu.help.microservice.entity.UserData;
 import edu.help.microservice.service.BarService;
 import edu.help.microservice.service.RegistrationService;
 import edu.help.microservice.service.UserDataService;
 import jakarta.mail.internet.MimeMessage;
 
-
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/signup")
 public class SignUpController {
-
     private static final String SECRET_KEY = "ArchistructureKnowsThatLOLITSALEXHatesPotSpam";
 
     private String generateHash(String email) throws NoSuchAlgorithmException {
@@ -43,18 +42,12 @@ public class SignUpController {
         return Base64.getEncoder().encodeToString(hash);
     }
 
-    @Autowired
-    private RegistrationService registrationService;
-
-    @Autowired
-    private UserDataService userDataService;
-
-    @Autowired
-    private BarService barService;
+    private final RegistrationService registrationService;
+    private final UserDataService userDataService;
+    private final BarService barService;
 
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody AcceptTOSRequest request) {
-    
         String email = request.getEmail();
     
         // Check if the email is already registered
@@ -117,50 +110,49 @@ public class SignUpController {
     }
 
     @PostMapping("/deleteaccount")
-public ResponseEntity<String> deleteAccount(@RequestBody LoginRequest request) {
-    String email = request.getEmail();
-    String password = request.getPassword();
+    public ResponseEntity<String> deleteAccount(@RequestBody LoginRequest request) {
+        String email = request.getEmail();
+        String password = request.getPassword();
 
-    // Find Registration by email
-    Registration registration = registrationService.findByEmail(email);
+        // Find Registration by email
+        Registration registration = registrationService.findByEmail(email);
 
-    if (registration != null) {
-        // Check if it's a user account with UserData
-        UserData userData = registration.getUserData();
+        if (registration != null) {
+            // Check if it's a user account with UserData
+            UserData userData = registration.getUserData();
 
-        if (userData != null) {
-            // Verify password for UserData
-            if (userData.getPassword().equals(password)) {
-                // Delete Registration first
-                registrationService.delete(registration);
-                // Then delete UserData
-                userDataService.delete(userData);
-                return ResponseEntity.ok("deleted");
+            if (userData != null) {
+                // Verify password for UserData
+                if (userData.getPassword().equals(password)) {
+                    // Delete Registration first
+                    registrationService.delete(registration);
+                    // Then delete UserData
+                    userDataService.delete(userData);
+                    return ResponseEntity.ok("deleted");
+                } else {
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("incorrect password");
+                }
+            } else if (registration.getIsBar() != null && registration.getIsBar()) {
+                // It's a bar account
+                // Verify password (assuming password is stored in passcode)
+                if (registration.getPasscode().equals(password)) {
+                    // Delete Registration
+                    registrationService.delete(registration);
+                    return ResponseEntity.ok("deleted");
+                } else {
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("incorrect password");
+                }
             } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("incorrect password");
-            }
-        } else if (registration.getIsBar() != null && registration.getIsBar()) {
-            // It's a bar account
-            // Verify password (assuming password is stored in passcode)
-            if (registration.getPasscode().equals(password)) {
+                // Registration exists but no associated UserData or Bar
                 // Delete Registration
                 registrationService.delete(registration);
                 return ResponseEntity.ok("deleted");
-            } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("incorrect password");
             }
         } else {
-            // Registration exists but no associated UserData or Bar
-            // Delete Registration
-            registrationService.delete(registration);
-            return ResponseEntity.ok("deleted");
+            // Registration not found
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("not found");
         }
-    } else {
-        // Registration not found
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("not found");
     }
-}
-
 
     @PostMapping("/verify")
     public ResponseEntity<String> verify(@RequestBody VerificationRequest verificationRequest) {
@@ -203,7 +195,6 @@ public ResponseEntity<String> deleteAccount(@RequestBody LoginRequest request) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         }
     }
-
 
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
@@ -255,9 +246,6 @@ public ResponseEntity<String> deleteAccount(@RequestBody LoginRequest request) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("LOGIN FAILED");
     }
 
-
-
-
     private String generateVerificationCode() {
         // Generate a random verification code
         Random rand = new Random();
@@ -272,7 +260,6 @@ public ResponseEntity<String> deleteAccount(@RequestBody LoginRequest request) {
 
     private void sendVerificationEmail(String email, String code) {
         JavaMailSenderImpl test = new JavaMailSenderImpl();
-
 
         test.setHost("email-smtp.us-east-1.amazonaws.com");
         test.setPort(587);
@@ -315,15 +302,12 @@ public ResponseEntity<String> deleteAccount(@RequestBody LoginRequest request) {
             // Log any exceptions
             System.err.println(ex.getMessage());
         }
-
-
-
     }
 
     @GetMapping("/unsubscribe")
     public ResponseEntity<String> unsubscribe(@RequestParam("email") String email,
                                               @RequestParam("hash") String hash) {
-System.out.println("Email: " + email + ", Hash: " + hash);
+        System.out.println("Email: " + email + ", Hash: " + hash);
         try {
             String expectedHash = generateHash(email);
             if (expectedHash.equals(hash)) {
@@ -338,11 +322,10 @@ System.out.println("Email: " + email + ", Hash: " + hash);
         }
     }
 
-        // Helper method to validate email format
-        private boolean isValidEmail(String email) {
-            String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
-            return email.matches(emailRegex);
-        }
+    private boolean isValidEmail(String email) {
+        String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
+        return email.matches(emailRegex);
+    }
 }
 
 
