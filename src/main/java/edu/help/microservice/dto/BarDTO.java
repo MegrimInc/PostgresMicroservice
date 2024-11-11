@@ -1,5 +1,7 @@
 package edu.help.microservice.dto;
 
+import java.util.Map;
+
 public class BarDTO {
     private Integer id;
     private String name;
@@ -8,6 +10,7 @@ public class BarDTO {
     private String tagImage;
     private String barImage;
     private String openHours;
+    private Map<String, String> happyHours; // Keep this as a Map
 
     // Getters and Setters
     public Integer getId() {
@@ -57,11 +60,20 @@ public class BarDTO {
     public void setBarImage(String barImage) {
         this.barImage = barImage;
     }
+
     public String getOpenHours() {
         return openHours;
     }
 
     public void setOpenHours(String openHours) {
         this.openHours = openHours;
+    }
+
+    public Map<String, String> getHappyHours() {
+        return happyHours;
+    }
+
+    public void setHappyHours(Map<String, String> happyHours) { // Accept a Map as parameter
+        this.happyHours = happyHours;
     }
 }

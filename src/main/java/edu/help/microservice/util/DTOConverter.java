@@ -16,6 +16,7 @@ public class DTOConverter {
         barDTO.setTagImage(bar.getTagImage());
         barDTO.setBarImage(bar.getBarImage());
         barDTO.setOpenHours(bar.getOpenHours());
+        barDTO.setHappyHours(bar.getHappyHourTimes()); // No conversion needed if HashMapConverter is set up
         return barDTO;
     }
 
