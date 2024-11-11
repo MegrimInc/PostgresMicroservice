@@ -1,9 +1,9 @@
 package edu.help.microservice.util;
 
-import jakarta.persistence.AttributeConverter;
-import jakarta.persistence.Converter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,7 +16,7 @@ public class HashMapConverter implements AttributeConverter<Map<String, String>,
     @Override
     public String convertToDatabaseColumn(Map<String, String> map) {
         try {
-            return objectMapper.writeValueAsString(map);
+            return map == null ? null : objectMapper.writeValueAsString(map);
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("Error converting map to JSON string.", e);
         }
@@ -24,6 +24,9 @@ public class HashMapConverter implements AttributeConverter<Map<String, String>,
 
     @Override
     public Map<String, String> convertToEntityAttribute(String json) {
+        if (json == null) {
+            return new HashMap<>(); // Or return null, based on your preference
+        }
         try {
             return objectMapper.readValue(json, HashMap.class);
         } catch (IOException e) {
