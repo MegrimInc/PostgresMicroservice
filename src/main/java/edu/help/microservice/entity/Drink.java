@@ -1,9 +1,6 @@
 package edu.help.microservice.entity;
 
-import java.math.BigDecimal;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -38,7 +35,7 @@ public class Drink {
     private String drinkImage;
 
     @Column(name = "drink_discount")
-    private BigDecimal drinkDiscount;
+    private Double drinkDiscount;
 
     @Column(name = "drink_tags")
     @Convert(converter = IntegerArrayConverter.class)
@@ -51,10 +48,23 @@ public class Drink {
     @Column(name = "point_price")
     private Integer point;
 
+    // New columns for pricing
+    @Column(name = "single_price")
+    private Double singlePrice;
 
-    // Constructor with the new description field
+    @Column(name = "single_happy_price")
+    private Double singleHappyPrice;
+
+    @Column(name = "double_price")
+    private Double doublePrice;
+
+    @Column(name = "double_happy_price")
+    private Double doubleHappyPrice;
+
+    // Constructor with new fields
     public Drink(Integer drinkId, Integer barId, String drinkName, Double drinkPrice, String alcoholContent,
-                 String drinkImage, BigDecimal drinkDiscount, Integer[] drinkTags, String description, Integer point) {
+                 String drinkImage, Double drinkDiscount, Integer[] drinkTags, String description, Integer point,
+                 Double singlePrice, Double singleHappyPrice, Double doublePrice, Double doubleHappyPrice) {
         this.drinkId = drinkId;
         this.barId = barId;
         this.drinkName = drinkName;
@@ -65,6 +75,10 @@ public class Drink {
         this.drinkTags = drinkTags;
         this.description = description;
         this.point = point;
+        this.singlePrice = singlePrice;
+        this.singleHappyPrice = singleHappyPrice;
+        this.doublePrice = doublePrice;
+        this.doubleHappyPrice = doubleHappyPrice;
     }
 
     // Default constructor
@@ -119,11 +133,11 @@ public class Drink {
         this.drinkImage = drinkImage;
     }
 
-    public BigDecimal getDrinkDiscount() {
+    public Double getDrinkDiscount() {
         return drinkDiscount;
     }
 
-    public void setDrinkDiscount(BigDecimal drinkDiscount) {
+    public void setDrinkDiscount(Double drinkDiscount) {
         this.drinkDiscount = drinkDiscount;
     }
 
@@ -149,5 +163,37 @@ public class Drink {
 
     public void setPoint(Integer point) {
         this.point = point;
+    }
+
+    public Double getSinglePrice() {
+        return singlePrice;
+    }
+
+    public void setSinglePrice(Double singlePrice) {
+        this.singlePrice = singlePrice;
+    }
+
+    public Double getSingleHappyPrice() {
+        return singleHappyPrice;
+    }
+
+    public void setSingleHappyPrice(Double singleHappyPrice) {
+        this.singleHappyPrice = singleHappyPrice;
+    }
+
+    public Double getDoublePrice() {
+        return doublePrice;
+    }
+
+    public void setDoublePrice(Double doublePrice) {
+        this.doublePrice = doublePrice;
+    }
+
+    public Double getDoubleHappyPrice() {
+        return doubleHappyPrice;
+    }
+
+    public void setDoubleHappyPrice(Double doubleHappyPrice) {
+        this.doubleHappyPrice = doubleHappyPrice;
     }
 }
