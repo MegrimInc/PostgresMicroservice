@@ -2,6 +2,7 @@ package edu.help.microservice.controller;
 
 import java.util.Map;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,37 +14,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 import edu.help.microservice.service.PointService;
 
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/points")
 public class PointController {
+    private final PointService pointService;
 
-    @Autowired
-    private PointService pointService;
-
-    // Retrieve points for a given user
     @GetMapping("/{userId}")
     public ResponseEntity<Map<Integer, Map<Integer, Integer>>> getPointsForUser(@PathVariable int userId) {
-        Map<Integer, Map<Integer, Integer>> points = pointService.getPointsForUser(userId);
+        Map<Integer, Map<Integer, Integer>> points = pointService.getPointsForCustomerTempForEndpoint(userId);
         return ResponseEntity.ok(points);
-    }
-
-    // Add points for a specific user and bar ID
-    @PostMapping("/add")
-    public ResponseEntity<String> addPoints(
-            @RequestParam int userId,
-            @RequestParam int barId,
-            @RequestParam int points) {
-        pointService.addPoints(userId, barId, points);
-        return ResponseEntity.ok("Points added successfully.");
-    }
-
-    // Subtract points for a specific user and bar ID
-    @PostMapping("/subtract")
-    public ResponseEntity<String> subtractPoints(
-            @RequestParam int userId,
-            @RequestParam int barId,
-            @RequestParam int points) {
-        pointService.subtractPoints(userId, barId, points);
-        return ResponseEntity.ok("Points subtracted successfully.");
     }
 }

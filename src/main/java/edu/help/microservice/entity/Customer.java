@@ -1,5 +1,6 @@
 package edu.help.microservice.entity;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import lombok.AllArgsConstructor;
@@ -47,7 +48,7 @@ public class Customer {
 
     @Type(JsonType.class)
     @Column(name = "points", columnDefinition = "jsonb")
-    private Map<Integer, Map<Integer, Integer>> points;
+    private Map<Integer, Map<Integer, Integer>> points = new HashMap<>();
 
     @Column(name = "payment_id", nullable = true)
     private String paymentId;

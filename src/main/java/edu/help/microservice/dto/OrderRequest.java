@@ -1,95 +1,21 @@
 package edu.help.microservice.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.util.List;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class OrderRequest {
     private int barId;
     private int userId;
+    private double tip; // Renamed field
     private List<DrinkOrder> drinks;
+    private boolean inAppPayments;
     private boolean isHappyHour;
-    private boolean points;
-
-    // Getters and Setters
-    public int getBarId() {
-        return barId;
-    }
-
-    public void setBarId(int barId) {
-        this.barId = barId;
-    }
-
-    public void setIsHappyHour(boolean isHappyHour)
-    {
-        this.isHappyHour = isHappyHour;
-    }
-
-    public boolean isHappyHour()
-    {
-        return isHappyHour;
-    }
-    public int getUserId() {
-        return userId;
-    }
-
-    public void setUserId(int userId) {
-        this.userId = userId;
-    }
-
-    public List<DrinkOrder> getDrinks() {
-        return drinks;
-    }
-
-    public void setDrinks(List<DrinkOrder> drinks) {
-        this.drinks = drinks;
-    }
-
-    public boolean isPoints() {  // New getter
-        return points;
-    }
-
-    public void setPoints(boolean points) {  // New setter
-        this.points = points;
-    }
-
-    // Inner class representing a drink order
-    public static class DrinkOrder {
-        private int drinkId;
-        private int quantity;
-
-        // Getters and Setters
-        public int getDrinkId() {
-            return drinkId;
-        }
-
-        public void setDrinkId(int drinkId) {
-            this.drinkId = drinkId;
-        }
-
-        public int getQuantity() {
-            return quantity;
-        }
-
-        public void setQuantity(int quantity) {
-            this.quantity = quantity;
-        }
-
-        @Override
-        public String toString() {
-            return "DrinkOrder{" +
-                    "drinkId=" + drinkId +
-                    ", quantity=" + quantity +
-                    '}';
-        }
-    }
-
-    // Override toString() for debugging
-    @Override
-    public String toString() {
-        return "OrderRequest{" +
-                "barId=" + barId +
-                ", userId=" + userId +
-                ", drinks=" + drinks +
-                ", points=" + points +
-                '}';
-    }
 }

@@ -28,8 +28,9 @@ public class StripeService {
     private final CustomerRepository customerRepository;
     private final BarRepository barRepository;
 
-    public void processOrder(double price, int customerId, int barId) throws StripeException {
+    public void processOrder(double price, double tip, int customerId, int barId) throws StripeException {
         Long priceInCents = Math.round(price * 100);
+        Long tipInCents = Math.round(tip * 100);
 
         var customerOptional = customerRepository.findById(customerId);
         if (customerOptional.isEmpty())
@@ -48,8 +49,8 @@ public class StripeService {
         paymentMethods.getData().stream()
                         .forEach(p -> System.out.println(p.toString()));
 
-        chargeCustomer(customerOptional.get(), priceInCents);
-        payBar(barOptional.get(), priceInCents);
+        chargeCustomer(customerOptional.get(), priceInCents + tipInCents);
+        payBar(barOptional.get(), priceInCents + tipInCents);
     }
 
     public void createStripeCustomer(Customer customer, SignUp signUp) throws StripeException {

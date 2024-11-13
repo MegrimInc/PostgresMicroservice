@@ -1,10 +1,10 @@
 package edu.help.microservice.service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import edu.help.microservice.dto.DrinkOrder;
 import org.springframework.stereotype.Service;
 
 import com.stripe.exception.StripeException;
@@ -12,14 +12,12 @@ import com.stripe.exception.StripeException;
 import edu.help.microservice.dto.BarDTO;
 import edu.help.microservice.dto.OrderRequest;
 import edu.help.microservice.dto.OrderResponse;
-import edu.help.microservice.dto.OrderResponse.DrinkOrder;
 import edu.help.microservice.entity.Bar;
 import edu.help.microservice.entity.Drink;
 import edu.help.microservice.repository.BarRepository;
 import edu.help.microservice.repository.DrinkRepository;
 import edu.help.microservice.util.DTOConverter;
 import lombok.AllArgsConstructor;
-
 
 @Service
 @AllArgsConstructor
@@ -56,120 +54,73 @@ public class BarService {
         return barRepository.save(bar);
     }
 
-    public OrderResponse processOrder(
-            int barId,
-            List<OrderRequest.DrinkOrder> drinkOrders,
-            boolean isHappyHour,
-            boolean points,
-            int userId) {
+    public OrderResponse processOrder(int barId, OrderRequest request) {
+        double totalMoneyPrice = 0;
+        int totalPointsPrice = 0;
+        int totalDrinkQuantity = 0;
 
-        double totalPrice = 0;
-        int totalQuantity = 0; // Track total quantity
-        List<DrinkOrder> finalDrinkOrders = new ArrayList<>();
-
-        // Calculate the total price or points required
-        for (OrderRequest.DrinkOrder drinkOrder : drinkOrders) {
+        // Process drinks
+        for (DrinkOrder drinkOrder : request.getDrinks()) {
             Drink drink = drinkRepository.findById(drinkOrder.getDrinkId())
                     .orElseThrow(() -> new RuntimeException("Drink not found"));
 
-            double price = points ? drink.getPoint().doubleValue()
-                    : (isHappyHour ? drink.getDrinkDiscount().doubleValue() : drink.getDrinkPrice());
-
-            totalPrice += price * drinkOrder.getQuantity();
-            totalQuantity += drinkOrder.getQuantity();
-
-            System.out.println("Drink Name: " + drink.getDrinkName() +
-                    ", Quantity: " + drinkOrder.getQuantity() +
-                    ", Price per unit: " + price);
-
-            finalDrinkOrders.add(new OrderResponse.DrinkOrder(
-                    drink.getDrinkId(),
-                    drink.getDrinkName(),
-                    drinkOrder.getQuantity()));
-        }
-
-        // Validate Points
-        if (points) {
-            boolean success = pointService.charge(userId, barId, (int) totalPrice, totalQuantity);
-            if (!success) {
-                System.out.println("Insufficient points. Transaction canceled.");
-                return new OrderResponse(
-                        "Insufficient points. Would you like to proceed with regular pricing?",
-                        totalPrice, // Show the calculated price
-                        finalDrinkOrders,
-                        "broke");
+            totalDrinkQuantity += drinkOrder.getQuantity();
+            if (drinkOrder.getPaymentType().equals("points")) {
+                totalPointsPrice += drink.getPoint() * drinkOrder.getQuantity();
+                continue;
             }
+
+            double price;
+            if (request.isHappyHour()) {
+                if (drinkOrder.getSizeType().equals("double"))
+                    price = drink.getDoubleHappyPrice();
+                else
+                    price = drink.getSingleHappyPrice();
+            } else {
+                if (drinkOrder.getSizeType().equals("double"))
+                    price = drink.getDoublePrice();
+                else
+                    price = drink.getSinglePrice();
+            }
+
+            totalMoneyPrice += price * drinkOrder.getQuantity();
+        }
+        double tipAmount = request.getTip() * totalMoneyPrice;
+
+        if (!pointService.customerHasRequiredBalance(totalPointsPrice, request.getUserId(), barId)) {
+            return OrderResponse.builder()
+                    .message("Insufficient points.")
+                    .messageType("broke")
+                    .tip(tipAmount)
+                    .totalPrice(totalMoneyPrice)
+                    .drinks(request.getDrinks())
+                    .build();
         }
 
         // Process payment
         try {
-            stripeService.processOrder(totalPrice, userId, barId);
+            stripeService.processOrder(totalMoneyPrice, tipAmount, request.getUserId(), barId);
         } catch (StripeException exception) {
             System.out.println(exception.getMessage());
-            return new OrderResponse(
-                    "Payment failed: " + exception.getStripeError().getMessage(),
-                    totalPrice,
-                    finalDrinkOrders,
-                    "broke"
-            );
+            return OrderResponse.builder()
+                    .message("Stripe error")
+                    .messageType("broke")
+                    .tip(tipAmount)
+                    .totalPrice(totalMoneyPrice)
+                    .drinks(request.getDrinks())
+                    .build();
         }
 
-        // After payment is confirmed, reward user with points
-        // if they didn't spend points
-        if (!points) {
-            pointService.addPoints(userId, barId, totalQuantity);
-        }
+        // Reward user with points / charge them for used points
+        pointService.chargeCustomer(totalPointsPrice, request.getUserId(), barId);
+        pointService.rewardCustomer(totalDrinkQuantity, request.getUserId(), barId);
 
-        System.out.println("Total price: " + totalPrice);
-        System.out.println("Final Drink Orders: " + finalDrinkOrders);
-
-        return new OrderResponse(
-                "Order processed successfully",
-                totalPrice,
-                finalDrinkOrders,
-                "success");
-    }
-    
-    public OrderResponse refundOrder(
-            int barId,
-            List<OrderRequest.DrinkOrder> drinkOrders,
-            boolean isHappyHour,
-            boolean points,
-            int userId) {
-
-        double totalPrice = 0;
-        int totalQuantity = 0; // Track total quantity
-        List<OrderResponse.DrinkOrder> finalDrinkOrders = new ArrayList<>();
-
-        // Calculate total price/points to refund
-        for (OrderRequest.DrinkOrder drinkOrder : drinkOrders) {
-            Drink drink = drinkRepository.findById(drinkOrder.getDrinkId())
-                    .orElseThrow(() -> new RuntimeException("Drink not found"));
-
-            double price = points ? drink.getPoint().doubleValue()
-                    : (isHappyHour ? drink.getDrinkDiscount().doubleValue() : drink.getDrinkPrice());
-
-            totalPrice += price * drinkOrder.getQuantity();
-            totalQuantity += drinkOrder.getQuantity();
-
-            finalDrinkOrders.add(new OrderResponse.DrinkOrder(
-                    drink.getDrinkId(),
-                    drink.getDrinkName(),
-                    drinkOrder.getQuantity()));
-        }
-
-        if (points) {
-            // Refund points
-            pointService.refund(userId, barId, (int) totalPrice, totalQuantity);
-        } else {
-            // Subtract previously awarded points
-            pointService.subtractPoints(userId, barId, totalQuantity);
-        }
-
-        return new OrderResponse(
-                "Order refunded successfully",
-                totalPrice,
-                finalDrinkOrders,
-                "refunded");
+        return OrderResponse.builder()
+                .message("Order processed successfully")
+                .messageType("success")
+                .tip(tipAmount)
+                .totalPrice(totalMoneyPrice)
+                .drinks(request.getDrinks())
+                .build();
     }
 }
