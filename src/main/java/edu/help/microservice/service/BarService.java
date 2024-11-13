@@ -98,17 +98,19 @@ public class BarService {
         }
 
         // Process payment
-        try {
-            stripeService.processOrder(totalMoneyPrice, tipAmount, request.getUserId(), barId);
-        } catch (StripeException exception) {
-            System.out.println(exception.getMessage());
-            return OrderResponse.builder()
-                    .message("Stripe error")
-                    .messageType("broke")
-                    .tip(tipAmount)
-                    .totalPrice(totalMoneyPrice)
-                    .drinks(request.getDrinks())
-                    .build();
+        if (request.isInAppPayments()) {
+            try {
+                stripeService.processOrder(totalMoneyPrice, tipAmount, request.getUserId(), barId);
+            } catch (StripeException exception) {
+                System.out.println(exception.getMessage());
+                return OrderResponse.builder()
+                        .message("Stripe error")
+                        .messageType("broke")
+                        .tip(tipAmount)
+                        .totalPrice(totalMoneyPrice)
+                        .drinks(request.getDrinks())
+                        .build();
+            }
         }
 
         // Reward user with points / charge them for used points
