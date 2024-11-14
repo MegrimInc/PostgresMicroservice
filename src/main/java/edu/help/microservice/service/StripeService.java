@@ -77,6 +77,13 @@ public class StripeService {
                         .setAmount(priceInCents)
                         .setCurrency(CURRENCY_TYPE)
                         .setCustomer(customer.getStripeId())
+                        .setAutomaticPaymentMethods(
+                                PaymentIntentCreateParams.AutomaticPaymentMethods
+                                        .builder()
+                                        .setEnabled(true)
+                                        .setAllowRedirects(PaymentIntentCreateParams.AutomaticPaymentMethods.AllowRedirects.NEVER)
+                                        .build()
+                        )
                         .setPaymentMethod(customer.getPaymentId())
                         .setConfirm(true)
                         .build());
