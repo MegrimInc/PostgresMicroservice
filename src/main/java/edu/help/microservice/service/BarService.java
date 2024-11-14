@@ -116,7 +116,7 @@ public class BarService {
                 System.out.println(exception.getMessage());
                 return OrderResponse.builder()
                         .message("Stripe error")
-                        .messageType("broke")
+                        .messageType("error")
                         .tip(tipAmount)
                         .totalPrice(totalMoneyPrice)
                         .drinks(drinkOrderResponses)
