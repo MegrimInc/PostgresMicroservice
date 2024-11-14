@@ -96,7 +96,7 @@ public class BarService {
 
         if (!pointService.customerHasRequiredBalance(totalPointsPrice, request.getUserId(), barId)) {
             return OrderResponse.builder()
-                    .message("Insufficient points.")
+                    .message("Insufficient points. Would you like to proceed with regular pricing?")
                     .messageType("broke")
                     .tip(tipAmount)
                     .totalPrice(totalMoneyPrice)
