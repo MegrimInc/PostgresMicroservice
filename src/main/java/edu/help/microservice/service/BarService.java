@@ -5,11 +5,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import edu.help.microservice.dto.*;
 import org.springframework.stereotype.Service;
 
 import com.stripe.exception.StripeException;
 
+import edu.help.microservice.dto.BarDTO;
+import edu.help.microservice.dto.DrinkOrderRequest;
+import edu.help.microservice.dto.DrinkOrderResponse;
+import edu.help.microservice.dto.OrderRequest;
+import edu.help.microservice.dto.OrderResponse;
 import edu.help.microservice.entity.Bar;
 import edu.help.microservice.entity.Drink;
 import edu.help.microservice.repository.BarRepository;
@@ -96,7 +100,7 @@ public class BarService {
 
         if (!pointService.customerHasRequiredBalance(totalPointsPrice, request.getUserId(), barId)) {
             return OrderResponse.builder()
-                    .message("Insufficient points. Would you like to proceed with regular pricing?")
+                    .message("Insufficient points. Would you like to proceed with $ pricing?")
                     .messageType("broke")
                     .tip(tipAmount)
                     .totalPrice(totalMoneyPrice)
