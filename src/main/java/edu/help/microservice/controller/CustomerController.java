@@ -3,12 +3,11 @@ package edu.help.microservice.controller;
 import java.util.Map;
 import java.util.Optional;
 
+import com.stripe.exception.StripeException;
+import edu.help.microservice.dto.PaymentIdSetRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import edu.help.microservice.entity.Customer;
 import edu.help.microservice.service.CustomerService;
@@ -18,19 +17,17 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/points")
+@RequestMapping("/customer")
 public class CustomerController {
     private final PointService pointService;
     private final CustomerService customerService;
     private final StripeService stripeService;
 
-
-    @GetMapping("/{userId}")
+    @GetMapping("/points/{userId}")
     public ResponseEntity<Map<Integer, Map<Integer, Integer>>> getPointsForUser(@PathVariable int userId) {
         Map<Integer, Map<Integer, Integer>> points = pointService.getPointsForCustomerTempForEndpoint(userId);
         return ResponseEntity.ok(points);
     }
-
 
     @GetMapping("/checkPaymentMethod/{userId}")
     public ResponseEntity<Boolean> checkPaymentMethod(@PathVariable int userId) {
@@ -53,5 +50,11 @@ public class CustomerController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                                  .body(Map.of("error", "Failed to create SetupIntent: " + e.getMessage()));
         }
+    }
+
+    @PostMapping("/addPaymentIdToDatabase")
+    public ResponseEntity<Void> addPaymentIdToDatabase(@RequestBody PaymentIdSetRequest request) throws StripeException {
+        stripeService.savePaymentId(request);
+        return ResponseEntity.ok().build();
     }
 }

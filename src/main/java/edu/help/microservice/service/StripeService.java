@@ -3,6 +3,8 @@ package edu.help.microservice.service;
 import java.util.Map;
 import java.util.Optional;
 
+import edu.help.microservice.dto.PaymentIdSetRequest;
+import edu.help.microservice.exception.CustomerStripeIdNotMachingException;
 import org.springframework.stereotype.Service;
 
 import com.stripe.StripeClient;
@@ -87,6 +89,25 @@ public class StripeService {
                         .setCurrency(CURRENCY_TYPE)
                         .setDestination(bar.getAccountId())
                         .build());
+    }
+
+    public void savePaymentId(PaymentIdSetRequest request) throws StripeException {
+        int customerId = request.getCustomerId();
+        var customerOptional = customerRepository.findById(customerId);
+        if (customerOptional.isEmpty())
+            throw new CustomerNotFoundException(customerId);
+
+        Customer customer = customerOptional.get();
+        if (request.getStripeId().equals(customer.getStripeId()))
+            throw new CustomerStripeIdNotMachingException(customerId, request.getStripeId());
+
+        PaymentMethodListParams listParams = PaymentMethodListParams.builder()
+                .setCustomer(customerOptional.get().getStripeId())
+                .build();
+
+        String paymentId = stripeClient.paymentMethods().list(listParams).getData().get(0).getId();
+        customer.setPaymentId(paymentId);
+        customerRepository.save(customer);
     }
     
     public Map<String, String> createSetupIntent(int customerId) throws StripeException {

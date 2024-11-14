@@ -1,7 +1,5 @@
 package edu.help.microservice.dto;
 
-
-
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
