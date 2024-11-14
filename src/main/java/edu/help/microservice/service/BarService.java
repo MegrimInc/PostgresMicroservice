@@ -1,17 +1,15 @@
 package edu.help.microservice.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import edu.help.microservice.dto.DrinkOrder;
+import edu.help.microservice.dto.*;
 import org.springframework.stereotype.Service;
 
 import com.stripe.exception.StripeException;
 
-import edu.help.microservice.dto.BarDTO;
-import edu.help.microservice.dto.OrderRequest;
-import edu.help.microservice.dto.OrderResponse;
 import edu.help.microservice.entity.Bar;
 import edu.help.microservice.entity.Drink;
 import edu.help.microservice.repository.BarRepository;
@@ -58,32 +56,41 @@ public class BarService {
         double totalMoneyPrice = 0;
         int totalPointsPrice = 0;
         int totalDrinkQuantity = 0;
+        List<DrinkOrderResponse> drinkOrderResponses = new ArrayList<>();
 
         // Process drinks
-        for (DrinkOrder drinkOrder : request.getDrinks()) {
-            Drink drink = drinkRepository.findById(drinkOrder.getDrinkId())
+        for (DrinkOrderRequest drinkOrderRequest : request.getDrinks()) {
+            Drink drink = drinkRepository.findById(drinkOrderRequest.getDrinkId())
                     .orElseThrow(() -> new RuntimeException("Drink not found"));
 
-            totalDrinkQuantity += drinkOrder.getQuantity();
-            if (drinkOrder.getPaymentType().equals("points")) {
-                totalPointsPrice += drink.getPoint() * drinkOrder.getQuantity();
+            drinkOrderResponses.add(DrinkOrderResponse.builder()
+                    .drinkId(drink.getDrinkId())
+                    .drinkName(drink.getDrinkName())
+                    .paymentType(drinkOrderRequest.getPaymentType())
+                    .sizeType(drinkOrderRequest.getSizeType())
+                    .quantity(drinkOrderRequest.getQuantity())
+                    .build());
+
+            totalDrinkQuantity += drinkOrderRequest.getQuantity();
+            if (drinkOrderRequest.getPaymentType().equals("points")) {
+                totalPointsPrice += drink.getPoint() * drinkOrderRequest.getQuantity();
                 continue;
             }
 
             double price;
             if (request.isHappyHour()) {
-                if (drinkOrder.getSizeType().equals("double"))
+                if (drinkOrderRequest.getSizeType().equals("double"))
                     price = drink.getDoubleHappyPrice();
                 else
                     price = drink.getSingleHappyPrice();
             } else {
-                if (drinkOrder.getSizeType().equals("double"))
+                if (drinkOrderRequest.getSizeType().equals("double"))
                     price = drink.getDoublePrice();
                 else
                     price = drink.getSinglePrice();
             }
 
-            totalMoneyPrice += price * drinkOrder.getQuantity();
+            totalMoneyPrice += price * drinkOrderRequest.getQuantity();
         }
         double tipAmount = request.getTip() * totalMoneyPrice;
 
@@ -93,7 +100,7 @@ public class BarService {
                     .messageType("broke")
                     .tip(tipAmount)
                     .totalPrice(totalMoneyPrice)
-                    .drinks(request.getDrinks())
+                    .drinks(drinkOrderResponses)
                     .build();
         }
 
@@ -108,7 +115,7 @@ public class BarService {
                         .messageType("broke")
                         .tip(tipAmount)
                         .totalPrice(totalMoneyPrice)
-                        .drinks(request.getDrinks())
+                        .drinks(drinkOrderResponses)
                         .build();
             }
         }
@@ -122,7 +129,7 @@ public class BarService {
                 .messageType("success")
                 .tip(tipAmount)
                 .totalPrice(totalMoneyPrice)
-                .drinks(request.getDrinks())
+                .drinks(drinkOrderResponses)
                 .build();
     }
 }

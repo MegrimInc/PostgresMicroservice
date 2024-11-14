@@ -15,6 +15,6 @@ public class OrderResponse {
     private String message;
     private double totalPrice;
     private double tip; // Renamed field
-    private List<DrinkOrder> drinks;
+    private List<DrinkOrderResponse> drinks;
     private String messageType;
 }

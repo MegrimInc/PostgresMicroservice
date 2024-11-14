@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class DrinkOrder {
+public class DrinkOrderRequest {
     private int drinkId;
     private int quantity;
     private String paymentType; // "points" or "regular"
