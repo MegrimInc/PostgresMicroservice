@@ -100,7 +100,7 @@ public class StripeService {
             throw new CustomerNotFoundException(customerId);
 
         Customer customer = customerOptional.get();
-        if (request.getStripeId().equals(customer.getStripeId()))
+        if (!request.getStripeId().equals(customer.getStripeId()))
             throw new CustomerStripeIdNotMachingException(customerId, request.getStripeId());
 
         String paymentId = stripeClient.customers()
