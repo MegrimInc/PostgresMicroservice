@@ -34,7 +34,7 @@ public class StripeService {
     private final StripeClient stripeClient;
     private final CustomerRepository customerRepository;
     private final BarRepository barRepository;
-     private final SignUpRepository signUpRepository;
+    private final SignUpRepository signUpRepository;
 
     public void processOrder(double price, double tip, int customerId, int barId) throws StripeException {
         Long priceInCents = Math.round(price * 100);
@@ -57,8 +57,7 @@ public class StripeService {
         paymentMethods.getData().stream()
                         .forEach(p -> System.out.println(p.toString()));
 
-        chargeCustomer(customerOptional.get(), priceInCents + tipInCents);
-        payBar(barOptional.get(), priceInCents + tipInCents);
+        chargeCustomer(barOptional.get(), customerOptional.get(), priceInCents + tipInCents);
     }
 
     public void createStripeCustomer(Customer customer, SignUp signUp) throws StripeException {
@@ -71,7 +70,7 @@ public class StripeService {
         customer.setStripeId(stripeCustomer.getId());
     }
 
-    private void chargeCustomer(Customer customer, Long priceInCents) throws StripeException {
+    private void chargeCustomer(Bar bar, Customer customer, Long priceInCents) throws StripeException {
         stripeClient.paymentIntents().create(
                 new PaymentIntentCreateParams.Builder()
                         .setAmount(priceInCents)
@@ -85,16 +84,13 @@ public class StripeService {
                                         .build()
                         )
                         .setPaymentMethod(customer.getPaymentId())
+                        .setTransferData(
+                                PaymentIntentCreateParams.TransferData.builder()
+                                        .setAmount(priceInCents)
+                                        .setDestination(bar.getAccountId())
+                                        .build()
+                        )
                         .setConfirm(true)
-                        .build());
-    }
-
-    private void payBar(Bar bar, Long priceInCents) throws StripeException {
-        stripeClient.transfers().create(
-                new TransferCreateParams.Builder()
-                        .setAmount(priceInCents)
-                        .setCurrency(CURRENCY_TYPE)
-                        .setDestination(bar.getAccountId())
                         .build());
     }
 
