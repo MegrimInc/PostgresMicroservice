@@ -101,11 +101,11 @@ public class StripeService {
         if (request.getStripeId().equals(customer.getStripeId()))
             throw new CustomerStripeIdNotMachingException(customerId, request.getStripeId());
 
-        PaymentMethodListParams listParams = PaymentMethodListParams.builder()
-                .setCustomer(customerOptional.get().getStripeId())
-                .build();
+        String paymentId = stripeClient.customers()
+                .retrieve(request.getStripeId())
+                .getInvoiceSettings()
+                .getDefaultPaymentMethod();
 
-        String paymentId = stripeClient.paymentMethods().list(listParams).getData().get(0).getId();
         customer.setPaymentId(paymentId);
         customerRepository.save(customer);
     }
