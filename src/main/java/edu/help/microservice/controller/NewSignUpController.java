@@ -7,9 +7,6 @@ import java.util.Base64;
 import java.util.Properties;
 import java.util.Random;
 
-import com.stripe.exception.StripeException;
-import edu.help.microservice.service.StripeService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
@@ -20,6 +17,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.stripe.exception.StripeException;
 
 import edu.help.microservice.dto.AcceptTOSRequest;
 import edu.help.microservice.dto.AcceptTOSRequest2;
@@ -34,7 +33,9 @@ import edu.help.microservice.entity.SignUp;
 import edu.help.microservice.service.BarService;
 import edu.help.microservice.service.CustomerService;
 import edu.help.microservice.service.SignUpService;
+import edu.help.microservice.service.StripeService;
 import jakarta.mail.internet.MimeMessage;
+import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @RestController
@@ -47,86 +48,7 @@ public class NewSignUpController {
     private final BarService barService;
     private final StripeService stripeService;
 
-    //ENDPOINT #1: Register a new Customer
-    @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody AcceptTOSRequest request) {
-        String email = request.getEmail();
-
-        SignUp existingSignUp = signUpService.findByEmail(email);
-
-        if (existingSignUp == null) {
-            // Email does not exist
-            SignUp newSignUp = new SignUp();
-            newSignUp.setEmail(email);
-            newSignUp.setIsBar(false);
-            String verificationCode = generateVerificationCode();
-            try {
-                newSignUp.setVerificationCode(hash(verificationCode));
-            } catch (NoSuchAlgorithmException e) {
-                e.printStackTrace();
-            }
-            newSignUp.setExpiryTimestamp(generateExpiryTimestamp());
-            signUpService.save(newSignUp);
-
-            sendVerificationEmail(email, verificationCode, "Registration");
-            return ResponseEntity.ok("sent email");
-        } else if (existingSignUp.getCustomer() != null) {
-            // Email exists and customer exists
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("email already exists");
-        } else {
-            // Email exists but customer does not exist (verification not completed)
-            String verificationCode = generateVerificationCode();
-            try {
-                existingSignUp.setVerificationCode(hash(verificationCode));
-            } catch (NoSuchAlgorithmException e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("error generating verification code");
-            }
-            existingSignUp.setExpiryTimestamp(generateExpiryTimestamp());
-            signUpService.save(existingSignUp);
-            sendVerificationEmail(email, verificationCode, "Registration");
-            return ResponseEntity.ok("re-sent email");
-        }
-    }
-
-    // ENDPOINT #1b: Register a new Bar
-    @PostMapping("/register/bar")
-    public ResponseEntity<String> registerBar(@RequestBody AcceptTOSRequest request) {
-        String email = request.getEmail();
-        SignUp existingSignUp = signUpService.findByEmail(email);
-
-        if (existingSignUp == null) {
-            SignUp newSignUp = new SignUp();
-            newSignUp.setEmail(email);
-            newSignUp.setIsBar(true);
-            String verificationCode = generateVerificationCode();
-            try {
-                newSignUp.setVerificationCode(hash(verificationCode));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            newSignUp.setExpiryTimestamp(generateExpiryTimestamp());
-            signUpService.save(newSignUp);
-
-            sendVerificationEmail(email, verificationCode, "Registration");
-            return ResponseEntity.ok("sent email");
-        } else if (existingSignUp.getBar() != null) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("email already exists");
-        } else if (existingSignUp.getCustomer() != null) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("email already exists as customer");
-        } else {
-            String verificationCode = generateVerificationCode();
-            try {
-                existingSignUp.setVerificationCode(hash(verificationCode));
-            } catch (NoSuchAlgorithmException e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body("error generating verification code");
-            }
-            existingSignUp.setExpiryTimestamp(generateExpiryTimestamp());
-            signUpService.save(existingSignUp);
-            sendVerificationEmail(email, verificationCode, "Registration");
-            return ResponseEntity.ok("re-sent email");
-        }
-    }
+    
 
     // ENDPOINT #2: Resend verification code
     @PostMapping("/send-verification")

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import edu.help.microservice.entity.Customer;
 import edu.help.microservice.service.CustomerService;
 import edu.help.microservice.service.PointService;
+import edu.help.microservice.service.StripeService;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -21,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 public class CustomerController {
     private final PointService pointService;
     private final CustomerService customerService;
+    private final StripeService stripeService;
 
 
     @GetMapping("/{userId}")
@@ -39,6 +41,17 @@ public class CustomerController {
             return ResponseEntity.ok(hasPaymentMethod);
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(false);
+        }
+    }
+
+    @GetMapping("/createSetupIntent/{userId}")
+    public ResponseEntity<Map<String, String>> createSetupIntent(@PathVariable int userId) {
+        try {
+            Map<String, String> setupIntentData = stripeService.createSetupIntent(userId);
+            return ResponseEntity.ok(setupIntentData);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                 .body(Map.of("error", "Failed to create SetupIntent: " + e.getMessage()));
         }
     }
 }
