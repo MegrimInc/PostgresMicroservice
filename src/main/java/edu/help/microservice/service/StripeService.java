@@ -92,6 +92,8 @@ public class StripeService {
     }
 
     public void savePaymentId(PaymentIdSetRequest request) throws StripeException {
+        System.out.println("Starting save payment id method");
+
         int customerId = request.getCustomerId();
         var customerOptional = customerRepository.findById(customerId);
         if (customerOptional.isEmpty())
@@ -105,6 +107,8 @@ public class StripeService {
                 .retrieve(request.getStripeId())
                 .getInvoiceSettings()
                 .getDefaultPaymentMethod();
+
+        System.out.println("Payment ID Set: " + paymentId);
 
         customer.setPaymentId(paymentId);
         customerRepository.save(customer);
