@@ -17,5 +17,5 @@ public class OrderRequest {
     private double tip; // Renamed field
     private List<DrinkOrderRequest> drinks;
     private boolean inAppPayments;
-    private boolean isHappyHour;
+    private boolean HappyHour;
 }

@@ -1,6 +1,7 @@
 package edu.help.microservice.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -31,7 +32,6 @@ public class Drink {
     @Column(name = "drink_image")
     private String drinkImage;
 
-
     @Column(name = "drink_tags")
     @Convert(converter = IntegerArrayConverter.class)
     private Integer[] drinkTags;
@@ -57,8 +57,8 @@ public class Drink {
     private Double doubleHappyPrice;
 
     // Constructor with new fields
-    public Drink(Integer drinkId, Integer barId, String drinkName, Double drinkPrice, String alcoholContent,
-                 String drinkImage, Double drinkDiscount, Integer[] drinkTags, String description, Integer point,
+    public Drink(Integer drinkId, Integer barId, String drinkName, String alcoholContent,
+                 String drinkImage, Integer[] drinkTags, String description, Integer point,
                  Double singlePrice, Double singleHappyPrice, Double doublePrice, Double doubleHappyPrice) {
         this.drinkId = drinkId;
         this.barId = barId;
