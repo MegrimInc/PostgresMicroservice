@@ -25,17 +25,12 @@ public class Drink {
     @Column(name = "drink_name")
     private String drinkName;
 
-    @Column(name = "drink_price")
-    private Double drinkPrice;
-
     @Column(name = "alcohol_content")
     private String alcoholContent;
 
     @Column(name = "drink_image")
     private String drinkImage;
 
-    @Column(name = "drink_discount")
-    private Double drinkDiscount;
 
     @Column(name = "drink_tags")
     @Convert(converter = IntegerArrayConverter.class)
@@ -68,10 +63,8 @@ public class Drink {
         this.drinkId = drinkId;
         this.barId = barId;
         this.drinkName = drinkName;
-        this.drinkPrice = drinkPrice;
         this.alcoholContent = alcoholContent;
         this.drinkImage = drinkImage;
-        this.drinkDiscount = drinkDiscount;
         this.drinkTags = drinkTags;
         this.description = description;
         this.point = point;
@@ -109,14 +102,6 @@ public class Drink {
         this.drinkName = drinkName;
     }
 
-    public Double getDrinkPrice() {
-        return drinkPrice;
-    }
-
-    public void setDrinkPrice(Double drinkPrice) {
-        this.drinkPrice = drinkPrice;
-    }
-
     public String getAlcoholContent() {
         return alcoholContent;
     }
@@ -133,13 +118,6 @@ public class Drink {
         this.drinkImage = drinkImage;
     }
 
-    public Double getDrinkDiscount() {
-        return drinkDiscount;
-    }
-
-    public void setDrinkDiscount(Double drinkDiscount) {
-        this.drinkDiscount = drinkDiscount;
-    }
 
     public Integer[] getDrinkTags() {
         return drinkTags;
