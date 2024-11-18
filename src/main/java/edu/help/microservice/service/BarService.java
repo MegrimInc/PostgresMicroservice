@@ -96,7 +96,7 @@ public class BarService {
 
             totalMoneyPrice += price * drinkOrderRequest.getQuantity();
         }
-        double tipAmount = request.getTip() * totalMoneyPrice;
+        double tipAmount = (double) Math.round(request.getTip() * totalMoneyPrice * 100) / 100;
 
         if (!pointService.customerHasRequiredBalance(totalPointsPrice, request.getUserId(), barId)) {
             return OrderResponse.builder()
