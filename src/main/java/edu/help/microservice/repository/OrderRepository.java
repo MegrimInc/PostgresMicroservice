@@ -11,16 +11,13 @@ import java.util.List;
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Integer> {
 
-    // Find orders by user ID for order history
-    List<Order> findByUserId(Integer userId);
+    // Find unclaimed orders by bar ID and station
+    @Query("SELECT o FROM Order o WHERE o.barId = :barId AND o.station = :station AND o.tipsClaimed IS NULL")
+    List<Order> findUnclaimedOrdersByBarAndStation(Integer barId, Character station);
 
-    // Find unclaimed orders by station
-    @Query("SELECT o FROM Order o WHERE o.station = :station AND o.tipsClaimed = false")
-    List<Order> findUnclaimedOrdersByStation(Character station);
-
-    // Update tipsClaimed for orders after claiming tips
+    // Update orders to mark tips as claimed by bartender name
     @Modifying
     @Transactional
-    @Query("UPDATE Order o SET o.tipsClaimed = true WHERE o.station = :station AND o.tipsClaimed = false")
-    void markTipsAsClaimedForStation(Character station);
+    @Query("UPDATE Order o SET o.tipsClaimed = :bartenderName WHERE o.barId = :barId AND o.station = :station AND o.tipsClaimed IS NULL")
+    void markTipsAsClaimedByBartender(Integer barId, Character station, String bartenderName);
 }

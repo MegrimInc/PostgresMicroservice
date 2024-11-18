@@ -20,9 +20,9 @@ public class HierarchyController {
 
     @PostMapping("/save")
     public String saveOrder(@RequestBody OrderToSave orderToSave) {
-        System.out.println("....BeforeService...");
+        System.out.println("....BeforeSavingOrder...");
         hierarchyService.saveOrderToHierarchy(orderToSave);
-        System.out.println("...AfterService...");
+        System.out.println("...AfterSavingOrder...");
         
         return "Order saved to hierarchy successfully.";
     }

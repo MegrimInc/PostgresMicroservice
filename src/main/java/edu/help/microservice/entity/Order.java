@@ -53,6 +53,6 @@ public class Order {
     @Column(name = "tip_amount")
     private Double tipAmount;
 
-    @Column(name = "tips_claimed", nullable = false)
-    private Boolean tipsClaimed = false;
+    @Column(name = "tips_claimed", nullable = true)
+    private String tipsClaimed; // Name of the bartender who claimed the tips
 }

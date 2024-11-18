@@ -16,18 +16,13 @@ public class OrderService {
         this.orderRepository = orderRepository;
     }
 
-    // Get order history for a specific user
-    public List<Order> getOrderHistoryByUserId(Integer userId) {
-        return orderRepository.findByUserId(userId);
+    // Get unclaimed orders by bar ID and station
+    public List<Order> getUnclaimedOrdersByBarAndStation(Integer barId, Character station) {
+        return orderRepository.findUnclaimedOrdersByBarAndStation(barId, station);
     }
 
-    // Get unclaimed orders by station
-    public List<Order> getUnclaimedOrdersByStation(Character station) {
-        return orderRepository.findUnclaimedOrdersByStation(station);
-    }
-
-    // Mark tips as claimed for a specific station
-    public void claimTipsForStation(Character station) {
-        orderRepository.markTipsAsClaimedForStation(station);
+    // Mark tips as claimed by bartender name
+    public void claimTipsForStation(Integer barId, Character station, String bartenderName) {
+        orderRepository.markTipsAsClaimedByBartender(barId, station, bartenderName);
     }
 }
