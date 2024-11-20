@@ -104,6 +104,7 @@ public class BarService {
                     .messageType("broke")
                     .tip(tipAmount)
                     .totalPrice(totalMoneyPrice)
+                    .totalPointPrice(totalPointsPrice)
                     .drinks(drinkOrderResponses)
                     .build();
         }
@@ -119,6 +120,7 @@ public class BarService {
                         .messageType("error")
                         .tip(tipAmount)
                         .totalPrice(totalMoneyPrice)
+                        .totalPointPrice(totalPointsPrice)
                         .drinks(drinkOrderResponses)
                         .build();
             }
@@ -133,6 +135,7 @@ public class BarService {
                 .messageType("success")
                 .tip(tipAmount)
                 .totalPrice(totalMoneyPrice)
+                .totalPointPrice(totalPointsPrice)
                 .drinks(drinkOrderResponses)
                 .build();
     }

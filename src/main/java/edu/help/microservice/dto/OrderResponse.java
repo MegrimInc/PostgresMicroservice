@@ -14,6 +14,7 @@ import java.util.List;
 public class OrderResponse {
     private String message;
     private double totalPrice;
+    private int totalPointPrice;
     private double tip; // Renamed field
     private List<DrinkOrderResponse> drinks;
     private String messageType;
