@@ -69,6 +69,10 @@ public class CustomerService {
         return customerRepository.findByFirstNameAndLastName(firstName, lastName);
     }
 
-
-    
+    public String getName(Integer id) {
+        var customerOptional = findById(id);
+        return customerOptional.map(customer ->
+                customer.getFirstName() + " " + customer.getLastName()
+        ).orElse(null);
+    }
 }

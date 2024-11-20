@@ -28,6 +28,7 @@ public class BarService {
     private final DrinkRepository drinkRepository;
     private final PointService pointService;
     private final StripeService stripeService;
+    private final CustomerService customerService;
 
     public List<BarDTO> findAllBars() {
         List<Bar> bars = barRepository.findAll();
@@ -60,6 +61,7 @@ public class BarService {
         double totalMoneyPrice = 0;
         int totalPointsPrice = 0;
         int totalDrinkQuantity = 0;
+        String userName = customerService.getName(request.getUserId());
         List<DrinkOrderResponse> drinkOrderResponses = new ArrayList<>();
 
         // Process drinks
@@ -106,6 +108,7 @@ public class BarService {
                     .totalPrice(totalMoneyPrice)
                     .totalPointPrice(totalPointsPrice)
                     .drinks(drinkOrderResponses)
+                    .name(userName)
                     .build();
         }
 
@@ -122,6 +125,7 @@ public class BarService {
                         .totalPrice(totalMoneyPrice)
                         .totalPointPrice(totalPointsPrice)
                         .drinks(drinkOrderResponses)
+                        .name(userName)
                         .build();
             }
         }
@@ -137,6 +141,7 @@ public class BarService {
                 .totalPrice(totalMoneyPrice)
                 .totalPointPrice(totalPointsPrice)
                 .drinks(drinkOrderResponses)
+                .name(userName)
                 .build();
     }
 }

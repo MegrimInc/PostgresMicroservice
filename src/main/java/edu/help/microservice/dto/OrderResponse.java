@@ -13,6 +13,7 @@ import java.util.List;
 @Builder
 public class OrderResponse {
     private String message;
+    private String name;
     private double totalPrice;
     private int totalPointPrice;
     private double tip; // Renamed field
