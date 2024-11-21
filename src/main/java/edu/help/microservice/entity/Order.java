@@ -1,51 +1,38 @@
 package edu.help.microservice.entity;
 
-import jakarta.persistence.*;
+import java.time.Instant;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.sql.Timestamp;
-
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-@Entity
-@Table(name = "orders")
+@AllArgsConstructor
 public class Order {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "order_id")
-    private Integer orderId;
-
-    @Column(name = "bar_id", nullable = false)
-    private Integer barId;
-
-    @Column(name = "user_id", nullable = false)
-    private Integer userId;
-
-    @Column(name = "timestamp", nullable = false)
-    private Timestamp timestamp;
-
-    @Column(name = "drink_ids", columnDefinition = "jsonb", nullable = false)
-    private String drinkIds;
-
-    @Column(name = "point_price")
-    private Integer pointPrice;
-
-    @Column(name = "dollar_price")
-    private Double dollarPrice;
-
-    @Column(name = "tip_amount", columnDefinition = "double precision DEFAULT 0")
-    private Double tipAmount;
-
-    @Column(name = "status")
+    private int orderId;
+    private int barId;
+    private int userId;
+    private double totalRegularPrice;
+    private int totalPointPrice;
+    private double tip;
+    private boolean inAppPayments;
+    private List<DrinkOrder> drinks;
     private String status;
+    private String claimer;
+    private Instant timestamp; // Changed to Instant for PostgreSQL compatibility
+    private String sessionId;
 
-    @Column(name = "station", length = 1)
-    private String station;
-
-    @Column(name = "tips_claimed")
-    private String tipsClaimed; // Stores the bartender's name or NULL
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class DrinkOrder {
+        private int drinkId;
+        private String drinkName;  // Added back drinkName
+        private String paymentType;  // "points" or "regular"
+        private String sizeType;     // "single" or "double"
+        private int quantity;
+    }
 }
