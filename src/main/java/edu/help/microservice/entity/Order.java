@@ -1,21 +1,14 @@
 package edu.help.microservice.entity;
 
-import java.time.OffsetDateTime;
-import java.util.List;
-import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.ZonedDateTime;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Entity
 @Table(name = "orders")
 public class Order {
@@ -32,27 +25,26 @@ public class Order {
     private Integer userId;
 
     @Column(name = "timestamp", nullable = false)
-    private OffsetDateTime timestamp;
+    private ZonedDateTime timestamp;
 
-    @ElementCollection
-    @Column(name = "drink_ids", nullable = false)
-    private List<Integer> drinkIds;
+    @Column(name = "drink_ids", columnDefinition = "jsonb", nullable = false)
+    private String drinkIds; // JSON data as String
 
     @Column(name = "point_price")
-    private Integer pointPrice;
+    private Integer totalPointPrice;
 
     @Column(name = "dollar_price")
-    private Double dollarPrice;
+    private Double totalRegularPrice;
 
-    @Column(name = "status")
-    private String status;
-
-    @Column(name = "station")
-    private Character station;
-
-    @Column(name = "tip_amount")
+    @Column(name = "tip_amount", columnDefinition = "double precision DEFAULT 0")
     private Double tipAmount;
 
-    @Column(name = "tips_claimed", nullable = true)
-    private String tipsClaimed; // Name of the bartender who claimed the tips
+    @Column(name = "status", length = 20)
+    private String status;
+
+    @Column(name = "station", length = 1)
+    private String station;
+
+    @Column(name = "tips_claimed")
+    private String tipsClaimed; // Stores the bartender's name or NULL
 }

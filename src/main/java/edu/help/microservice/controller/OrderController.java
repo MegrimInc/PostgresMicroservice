@@ -1,5 +1,6 @@
 package edu.help.microservice.controller;
 
+import edu.help.microservice.dto.OrderToSave;
 import edu.help.microservice.entity.Order;
 import edu.help.microservice.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +22,9 @@ public class OrderController {
 
     // Endpoint to get unclaimed orders by bar ID and station
     @GetMapping("/unclaimed/{barId}/{station}")
-    public ResponseEntity<List<Order>> getUnclaimedOrdersByBarAndStation(@PathVariable Integer barId, @PathVariable Character station) {
+    public ResponseEntity<List<Order>> getUnclaimedOrdersByBarAndStation(
+            @PathVariable Integer barId,
+            @PathVariable Character station) {
         List<Order> orders = orderService.getUnclaimedOrdersByBarAndStation(barId, station);
         return ResponseEntity.ok(orders);
     }
@@ -31,9 +34,15 @@ public class OrderController {
     public ResponseEntity<String> claimTipsForStation(
             @RequestParam Integer barId,
             @RequestParam Character station,
-            @RequestParam String bartenderName
-    ) {
+            @RequestParam String bartenderName) {
         orderService.claimTipsForStation(barId, station, bartenderName);
         return ResponseEntity.ok("Tips claimed for station " + station + " by bartender " + bartenderName);
+    }
+
+    // Endpoint to save an order
+    @PostMapping("/save")
+    public ResponseEntity<String> saveOrder(@RequestBody OrderToSave orderToSave) {
+        orderService.saveOrder(orderToSave);
+        return ResponseEntity.ok("Order saved successfully");
     }
 }
