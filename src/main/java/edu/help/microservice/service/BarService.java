@@ -65,10 +65,11 @@ public class BarService {
         List<DrinkOrderResponse> drinkOrderResponses = new ArrayList<>();
 
         // Process drinks
-        for (DrinkOrderRequest drinkOrderRequest : request.getDrinks()) {
+        for (OrderRequest.DrinkOrder drinkOrderRequest : request.getDrinks()) {
             Drink drink = drinkRepository.findById(drinkOrderRequest.getDrinkId())
                     .orElseThrow(() -> new RuntimeException("Drink not found"));
 
+            // Map to DrinkOrderResponse
             drinkOrderResponses.add(DrinkOrderResponse.builder()
                     .drinkId(drink.getDrinkId())
                     .drinkName(drink.getDrinkName())
@@ -78,28 +79,28 @@ public class BarService {
                     .build());
 
             totalDrinkQuantity += drinkOrderRequest.getQuantity();
+
+            // Calculate price or points based on payment type
             if (drinkOrderRequest.getPaymentType().equals("points")) {
                 totalPointsPrice += drink.getPoint() * drinkOrderRequest.getQuantity();
-                continue;
-            }
-
-            double price;
-            if (request.isHappyHour()) {
-                if (drinkOrderRequest.getSizeType().equals("double"))
-                    price = drink.getDoubleHappyPrice();
-                else
-                    price = drink.getSingleHappyPrice();
             } else {
-                if (drinkOrderRequest.getSizeType().equals("double"))
-                    price = drink.getDoublePrice();
-                else
-                    price = drink.getSinglePrice();
+                double price;
+                if (request.isHappyHour()) {
+                    price = drinkOrderRequest.getSizeType().equals("double")
+                            ? drink.getDoubleHappyPrice()
+                            : drink.getSingleHappyPrice();
+                } else {
+                    price = drinkOrderRequest.getSizeType().equals("double")
+                            ? drink.getDoublePrice()
+                            : drink.getSinglePrice();
+                }
+                totalMoneyPrice += price * drinkOrderRequest.getQuantity();
             }
-
-            totalMoneyPrice += price * drinkOrderRequest.getQuantity();
         }
-        double tipAmount = (double) Math.round(request.getTip() * totalMoneyPrice * 100) / 100;
 
+        double tipAmount = Math.round(request.getTip() * totalMoneyPrice * 100) / 100.0;
+
+        // Check if customer has enough points
         if (!pointService.customerHasRequiredBalance(totalPointsPrice, request.getUserId(), barId)) {
             return OrderResponse.builder()
                     .message("Insufficient points. Would you like to proceed with $ pricing?")
@@ -112,12 +113,12 @@ public class BarService {
                     .build();
         }
 
-        // Process payment
+        // Process in-app payment via Stripe
         if (request.isInAppPayments()) {
             try {
                 stripeService.processOrder(totalMoneyPrice, tipAmount, request.getUserId(), barId);
-            } catch (StripeException exception) {
-                System.out.println(exception.getMessage());
+            } catch (StripeException e) {
+                System.out.println(e.getMessage());
                 return OrderResponse.builder()
                         .message("Stripe error")
                         .messageType("error")
@@ -130,10 +131,11 @@ public class BarService {
             }
         }
 
-        // Reward user with points / charge them for used points
+        // Reward or charge points for the order
         pointService.chargeCustomer(totalPointsPrice, request.getUserId(), barId);
         pointService.rewardCustomer(totalDrinkQuantity, request.getUserId(), barId);
 
+        // Return success response
         return OrderResponse.builder()
                 .message("Order processed successfully")
                 .messageType("success")
@@ -144,4 +146,6 @@ public class BarService {
                 .name(userName)
                 .build();
     }
+
+
 }

@@ -2,6 +2,7 @@ package edu.help.microservice.controller;
 
 import java.util.List;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,7 +32,13 @@ public class BarController {
     }
 
     @PostMapping("/{barId}/processOrder")
-    public OrderResponse processOrder(@PathVariable int barId, @RequestBody OrderRequest orderRequest) {
-        return barService.processOrder(barId, orderRequest);
+    public ResponseEntity<OrderResponse> processOrder(@PathVariable int barId, @RequestBody OrderRequest orderRequest) {
+        // Delegate processing to the service layer
+        OrderResponse response = barService.processOrder(barId, orderRequest);
+
+        // Return the processed order response
+        return ResponseEntity.ok(response);
     }
+
+
 }

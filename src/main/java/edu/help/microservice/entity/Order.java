@@ -14,11 +14,11 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "orders") // Match the table name in your PostgreSQL database
+@Table(name = "orders")
 public class Order {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Auto-incremented ID
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int orderId;
 
     @Column(nullable = false)
@@ -39,8 +39,8 @@ public class Order {
     @Column(nullable = false)
     private boolean inAppPayments;
 
-    @Column(columnDefinition = "jsonb") // Map to PostgreSQL's JSONB type
-    @Convert(converter = JsonbConverter.class)
+    @Column(columnDefinition = "jsonb")
+    @Convert(converter = JsonbConverter.class) // Use the custom converter
     private List<DrinkOrder> drinks;
 
     @Column(nullable = false)
@@ -49,7 +49,7 @@ public class Order {
     private String claimer;
 
     @Column(nullable = false)
-    private Instant timestamp; // Stores the time in PostgreSQL as a TIMESTAMP WITH TIME ZONE
+    private Instant timestamp;
 
     private String sessionId;
 
@@ -58,9 +58,9 @@ public class Order {
     @AllArgsConstructor
     public static class DrinkOrder {
         private int drinkId;
-        private String drinkName;  // Name of the drink
-        private String paymentType;  // "points" or "regular"
-        private String sizeType;     // "single" or "double"
+        private String drinkName;
+        private String paymentType;
+        private String sizeType;
         private int quantity;
     }
 
@@ -74,7 +74,7 @@ public class Order {
         @Override
         public String convertToDatabaseColumn(List<DrinkOrder> attribute) {
             try {
-                return objectMapper.writeValueAsString(attribute);
+                return objectMapper.writeValueAsString(attribute); // Convert List to JSON string
             } catch (JsonProcessingException e) {
                 throw new RuntimeException("Failed to convert list to JSON string", e);
             }

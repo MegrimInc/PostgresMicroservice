@@ -20,14 +20,6 @@ public class OrderService {
         this.orderRepository = orderRepository;
     }
 
-    public List<Order> getUnclaimedOrdersByBarAndStation(Integer barId, Character station) {
-        return orderRepository.findUnclaimedOrdersByBarAndStation(barId, station);
-    }
-
-    public void claimTipsForStation(Integer barId, Character station, String bartenderName) {
-        orderRepository.markTipsAsClaimedByBartender(barId, station, bartenderName);
-    }
-
     public Order saveOrder(Order order) {
         if (order.getTimestamp() == null) {
             order.setTimestamp(Instant.now()); // Set current time if timestamp is missing
