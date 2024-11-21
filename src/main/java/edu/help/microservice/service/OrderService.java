@@ -8,7 +8,7 @@ import edu.help.microservice.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.ZonedDateTime;
+import java.sql.Timestamp;
 import java.util.List;
 
 @Service
@@ -33,6 +33,7 @@ public class OrderService {
         orderRepository.markTipsAsClaimedByBartender(barId, station, bartenderName);
     }
 
+    // Save an order to the database
     public void saveOrder(OrderToSave orderToSave) {
         try {
             Order orderEntity = new Order();
@@ -40,25 +41,28 @@ public class OrderService {
             // Set fields from OrderToSave to Order entity
             orderEntity.setBarId(orderToSave.getBarId());
             orderEntity.setUserId(orderToSave.getUserId());
-            orderEntity.setTimestamp(ZonedDateTime.parse(orderToSave.getTimestamp())); // Convert timestamp
-            orderEntity.setTotalPointPrice(orderToSave.getPointPrice());
-            orderEntity.setTotalRegularPrice(orderToSave.getDollarPrice());
+            orderEntity.setTimestamp(Timestamp.valueOf(orderToSave.getTimestamp())); // Convert to SQL timestamp
+            orderEntity.setPointPrice(orderToSave.getPointPrice());
+            orderEntity.setDollarPrice(orderToSave.getDollarPrice());
             orderEntity.setTipAmount(orderToSave.getTipAmount());
             orderEntity.setStatus(orderToSave.getStatus());
-            orderEntity.setStation(orderToSave.getClaimer()); // Example: Set station based on claimer
-            orderEntity.setTipsClaimed(orderToSave.getClaimer());
-            System.out.println(orderEntity);
-            // Serialize drinks to JSON and set in the entity
+            orderEntity.setStation(orderToSave.getClaimer());
+            orderEntity.setTipsClaimed(null);
+
+            // Serialize drinks to JSON and set it in the entity
             String drinksJson = objectMapper.writeValueAsString(orderToSave.getDrinkIds());
             orderEntity.setDrinkIds(drinksJson);
 
             // Save the order to the database
             orderRepository.save(orderEntity);
+        } catch (JsonProcessingException e) {
+            // Handle JSON serialization exceptions
+            System.err.println("Error serializing drinks to JSON: " + e.getMessage());
+            e.printStackTrace();
         } catch (Exception e) {
-            // Handle exceptions and log the error
+            // Handle other exceptions
             System.err.println("Error saving order: " + e.getMessage());
             e.printStackTrace();
         }
     }
-
 }

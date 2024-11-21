@@ -1,14 +1,15 @@
 package edu.help.microservice.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.time.ZonedDateTime;
+import java.sql.Timestamp;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@NoArgsConstructor
 @Entity
 @Table(name = "orders")
 public class Order {
@@ -25,21 +26,21 @@ public class Order {
     private Integer userId;
 
     @Column(name = "timestamp", nullable = false)
-    private ZonedDateTime timestamp;
+    private Timestamp timestamp;
 
     @Column(name = "drink_ids", columnDefinition = "jsonb", nullable = false)
-    private String drinkIds; // JSON data as String
+    private String drinkIds;
 
     @Column(name = "point_price")
-    private Integer totalPointPrice;
+    private Integer pointPrice;
 
     @Column(name = "dollar_price")
-    private Double totalRegularPrice;
+    private Double dollarPrice;
 
     @Column(name = "tip_amount", columnDefinition = "double precision DEFAULT 0")
     private Double tipAmount;
 
-    @Column(name = "status", length = 20)
+    @Column(name = "status")
     private String status;
 
     @Column(name = "station", length = 1)

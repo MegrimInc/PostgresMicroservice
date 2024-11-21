@@ -17,23 +17,23 @@ public class HierarchyService {
     @Autowired
     private HierarchyRepository hierarchyRepository;
 
-    @Transactional
-    public void saveOrderToHierarchy(OrderToSave order) {
-        Map<Integer, Integer> drinkQuantityMap = new HashMap<>();
-
-        System.out.println("...In.Service.Made.The.Map...");
-
-
-        for (DrinkOrder drinkOrder : order.getDrinks()) {
-            drinkQuantityMap.put(drinkOrder.getId(), drinkOrder.getQuantity());
-            System.out.println("...PopulatingMap...");
-        }
-
-        System.out.println("...CallingCreateHierarchy...");
-        createHierarchy(order.getBarId(), order.getUserId(), order.getTimestamp(), 
-            drinkQuantityMap, order.getStatus(), order.getClaimer());
-        System.out.println("...JustCalledCreateHierarchy...");
-    }
+//    @Transactional
+//    public void saveOrderToHierarchy(OrderToSave order) {
+//        Map<Integer, Integer> drinkQuantityMap = new HashMap<>();
+//
+//        System.out.println("...In.Service.Made.The.Map...");
+//
+//
+//        for (DrinkOrder drinkOrder : order.getDrinks()) {
+//            drinkQuantityMap.put(drinkOrder.getId(), drinkOrder.getQuantity());
+//            System.out.println("...PopulatingMap...");
+//        }
+//
+//        System.out.println("...CallingCreateHierarchy...");
+//        createHierarchy(order.getBarId(), order.getUserId(), order.getTimestamp(),
+//            drinkQuantityMap, order.getStatus(), order.getClaimer());
+//        System.out.println("...JustCalledCreateHierarchy...");
+//    }
 
     
     @Transactional
