@@ -65,7 +65,7 @@ public class BarService {
         List<DrinkOrderResponse> drinkOrderResponses = new ArrayList<>();
 
         // Process drinks
-        for (OrderRequest.DrinkOrder drinkOrderRequest : request.getDrinks()) {
+        for (DrinkOrderRequest drinkOrderRequest : request.getDrinks()) {
             Drink drink = drinkRepository.findById(drinkOrderRequest.getDrinkId())
                     .orElseThrow(() -> new RuntimeException("Drink not found"));
 
