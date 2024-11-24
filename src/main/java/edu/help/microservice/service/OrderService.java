@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.help.microservice.dto.OrderDTO;
 import edu.help.microservice.entity.Order;
 import edu.help.microservice.repository.OrderRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -12,15 +13,12 @@ import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 
+@RequiredArgsConstructor
 @Service
 public class OrderService {
 
     private final OrderRepository orderRepository;
-
-    @Autowired
-    public OrderService(OrderRepository orderRepository) {
-        this.orderRepository = orderRepository;
-    }
+    private final PointService pointService;
 
     public void saveOrder(OrderDTO orderDTO) {
         Order order = new Order();
@@ -54,6 +52,7 @@ public class OrderService {
 
         // Save the order to the database
         orderRepository.save(order);
+        pointService.rewardPointsForOrder(order);
     }
 }
 

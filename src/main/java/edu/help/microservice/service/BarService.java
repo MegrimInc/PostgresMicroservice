@@ -143,7 +143,6 @@ public class BarService {
 
         // Reward user with points / charge them for used points
         pointService.chargeCustomer(totalPointsPrice, request.getUserId(), barId);
-        pointService.rewardCustomer(totalDrinkQuantity, request.getUserId(), barId);
 
         return OrderResponse.builder()
                 .message("Order processed successfully")
