@@ -35,7 +35,6 @@ public class BarController {
     public ResponseEntity<OrderResponse> processOrder(@PathVariable int barId, @RequestBody OrderRequest orderRequest) {
         // Delegate processing to the service layer
         OrderResponse response = barService.processOrder(barId, orderRequest);
-
         // Return the processed order response
         return ResponseEntity.ok(response);
     }
