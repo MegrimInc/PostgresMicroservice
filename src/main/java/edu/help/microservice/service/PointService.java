@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import edu.help.microservice.entity.Order;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -71,6 +72,16 @@ public class PointService {
         }
 
         return customer.getPoints().get(userId);
+    }
+
+    public void rewardPointsForOrder(Order order) {
+        if (order.getStatus().equals("canceled"))
+            return;
+
+        int totalDrinkQuantity = 0;
+        for (Order.DrinkOrder drinkOrder : order.getDrinks())
+            totalDrinkQuantity += drinkOrder.getQuantity();
+        rewardCustomer(totalDrinkQuantity, order.getUserId(), order.getBarId());
     }
 
     private int getPointsAtBar(int customerId, int barId) {
