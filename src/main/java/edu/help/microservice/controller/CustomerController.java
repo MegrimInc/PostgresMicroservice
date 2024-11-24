@@ -4,7 +4,10 @@ import java.util.Map;
 import java.util.Optional;
 
 import com.stripe.exception.StripeException;
+import edu.help.microservice.dto.CustomerNameRequest;
+import edu.help.microservice.dto.CustomerNameResponse;
 import edu.help.microservice.dto.PaymentIdSetRequest;
+import org.apache.coyote.Request;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -50,6 +53,17 @@ public class CustomerController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                                  .body(Map.of("error", "Failed to create SetupIntent: " + e.getMessage()));
         }
+    }
+
+    @GetMapping("/getNames/{userId}")
+    public ResponseEntity<CustomerNameResponse> getName(@PathVariable int userId) {
+        return ResponseEntity.ok(customerService.getNameData(userId));
+    }
+
+    @PostMapping("/updateNames/{userId}")
+    public ResponseEntity<CustomerNameResponse> getName(@RequestBody CustomerNameRequest request,
+                                                        @PathVariable int userId) {
+        return ResponseEntity.ok(customerService.updateNameData(request, userId));
     }
 
     @PostMapping("/addPaymentIdToDatabase")

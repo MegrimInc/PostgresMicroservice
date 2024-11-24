@@ -3,6 +3,9 @@ package edu.help.microservice.service;
 import java.util.List;
 import java.util.Optional;
 
+import edu.help.microservice.dto.CustomerNameRequest;
+import edu.help.microservice.dto.CustomerNameResponse;
+import edu.help.microservice.exception.CustomerNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -74,5 +77,35 @@ public class CustomerService {
         return customerOptional.map(customer ->
                 customer.getFirstName() + " " + customer.getLastName()
         ).orElse(null);
+    }
+
+    public CustomerNameResponse getNameData(int id) {
+        var customerOptional = findById(id);
+        if (customerOptional.isEmpty())
+            throw new CustomerNotFoundException(id);
+
+        Customer customer = customerOptional.get();
+        return CustomerNameResponse.builder()
+                .firstName(customer.getFirstName())
+                .lastName(customer.getLastName())
+                .build();
+    }
+
+    public CustomerNameResponse updateNameData(CustomerNameRequest request, int id) {
+        var customerOptional = findById(id);
+        if (customerOptional.isEmpty())
+            throw new CustomerNotFoundException(id);
+
+        Customer customer = customerOptional.get();
+        if (request.getFirstName() != null && !request.getFirstName().isEmpty())
+            customer.setFirstName(request.getFirstName());
+        if (request.getLastName() != null && request.getLastName().isEmpty())
+            customer.setLastName(request.getLastName());
+        customerRepository.save(customer);
+
+        return CustomerNameResponse.builder()
+                .firstName(customer.getFirstName())
+                .lastName(customer.getLastName())
+                .build();
     }
 }
