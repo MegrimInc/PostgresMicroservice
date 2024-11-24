@@ -69,38 +69,48 @@ public class BarService {
             Drink drink = drinkRepository.findById(drinkOrderRequest.getDrinkId())
                     .orElseThrow(() -> new RuntimeException("Drink not found"));
 
-            // Map to DrinkOrderResponse
+            String sizeType = drinkOrderRequest.getSizeType();
+
+            // Handle null or empty sizeType
+            if (sizeType == null || sizeType.isEmpty()) {
+                sizeType = ""; // Treat null as empty string
+            }
+
             drinkOrderResponses.add(DrinkOrderResponse.builder()
                     .drinkId(drink.getDrinkId())
                     .drinkName(drink.getDrinkName())
                     .paymentType(drinkOrderRequest.getPaymentType())
-                    .sizeType(drinkOrderRequest.getSizeType())
+                    .sizeType(sizeType)
                     .quantity(drinkOrderRequest.getQuantity())
                     .build());
 
             totalDrinkQuantity += drinkOrderRequest.getQuantity();
 
-            // Calculate price or points based on payment type
-            if (drinkOrderRequest.getPaymentType().equals("points")) {
+            if ("points".equals(drinkOrderRequest.getPaymentType())) {
                 totalPointsPrice += drink.getPoint() * drinkOrderRequest.getQuantity();
-            } else {
-                double price;
-                if (request.isHappyHour()) {
-                    price = drinkOrderRequest.getSizeType().equals("double")
-                            ? drink.getDoubleHappyPrice()
-                            : drink.getSingleHappyPrice();
-                } else {
-                    price = drinkOrderRequest.getSizeType().equals("double")
-                            ? drink.getDoublePrice()
-                            : drink.getSinglePrice();
-                }
-                totalMoneyPrice += price * drinkOrderRequest.getQuantity();
+                continue;
             }
+
+            double price;
+            if (request.isHappyHour()) {
+                if ("double".equals(sizeType)) {
+                    price = drink.getDoubleHappyPrice();
+                } else {
+                    price = drink.getSingleHappyPrice();
+                }
+            } else {
+                if ("double".equals(sizeType)) {
+                    price = drink.getDoublePrice();
+                } else {
+                    price = drink.getSinglePrice();
+                }
+            }
+
+            totalMoneyPrice += price * drinkOrderRequest.getQuantity();
         }
 
-        double tipAmount = Math.round(request.getTip() * totalMoneyPrice * 100) / 100.0;
+        double tipAmount = (double) Math.round(request.getTip() * totalMoneyPrice * 100) / 100;
 
-        // Check if customer has enough points
         if (!pointService.customerHasRequiredBalance(totalPointsPrice, request.getUserId(), barId)) {
             return OrderResponse.builder()
                     .message("Insufficient points. Would you like to proceed with $ pricing?")
@@ -113,12 +123,12 @@ public class BarService {
                     .build();
         }
 
-        // Process in-app payment via Stripe
+        // Process payment
         if (request.isInAppPayments()) {
             try {
                 stripeService.processOrder(totalMoneyPrice, tipAmount, request.getUserId(), barId);
-            } catch (StripeException e) {
-                System.out.println(e.getMessage());
+            } catch (StripeException exception) {
+                System.out.println(exception.getMessage());
                 return OrderResponse.builder()
                         .message("Stripe error")
                         .messageType("error")
@@ -131,11 +141,10 @@ public class BarService {
             }
         }
 
-        // Reward or charge points for the order
+        // Reward user with points / charge them for used points
         pointService.chargeCustomer(totalPointsPrice, request.getUserId(), barId);
         pointService.rewardCustomer(totalDrinkQuantity, request.getUserId(), barId);
 
-        // Return success response
         return OrderResponse.builder()
                 .message("Order processed successfully")
                 .messageType("success")
@@ -146,6 +155,4 @@ public class BarService {
                 .name(userName)
                 .build();
     }
-
-
 }
