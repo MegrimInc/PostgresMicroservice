@@ -103,6 +103,8 @@ public class CustomerService {
             customer.setLastName(request.getLastName());
         customerRepository.save(customer);
 
+        System.out.println("YO MAMA");
+
         return CustomerNameResponse.builder()
                 .firstName(customer.getFirstName())
                 .lastName(customer.getLastName())
