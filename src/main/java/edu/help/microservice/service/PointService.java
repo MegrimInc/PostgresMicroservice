@@ -89,6 +89,8 @@ public class PointService {
         if (userPoints == null)
             return -1;
 
+        if (!userPoints.containsKey(barId))
+            userPoints.put(barId, 0);
         return userPoints.get(barId);
     }
 }
