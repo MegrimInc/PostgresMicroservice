@@ -99,7 +99,7 @@ public class CustomerService {
         Customer customer = customerOptional.get();
         if (request.getFirstName() != null && !request.getFirstName().isEmpty())
             customer.setFirstName(request.getFirstName());
-        if (request.getLastName() != null && request.getLastName().isEmpty())
+        if (request.getLastName() != null && !request.getLastName().isEmpty())
             customer.setLastName(request.getLastName());
         customerRepository.save(customer);
 
