@@ -19,39 +19,43 @@ public class Order {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int orderId;
+    private int orderId; // Unique identifier for each order
 
     @Column(nullable = false)
-    private int barId;
+    private int barId; // ID of the bar where the order was placed
 
     @Column(nullable = false)
-    private int userId;
+    private int userId; // ID of the user who placed the order
 
     @Column(nullable = false)
-    private double totalRegularPrice;
+    private Instant timestamp; // Timestamp when the order was completed
 
-    @Column(nullable = false)
-    private int totalPointPrice;
-
-    @Column(nullable = false)
-    private double tip;
-
-    @Column(nullable = false)
-    private boolean inAppPayments;
-
-    @Column(columnDefinition = "jsonb")
-    @Convert(converter = JsonbConverter.class) // Use the custom converter
+    @Column(columnDefinition = "jsonb", nullable = false)
+    @Convert(converter = JsonbConverter.class)
     private List<DrinkOrder> drinks;
 
-    @Column(nullable = false)
-    private String status;
-
-    private String claimer;
 
     @Column(nullable = false)
-    private Instant timestamp;
+    private int totalPointPrice; // Total price in points if used for payment
 
-    private String sessionId;
+    @Column(nullable = false)
+    private double totalRegularPrice; // Total price in dollars
+
+    @Column(nullable = false)
+    private double tip; // Tip amount given by the user for the order
+
+
+    @Column(nullable = false)
+    private boolean inAppPayments; // Indicates if the payment was made in-app
+
+    @Column(length = 20, nullable = false)
+    private String status; // Final status of the order ('claimed', 'delivered', 'canceled')
+
+    @Column(length = 1)
+    private String station; // Bartender station identifier (A-Z)
+
+    @Column(length = 255)
+    private String tipsClaimed; // "NULL" (as a string) if not claimed, or the bartender's name
 
     @Data
     @NoArgsConstructor
@@ -74,11 +78,14 @@ public class Order {
         @Override
         public String convertToDatabaseColumn(List<DrinkOrder> attribute) {
             try {
-                return objectMapper.writeValueAsString(attribute); // Convert List to JSON string
+                String jsonString = objectMapper.writeValueAsString(attribute);
+                System.out.println("Serialized JSON: " + jsonString); // Debugging line
+                return jsonString;
             } catch (JsonProcessingException e) {
                 throw new RuntimeException("Failed to convert list to JSON string", e);
             }
         }
+
 
         @Override
         public List<DrinkOrder> convertToEntityAttribute(String dbData) {
