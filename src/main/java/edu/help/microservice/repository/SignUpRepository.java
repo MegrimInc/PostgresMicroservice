@@ -17,5 +17,6 @@ public interface SignUpRepository extends JpaRepository<SignUp, Integer> {
      */
     SignUp findByEmail(String email);
 
-    Optional<SignUp> findByBar_Id(Integer barId);
+    // Corrected method
+    Optional<SignUp> findByBar_BarId(Integer barId);
 }
