@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import edu.help.microservice.entity.SignUp;
+import edu.help.microservice.repository.SignUpRepository;
 import org.springframework.stereotype.Service;
 
 import com.stripe.exception.StripeException;
@@ -29,6 +31,7 @@ public class BarService {
     private final PointService pointService;
     private final StripeService stripeService;
     private final CustomerService customerService;
+    private final SignUpRepository signUpRepository;
 
     public List<BarDTO> findAllBars() {
         List<Bar> bars = barRepository.findAll();
@@ -43,6 +46,11 @@ public class BarService {
     public Bar findBarById(Integer id) {
         Optional<Bar> bar = barRepository.findById(id);
         return bar.orElse(null); // Returns the Bar if found, otherwise returns null
+    }
+
+    public String findEmailById(Integer id) {
+        Optional<SignUp> signUpEntity = signUpRepository.findByBar_Id(id);
+        return signUpEntity.get().getEmail();
     }
 
     public List<Drink> getDrinksByBarId(Integer barId) {
