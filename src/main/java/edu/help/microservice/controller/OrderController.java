@@ -4,8 +4,10 @@ import edu.help.microservice.dto.OrderDTO;
 import edu.help.microservice.dto.TipClaimRequest;
 import edu.help.microservice.dto.TipClaimResponse;
 import edu.help.microservice.entity.Order;
+import edu.help.microservice.entity.SignUp;
 import edu.help.microservice.service.BarService;
 import edu.help.microservice.service.OrderService;
+import edu.help.microservice.service.SignUpService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,12 +19,12 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
-    private final BarService barService;
+    private final SignUpService signUpService;
 
     @Autowired
-    public OrderController(OrderService orderService, BarService barService) {
+    public OrderController(OrderService orderService, SignUpService signUpService) {
         this.orderService = orderService;
-        this.barService = barService;
+        this.signUpService = signUpService;
     }
 
     // Endpoint to save an order
@@ -37,6 +39,7 @@ public class OrderController {
         try {
             // Fetch unclaimed orders
             List<Order> tipsList = orderService.getUnclaimedTips(request.getBarId(), request.getStation());
+            String barEmail = signUpService.findEmailByBarId(request.getBarId());
 
             if (tipsList.isEmpty()) {
                 return ResponseEntity.badRequest().body(new TipClaimResponse("No unclaimed tips found for your station."));
@@ -44,21 +47,8 @@ public class OrderController {
 
             // Update orders to set tipsClaimed to bartender's name
             orderService.claimTipsForOrders(tipsList, request.getBartenderName());
-
-            // Retrieve bar email address
-            String barEmail = barService.findEmailById(request.getBarId());
-
-//            // Prepare email content
-//            String emailContent = emailService.prepareEmailContent(request, tipsList);
-//
-//            // Send emails to bar and bartender (if email provided)
-//            emailService.sendTipEmail(barEmail, "Tip Report", emailContent);
-//            if (request.getBartenderEmail() != null && !request.getBartenderEmail().isEmpty()) {
-//                emailService.sendTipEmail(request.getBartenderEmail(), "Tip Report", emailContent);
-//            }
-
             // Return success response
-            return ResponseEntity.ok(new TipClaimResponse("Tip Claim Successful", tipsList));
+            return ResponseEntity.ok(new TipClaimResponse(barEmail, tipsList));
 
         } catch (Exception e) {
             e.printStackTrace();

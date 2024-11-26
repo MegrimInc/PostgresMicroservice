@@ -10,10 +10,11 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 public class TipClaimResponse {
-    private String message;
+    private String barEmail;
     private List<Order> orders;
 
-    public TipClaimResponse(String message) {
-        this.message = message;
+    public TipClaimResponse(String barEmail)
+    {
+        this.barEmail = barEmail;
     }
 }
