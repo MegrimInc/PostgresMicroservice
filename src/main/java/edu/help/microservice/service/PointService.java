@@ -75,7 +75,7 @@ public class PointService {
     }
 
     public void rewardPointsForOrder(Order order) {
-        if (order.getStatus().equals("canceled"))
+        if (!order.isInAppPayments() && order.getStatus().equals("canceled"))
             return;
 
         int totalDrinkQuantity = 0;
