@@ -21,6 +21,6 @@ public class OrderDTO {
     private double tip;
     private boolean inAppPayments;
     private String status;
-    private String station;
+    private String claimer;
     // Exclude fields not present in the Order entity
 }

@@ -1,11 +1,11 @@
 package edu.help.microservice.entity;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Type;
 
 import java.time.Instant;
 import java.util.List;
@@ -30,10 +30,9 @@ public class Order {
     @Column(nullable = false)
     private Instant timestamp; // Timestamp when the order was completed
 
+    @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb", nullable = false)
-    @Convert(converter = JsonbConverter.class)
     private List<DrinkOrder> drinks;
-
 
     @Column(nullable = false)
     private int totalPointPrice; // Total price in points if used for payment
@@ -43,7 +42,6 @@ public class Order {
 
     @Column(nullable = false)
     private double tip; // Tip amount given by the user for the order
-
 
     @Column(nullable = false)
     private boolean inAppPayments; // Indicates if the payment was made in-app
@@ -57,6 +55,7 @@ public class Order {
     @Column(length = 255)
     private String tipsClaimed; // "NULL" (as a string) if not claimed, or the bartender's name
 
+    // Inner class for DrinkOrder
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
@@ -66,34 +65,5 @@ public class Order {
         private String paymentType;
         private String sizeType;
         private int quantity;
-    }
-
-    /**
-     * Converter for handling JSONB fields in PostgreSQL.
-     */
-    @Converter
-    public static class JsonbConverter implements AttributeConverter<List<DrinkOrder>, String> {
-        private final ObjectMapper objectMapper = new ObjectMapper();
-
-        @Override
-        public String convertToDatabaseColumn(List<DrinkOrder> attribute) {
-            try {
-                String jsonString = objectMapper.writeValueAsString(attribute);
-                System.out.println("Serialized JSON: " + jsonString); // Debugging line
-                return jsonString;
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException("Failed to convert list to JSON string", e);
-            }
-        }
-
-
-        @Override
-        public List<DrinkOrder> convertToEntityAttribute(String dbData) {
-            try {
-                return objectMapper.readValue(dbData, objectMapper.getTypeFactory().constructCollectionType(List.class, DrinkOrder.class));
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException("Failed to convert JSON string to list", e);
-            }
-        }
     }
 }

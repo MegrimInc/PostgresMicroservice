@@ -4,6 +4,8 @@ import edu.help.microservice.entity.SignUp;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface SignUpRepository extends JpaRepository<SignUp, Integer> {
 
@@ -14,4 +16,7 @@ public interface SignUpRepository extends JpaRepository<SignUp, Integer> {
      * @return the SignUp entity with the given email, or null if not found
      */
     SignUp findByEmail(String email);
+
+    // Corrected method
+    Optional<SignUp> findByBar_BarId(Integer barId);
 }

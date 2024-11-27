@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import edu.help.microservice.entity.SignUp;
+import edu.help.microservice.repository.SignUpRepository;
 import org.springframework.stereotype.Service;
 
 import com.stripe.exception.StripeException;
@@ -113,8 +115,8 @@ public class BarService {
 
         if (!pointService.customerHasRequiredBalance(totalPointsPrice, request.getUserId(), barId)) {
             return OrderResponse.builder()
-                    .message("Insufficient points. Would you like to proceed with $ pricing?")
-                    .messageType("broke")
+                    .message("Insufficient points.")
+                    .messageType("error")
                     .tip(tipAmount)
                     .totalPrice(totalMoneyPrice)
                     .totalPointPrice(totalPointsPrice)

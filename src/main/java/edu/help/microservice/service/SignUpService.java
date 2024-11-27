@@ -24,6 +24,12 @@ public class SignUpService {
         return signUpRepository.findByEmail(email);
     }
 
+    public String findEmailByBarId(int barId)
+    {
+        Optional<SignUp> entity = signUpRepository.findById(barId);
+        return entity.get().getEmail();
+    }
+
     /**
      * Saves a SignUp entity to the database.
      *

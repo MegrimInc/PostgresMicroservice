@@ -1,17 +1,16 @@
 package edu.help.microservice.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
 import edu.help.microservice.dto.OrderDTO;
 import edu.help.microservice.entity.Order;
 import edu.help.microservice.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.time.Instant;
-import java.time.format.DateTimeParseException;
-import java.util.List;
+import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
@@ -45,7 +44,7 @@ public class OrderService {
         order.setTip(orderDTO.getTip());
         order.setInAppPayments(orderDTO.isInAppPayments());
         order.setStatus(orderDTO.getStatus());
-        order.setStation(orderDTO.getStation());
+        order.setStation(orderDTO.getClaimer());
 
         // Set tipsClaimed to null
         order.setTipsClaimed(null);
@@ -53,6 +52,17 @@ public class OrderService {
         // Save the order to the database
         orderRepository.save(order);
         pointService.rewardPointsForOrder(order);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Order> getUnclaimedTips(int barId, String station) {
+        return orderRepository.findUnclaimedTipsByBarIdAndStation(barId, station);
+    }
+
+    @Transactional
+    public void claimTipsForOrders(List<Order> orders, String bartenderName) {
+        List<Integer> orderIds = orders.stream().map(Order::getOrderId).toList();
+        orderRepository.updateTipsClaimed(bartenderName, orderIds);
     }
 }
 
