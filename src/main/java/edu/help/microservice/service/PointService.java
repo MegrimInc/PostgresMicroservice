@@ -78,6 +78,7 @@ public class PointService {
         if (!order.isInAppPayments() && order.getStatus().equals("canceled"))
             return;
 
+        // test
         int totalDrinkQuantity = 0;
         for (Order.DrinkOrder drinkOrder : order.getDrinks())
             totalDrinkQuantity += drinkOrder.getQuantity();
