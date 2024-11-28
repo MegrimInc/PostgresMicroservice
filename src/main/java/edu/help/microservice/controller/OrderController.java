@@ -3,9 +3,11 @@ package edu.help.microservice.controller;
 import edu.help.microservice.dto.OrderDTO;
 import edu.help.microservice.dto.TipClaimRequest;
 import edu.help.microservice.entity.Order;
+import edu.help.microservice.service.BarService;
 import edu.help.microservice.service.OrderService;
 import edu.help.microservice.service.SignUpService;
 import jakarta.mail.internet.MimeMessage;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,17 +22,21 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Properties;
 
+import edu.help.microservice.entity.Bar;
+
 @RestController
 @RequestMapping("/orders")
 public class OrderController {
 
     private final OrderService orderService;
     private final SignUpService signUpService;
+    private final BarService barService; 
 
     @Autowired
-    public OrderController(OrderService orderService, SignUpService signUpService) {
+    public OrderController(OrderService orderService, SignUpService signUpService, BarService barService) {
         this.orderService = orderService;
         this.signUpService = signUpService;
+        this.barService = barService;
     }
 
     // Endpoint to save an order
@@ -77,7 +83,7 @@ public class OrderController {
             String emailContent = prepareEmailContent(barID, bartenderName, bartenderEmail, station, tipsList);
 
             // Send emails
-            String subject = "Tip Receipt for " + bartenderName + " (Bar #" + barID + ")";
+            String subject = "Tip Receipt for " + bartenderName + " at " + barService.findBarById(barID).getBarName();
             if (barEmail != null && !barEmail.isEmpty()) {
                 sendTipEmail(barEmail, subject, emailContent);
             }
