@@ -26,7 +26,7 @@ public class SignUpService {
 
     public String findEmailByBarId(int barId)
     {
-        Optional<SignUp> entity = signUpRepository.findById(barId);
+        Optional<SignUp> entity = signUpRepository.findByBar_BarId(barId);
         return entity.get().getEmail();
     }
 
