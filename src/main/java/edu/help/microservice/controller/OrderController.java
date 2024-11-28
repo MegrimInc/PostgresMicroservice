@@ -125,7 +125,7 @@ public class OrderController {
         // Build email content
         StringBuilder emailContent = new StringBuilder();
         emailContent.append("<h1 style='text-align:center;'>Tip Report</h1>")
-                .append("<h2 style='text-align:center;'>Bar ID: ").append(barID).append("</h2>")
+                .append("<h2 style='text-align:center;'>Bar Name: ").append(barService.findBarById(barID).getBarName()).append("</h2>")
                 .append("<p style='text-align:center; font-weight:bold;'>Bartender Station: <span style='color:blue;'>")
                 .append(station).append("</span> | Bartender Name: <span style='color:blue;'>")
                 .append(bartenderName).append("</span></p>")
