@@ -2,10 +2,7 @@ package edu.help.microservice.controller;
 
 import edu.help.microservice.dto.OrderDTO;
 import edu.help.microservice.dto.TipClaimRequest;
-import edu.help.microservice.dto.TipClaimResponse;
 import edu.help.microservice.entity.Order;
-import edu.help.microservice.entity.SignUp;
-import edu.help.microservice.service.BarService;
 import edu.help.microservice.service.OrderService;
 import edu.help.microservice.service.SignUpService;
 import jakarta.mail.internet.MimeMessage;
@@ -18,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Properties;
 
@@ -64,13 +62,18 @@ public class OrderController {
 
             // Retrieve bar email
             String barEmail = signUpService.findEmailByBarId(barID);
+            if (barEmail == null || barEmail.isEmpty()) {
+                System.err.println("Bar email not found for bar ID: " + barID);
+            }
 
             // Prepare email content
             String emailContent = prepareEmailContent(barID, bartenderName, bartenderEmail, station, tipsList);
 
             // Send emails
             String subject = "Tip Receipt for " + bartenderName + " (Bar #" + barID + ")";
-            sendTipEmail(barEmail, subject, emailContent);
+            if (barEmail != null && !barEmail.isEmpty()) {
+                sendTipEmail(barEmail, subject, emailContent);
+            }
             if (bartenderEmail != null && !bartenderEmail.isEmpty()) {
                 sendTipEmail(bartenderEmail, subject, emailContent);
             }
@@ -115,7 +118,8 @@ public class OrderController {
         emailContent.append("<h3>Order Tips:</h3><ul>");
         for (Order order : tipsList) {
             Instant timestamp = order.getTimestamp();
-            String orderFormattedDate = formatter.format(timestamp);
+            ZonedDateTime dateTime = timestamp.atZone(ZoneId.systemDefault()); // Convert Instant to ZonedDateTime
+            String orderFormattedDate = dateTime.format(formatter);
             emailContent.append("<li><strong>Order ID#</strong> ").append(order.getOrderId())
                     .append(": $").append(String.format("%.2f", order.getTip()))
                     .append(" | ").append(orderFormattedDate).append("</li>");
@@ -150,15 +154,15 @@ public class OrderController {
             helper.setFrom("noreply@barzzy.site");
             helper.setSubject(subject);
 
-            // Set the email content as plain text
+            // Set the email content as HTML
             helper.setText(content, true);
 
             // Send the email
             test.send(message);
-            System.out.println("Successful send");
+            System.out.println("Email successfully sent to " + email);
         } catch (Exception ex) {
-            System.err.println(ex.getMessage());
+            System.err.println("Error sending email to " + email);
+            ex.printStackTrace();
         }
     }
-
 }
