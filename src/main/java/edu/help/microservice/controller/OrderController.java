@@ -7,6 +7,7 @@ import edu.help.microservice.service.OrderService;
 import edu.help.microservice.service.SignUpService;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -51,7 +52,8 @@ public class OrderController {
             List<Order> tipsList = orderService.getUnclaimedTips(barID, station);
 
             if (tipsList.isEmpty()) {
-                return ResponseEntity.badRequest().body(0.0);
+                // Return -1 if no unclaimed tips are found
+                return ResponseEntity.ok(-1.0);
             }
 
             // Update orders to set tipsClaimed to bartender's name
@@ -83,9 +85,11 @@ public class OrderController {
 
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).body(0.0);
+            // Return -1 if an error occurs
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(-2.0);
         }
     }
+
 
     // Helper methods...
 
