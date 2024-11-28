@@ -48,6 +48,9 @@ public class OrderController {
             String bartenderEmail = request.getBartenderEmail(); // Optional
             String station = request.getStation();
 
+            System.out.println("Request received with barID: " + barID + ", bartenderName: " + bartenderName 
+            + ", bartenderEmail: " + bartenderEmail + ", station: " + station);
+
             // Fetch unclaimed orders
             List<Order> tipsList = orderService.getUnclaimedTips(barID, station);
 
@@ -58,9 +61,11 @@ public class OrderController {
 
             // Update orders to set tipsClaimed to bartender's name
             orderService.claimTipsForOrders(tipsList, bartenderName);
+            System.out.println("Updated orders with bartender's name: " + bartenderName);
 
             // Calculate total tip amount
             double totalTipAmount = calculateTotalTipAmount(tipsList);
+            System.out.println("Total tip amount calculated: " + totalTipAmount);
 
             // Retrieve bar email
             String barEmail = signUpService.findEmailByBarId(barID);
@@ -80,10 +85,14 @@ public class OrderController {
                 sendTipEmail(bartenderEmail, subject, emailContent);
             }
 
+            System.out.println("ClaimTips process completed successfully. Total tips: " + totalTipAmount);
+
+
             // Return total tip amount to the frontend
             return ResponseEntity.ok(totalTipAmount);
 
         } catch (Exception e) {
+            System.err.println("Error occurred in claimTips process: " + e.getMessage());
             e.printStackTrace();
             // Return -1 if an error occurs
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(-2.0);
