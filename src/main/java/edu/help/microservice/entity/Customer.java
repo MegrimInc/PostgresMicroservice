@@ -43,7 +43,7 @@ public class Customer {
     @OneToOne(mappedBy = "customer", cascade = CascadeType.ALL)
     private SignUp signUp;
 
-    @Column(name = "stripe_id", nullable = false)
+    @Column(name = "stripe_id", nullable = true)
     private String stripeId;
 
     @Type(JsonType.class)
