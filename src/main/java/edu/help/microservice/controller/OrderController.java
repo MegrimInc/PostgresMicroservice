@@ -22,15 +22,13 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Properties;
 
-import edu.help.microservice.entity.Bar;
-
 @RestController
 @RequestMapping("/orders")
 public class OrderController {
 
     private final OrderService orderService;
     private final SignUpService signUpService;
-    private final BarService barService; 
+    private final BarService barService;
 
     @Autowired
     public OrderController(OrderService orderService, SignUpService signUpService, BarService barService) {
@@ -54,11 +52,14 @@ public class OrderController {
             String bartenderEmail = request.getBartenderEmail(); // Optional
             String station = request.getStation();
 
-            System.out.println("Request received with barID: " + barID + ", bartenderName: " + bartenderName 
-            + ", bartenderEmail: " + bartenderEmail + ", station: " + station);
+            System.out.println("Request received with barID: " + barID + ", bartenderName: " + bartenderName
+                    + ", bartenderEmail: " + bartenderEmail + ", station: " + station);
 
             // Fetch unclaimed orders
             List<Order> tipsList = orderService.getUnclaimedTips(barID, station);
+
+            // Filter out orders where inAppPayments is false
+            tipsList.removeIf(order -> !order.isInAppPayments());
 
             if (tipsList.isEmpty()) {
                 // Return -1 if no unclaimed tips are found
@@ -93,18 +94,16 @@ public class OrderController {
 
             System.out.println("ClaimTips process completed successfully. Total tips: " + totalTipAmount);
 
-
             // Return total tip amount to the frontend
             return ResponseEntity.ok(totalTipAmount);
 
         } catch (Exception e) {
             System.err.println("Error occurred in claimTips process: " + e.getMessage());
             e.printStackTrace();
-            // Return -1 if an error occurs
+            // Return -2 if an error occurs
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(-2.0);
         }
     }
-
 
     // Helper methods...
 
@@ -150,14 +149,14 @@ public class OrderController {
 
     // Use your existing sendTipEmail method
     private void sendTipEmail(String email, String subject, String content) {
-        JavaMailSenderImpl test = new JavaMailSenderImpl();
-        test.setHost("email-smtp.us-east-1.amazonaws.com");
-        test.setPort(587);
+        JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
+        mailSender.setHost("email-smtp.us-east-1.amazonaws.com");
+        mailSender.setPort(587);
 
-        test.setUsername("AKIARKMXJUVKGK3ZC6FH");
-        test.setPassword("BJ0EwGiCXsXWcZT2QSI5eR+5yFzbimTnquszEXPaEXsd");
+        mailSender.setUsername("YOUR_SMTP_USERNAME");
+        mailSender.setPassword("YOUR_SMTP_PASSWORD");
 
-        Properties props = test.getJavaMailProperties();
+        Properties props = mailSender.getJavaMailProperties();
         props.put("mail.transport.protocol", "smtp");
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true");
@@ -165,7 +164,7 @@ public class OrderController {
 
         try {
             // Create a MimeMessage
-            MimeMessage message = test.createMimeMessage();
+            MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
 
             // Set the basic email attributes
@@ -177,7 +176,7 @@ public class OrderController {
             helper.setText(content, true);
 
             // Send the email
-            test.send(message);
+            mailSender.send(message);
             System.out.println("Email successfully sent to " + email);
         } catch (Exception ex) {
             System.err.println("Error sending email to " + email);
