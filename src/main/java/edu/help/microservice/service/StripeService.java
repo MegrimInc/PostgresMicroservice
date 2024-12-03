@@ -3,24 +3,24 @@ package edu.help.microservice.service;
 import java.util.Map;
 import java.util.Optional;
 
-import edu.help.microservice.dto.PaymentIdSetRequest;
-import edu.help.microservice.exception.CustomerStripeIdNotMachingException;
 import org.springframework.stereotype.Service;
 
 import com.stripe.StripeClient;
 import com.stripe.exception.StripeException;
 import com.stripe.model.SetupIntent;
 import com.stripe.param.CustomerCreateParams;
+import com.stripe.param.CustomerUpdateParams;
 import com.stripe.param.PaymentIntentCreateParams;
 import com.stripe.param.PaymentMethodListParams;
 import com.stripe.param.SetupIntentCreateParams;
-import com.stripe.param.TransferCreateParams;
 
+import edu.help.microservice.dto.PaymentIdSetRequest;
 import edu.help.microservice.entity.Bar;
 import edu.help.microservice.entity.Customer;
 import edu.help.microservice.entity.SignUp;
 import edu.help.microservice.exception.BarNotFoundException;
 import edu.help.microservice.exception.CustomerNotFoundException;
+import edu.help.microservice.exception.CustomerStripeIdNotMachingException;
 import edu.help.microservice.repository.BarRepository;
 import edu.help.microservice.repository.CustomerRepository;
 import edu.help.microservice.repository.SignUpRepository;
@@ -55,7 +55,7 @@ public class StripeService {
 
         var paymentMethods = stripeClient.paymentMethods().list(listParams);
         paymentMethods.getData().stream()
-                        .forEach(p -> System.out.println(p.toString()));
+                .forEach(p -> System.out.println(p.toString()));
 
         chargeCustomer(barOptional.get(), customerOptional.get(), priceInCents + tipInCents);
     }
@@ -80,16 +80,15 @@ public class StripeService {
                                 PaymentIntentCreateParams.AutomaticPaymentMethods
                                         .builder()
                                         .setEnabled(true)
-                                        .setAllowRedirects(PaymentIntentCreateParams.AutomaticPaymentMethods.AllowRedirects.NEVER)
-                                        .build()
-                        )
+                                        .setAllowRedirects(
+                                                PaymentIntentCreateParams.AutomaticPaymentMethods.AllowRedirects.NEVER)
+                                        .build())
                         .setPaymentMethod(customer.getPaymentId())
                         .setTransferData(
                                 PaymentIntentCreateParams.TransferData.builder()
                                         .setAmount(priceInCents)
                                         .setDestination(bar.getAccountId())
-                                        .build()
-                        )
+                                        .build())
                         .setConfirm(true)
                         .build());
     }
@@ -106,62 +105,99 @@ public class StripeService {
         if (!request.getStripeId().equals(customer.getStripeId()))
             throw new CustomerStripeIdNotMachingException(customerId, request.getStripeId());
 
-        String paymentId = stripeClient.customers()
-                .retrieve(request.getStripeId())
-                .getInvoiceSettings()
-                .getDefaultPaymentMethod();
+        // Use the SetupIntent ID to retrieve the associated payment method
+        var setupIntent = stripeClient.setupIntents().retrieve(request.getSetupIntentId());
+        String paymentMethodId = setupIntent.getPaymentMethod();
 
-        System.out.println("Payment ID Set: " + paymentId);
+        System.out.println("Payment ID Set: " + paymentMethodId);
 
-        customer.setPaymentId(paymentId);
+        // Set the default payment method
+        stripeClient.customers().update(
+                request.getStripeId(),
+                CustomerUpdateParams.builder()
+                        .setInvoiceSettings(
+                                CustomerUpdateParams.InvoiceSettings.builder()
+                                        .setDefaultPaymentMethod(paymentMethodId)
+                                        .build())
+                        .build());
+
+        // Save the payment method ID in your database
+        customer.setPaymentId(paymentMethodId);
         customerRepository.save(customer);
+
+        System.out.println("Payment method saved and set as default.");
     }
-    
+
     public Map<String, String> createSetupIntent(int customerId) throws StripeException {
-        // Retrieve the customer from the database
-        Optional<Customer> customerOpt = customerRepository.findById(customerId);
-        if (customerOpt.isEmpty()) {
-            throw new CustomerNotFoundException(customerId);
-        }
-
-        Customer customer = customerOpt.get();
-        String stripeCustomerId = customer.getStripeId();
-
-        // If the customer doesn't have a Stripe ID, create one
-        if (stripeCustomerId == null || stripeCustomerId.isEmpty()) {
-            // Fetch the associated SignUp record for email
-            Optional<SignUp> signUpOpt = signUpRepository.findById(customerId);
-            if (signUpOpt.isEmpty()) {
-                throw new IllegalStateException("No SignUp record found for customerId: " + customerId);
+        try {
+            // Retrieve the customer from the database
+            Optional<Customer> customerOpt = customerRepository.findById(customerId);
+            if (customerOpt.isEmpty()) {
+                throw new CustomerNotFoundException(customerId);
             }
 
-            SignUp signUp = signUpOpt.get();
-            String email = signUp.getEmail();
+            Customer customer = customerOpt.get();
+            String stripeCustomerId = customer.getStripeId();
 
-            // Create the Stripe customer
-            var stripeCustomer = stripeClient.customers().create(
-                    CustomerCreateParams.builder()
-                            .setEmail(email)
-                            .setName(customer.getFirstName() + " " + customer.getLastName())
-                            .build()
-            );
+            // Log customer information
+            System.out.println("Customer retrieved: " + customer);
 
-            // Update and save the customer's Stripe ID
-            stripeCustomerId = stripeCustomer.getId();
-            customer.setStripeId(stripeCustomerId);
-            customerRepository.save(customer);
+            // If the customer doesn't have a Stripe ID, create one
+            if (stripeCustomerId == null || stripeCustomerId.isEmpty()) {
+                System.out.println("No Stripe ID found for customer. Creating a new Stripe customer...");
+
+                // Fetch the associated SignUp record for email
+                Optional<SignUp> signUpOpt = signUpRepository.findById(customerId);
+                if (signUpOpt.isEmpty()) {
+                    throw new IllegalStateException("No SignUp record found for customerId: " + customerId);
+                }
+
+                SignUp signUp = signUpOpt.get();
+                String email = signUp.getEmail();
+
+                // Log email being used
+                System.out.println("Using email for Stripe customer creation: " + email);
+
+                // Create the Stripe customer
+                var stripeCustomer = stripeClient.customers().create(
+                        CustomerCreateParams.builder()
+                                .setEmail(email)
+                                .setName(customer.getFirstName() + " " + customer.getLastName())
+                                .build());
+
+                // Update and save the customer's Stripe ID
+                stripeCustomerId = stripeCustomer.getId();
+                customer.setStripeId(stripeCustomerId);
+                customerRepository.save(customer);
+
+                // Log Stripe ID creation
+                System.out.println("Stripe customer created with ID: " + stripeCustomerId);
+            } else {
+                System.out.println("Existing Stripe ID found: " + stripeCustomerId);
+            }
+
+            // Create SetupIntent for the customer
+            System.out.println("Creating SetupIntent for Stripe customer ID: " + stripeCustomerId);
+            SetupIntentCreateParams params = SetupIntentCreateParams.builder()
+                    .setCustomer(stripeCustomerId)
+                    .build();
+            SetupIntent setupIntent = stripeClient.setupIntents().create(params);
+
+            // Log the creation of SetupIntent
+            System.out.println("SetupIntent created with client secret: " + setupIntent.getClientSecret());
+
+            // Return client secret and customer ID for the frontend
+            return Map.of(
+                    "setupIntentClientSecret", setupIntent.getClientSecret(),
+                    "customerId", stripeCustomerId);
+        } catch (StripeException e) {
+            // Log Stripe exception details
+            System.err.println("Stripe exception occurred: " + e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            // Log general exception details
+            System.err.println("Exception occurred: " + e.getMessage());
+            throw e;
         }
-
-        // Create SetupIntent for the customer
-        SetupIntentCreateParams params = SetupIntentCreateParams.builder()
-                .setCustomer(stripeCustomerId)
-                .build();
-        SetupIntent setupIntent = stripeClient.setupIntents().create(params);
-
-        // Return client secret and customer ID for the frontend
-        return Map.of(
-                "setupIntentClientSecret", setupIntent.getClientSecret(),
-                "customerId", stripeCustomerId
-        );
     }
 }

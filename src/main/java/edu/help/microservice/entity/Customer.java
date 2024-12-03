@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
+
 import org.hibernate.annotations.Type;
 
 import io.hypersistence.utils.hibernate.type.json.JsonType;
@@ -40,6 +42,7 @@ public class Customer {
     @Column(name = "last_name", nullable = false)
     private String lastName;
 
+    @ToString.Exclude 
     @OneToOne(mappedBy = "customer", cascade = CascadeType.ALL)
     private SignUp signUp;
 

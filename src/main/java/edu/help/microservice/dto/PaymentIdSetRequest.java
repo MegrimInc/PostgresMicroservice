@@ -12,4 +12,5 @@ import lombok.NoArgsConstructor;
 public class PaymentIdSetRequest {
     private int customerId;
     private String stripeId;
+    private String setupIntentId;
 }
