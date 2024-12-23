@@ -45,6 +45,7 @@ public class OrderService {
         order.setInAppPayments(orderDTO.isInAppPayments());
         order.setStatus(orderDTO.getStatus());
         order.setStation(orderDTO.getClaimer());
+        order.setPointOfSale(orderDTO.isPointOfSale());
 
         // Set tipsClaimed to null
         order.setTipsClaimed(null);

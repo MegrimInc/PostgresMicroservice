@@ -55,6 +55,9 @@ public class Order {
     @Column(length = 255)
     private String tipsClaimed; // "NULL" (as a string) if not claimed, or the bartender's name
 
+    @Column
+    private boolean pointOfSale; // Indicates if this is a point of sale purchase or not
+
     // Inner class for DrinkOrder
     @Data
     @NoArgsConstructor
