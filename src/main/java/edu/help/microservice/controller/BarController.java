@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import edu.help.microservice.dto.BarDTO;
 import edu.help.microservice.dto.OrderRequest;
 import edu.help.microservice.dto.OrderResponse;
+import edu.help.microservice.entity.Bar;
 import edu.help.microservice.entity.Drink;
 import edu.help.microservice.service.BarService;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,7 @@ public class BarController {
 
     @GetMapping("/bars/seeAllBars")
     public List<BarDTO> seeAllBars() {
-        return barService.findAllBars();        
+        return barService.findAllBars();
     }
 
     @GetMapping("/bars/getAllDrinksByBar/{barId}")
@@ -39,5 +40,13 @@ public class BarController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/bars/{barId}")
+    public ResponseEntity<Bar> getBarById(@PathVariable Integer barId) {
+        Bar bar = barService.findBarById(barId); // Fetch the bar by ID
+        if (bar == null) {
+            return ResponseEntity.notFound().build(); // Return 404 if not found
+        }
+        return ResponseEntity.ok(bar); // Return the bar if found
+    }
 
 }
