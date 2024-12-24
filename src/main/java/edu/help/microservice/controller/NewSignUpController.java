@@ -3,10 +3,13 @@ package edu.help.microservice.controller;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Properties;
 import java.util.Random;
 
+import edu.help.microservice.service.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
@@ -30,12 +33,11 @@ import edu.help.microservice.dto.VerifyResetCodeRequest;
 import edu.help.microservice.entity.Bar;
 import edu.help.microservice.entity.Customer;
 import edu.help.microservice.entity.SignUp;
-import edu.help.microservice.service.BarService;
-import edu.help.microservice.service.CustomerService;
-import edu.help.microservice.service.SignUpService;
-import edu.help.microservice.service.StripeService;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+
+import java.time.LocalDateTime;       // For "this hour"
+import java.time.format.DateTimeFormatter; // If needed for logging
 
 @RequiredArgsConstructor
 @RestController
@@ -47,8 +49,63 @@ public class NewSignUpController {
     private final CustomerService customerService;
     private final BarService barService;
     private final StripeService stripeService;
+    private final ActivityService activityService;
 
-    
+
+
+    /**
+     * The pay-to-use "heartbeat" call from the frontend.
+     *  1) if startDate == null, set it to now -> stop
+     *  2) if startDate < 30 days old, do nothing -> stop
+     *  3) otherwise, record usage for this hour (placeholder).
+     */
+    @GetMapping("/heartbeat")
+    public ResponseEntity<String> heartbeat(@RequestParam("barId") String barID,
+                                            @RequestParam("bartenderId") String bartenderID) {
+        try {
+            int barIdInt = Integer.parseInt(barID);
+            Bar bar = barService.findBarById(barIdInt);
+
+            if (bar == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("No bar found with ID " + barID);
+            }
+
+            // 1) if bar.startDate is null, set it and stop
+            if (bar.getStartDate() == null) {
+                barService.setStartDate(barIdInt, LocalDate.now());
+                return ResponseEntity.ok("startDate was null, now set to today. Done.");
+            }
+
+            // 2) check how long ago startDate was
+            LocalDate startDate = bar.getStartDate();
+            long daysSinceStart = ChronoUnit.DAYS.between(startDate, LocalDate.now());
+            if (daysSinceStart < 30) {
+                // still within free trial
+                return ResponseEntity.ok("Within 30-day free trial. Done.");
+            }
+
+
+            // 3) In paid territory
+            LocalDateTime currentHour = LocalDateTime.now()
+                    .withMinute(0)
+                    .withSecond(0)
+                    .withNano(0);
+
+            // Check if we have an entry for (barIdInt, bartenderID, currentHour)
+            if (!activityService.alreadyRecordedThisHour(barIdInt, bartenderID, currentHour)) {
+                activityService.recordActivity(barIdInt, bartenderID, currentHour);
+                String debugMessage = String.format("Recorded usage for bar %d, bartender %s at hour %s",
+                        barIdInt, bartenderID, currentHour.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+                return ResponseEntity.ok(debugMessage);
+            } else {
+                return ResponseEntity.ok("Usage for this hour was already recorded. Nothing to do.");
+            }
+        } catch (NumberFormatException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Invalid barId format: " + barID);
+        }
+    }
 
     // ENDPOINT #2: Resend verification code
     @PostMapping("/send-verification")
