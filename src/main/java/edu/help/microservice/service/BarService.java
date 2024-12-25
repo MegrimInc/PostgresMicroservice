@@ -82,18 +82,15 @@ public class BarService {
         return barRepository.save(bar);
     }
 
-    /**
-     * NEW UTILITY METHODS for the startDate field:
-     *  setStartDate(...) sets a LocalDate
-     *  getStartDate(...) retrieves the date
-     */
 
+    /**
+     * Sets the startDate column for a given bar, using our custom native query.
+     *
+     * @param barId The ID of the bar.
+     * @param date The LocalDate to set (works best if the column is a DATE type).
+     */
     public void setStartDate(Integer barId, LocalDate date) {
-        Bar bar = findBarById(barId);
-        if (bar != null) {
-            bar.setStartDate(date);
-            barRepository.save(bar);  // Persist the change
-        }
+        barRepository.updateStartDate(barId, date);
     }
 
     public LocalDate getStartDate(Integer barId) {

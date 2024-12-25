@@ -66,17 +66,19 @@ System.out.println("heartbeat intiated for bar " + barID);
         try {
             int barIdInt = Integer.parseInt(barID);
             Bar bar = barService.findBarById(barIdInt);
-
             if (bar == null) {
 System.out.println("heartbeat: no bar found");
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body("No bar found with ID " + barID);
             }
 
+System.out.println("heartbeat: Bar Found");
+
             // 1) if bar.startDate is null, set it and stop
             if (bar.getStartDate() == null) {
-                barService.setStartDate(barIdInt, LocalDate.now());
 
+System.out.println("heartbeat: attempting startdate setting.");
+                barService.setStartDate(barIdInt, LocalDate.now());
 System.out.println("heartbeat: Started free trial");
                 return ResponseEntity.ok("startDate was null, now set to today. Done.");
             }

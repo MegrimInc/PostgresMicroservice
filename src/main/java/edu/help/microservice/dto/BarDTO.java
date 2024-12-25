@@ -1,5 +1,6 @@
 package edu.help.microservice.dto;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 public class BarDTO {
@@ -11,6 +12,18 @@ public class BarDTO {
     private String barImage;
     private String openHours;
     private Map<String, String> happyHours; // Keep this as a Map
+
+    private LocalDateTime startDate;
+
+
+    public LocalDateTime getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(LocalDateTime start_date) {
+        this.startDate = start_date;
+    }
+
 
     // Getters and Setters
     public Integer getId() {
