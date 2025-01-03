@@ -9,6 +9,7 @@ import java.util.Base64;
 import java.util.Properties;
 import java.util.Random;
 
+import edu.help.microservice.entity.Activity;
 import edu.help.microservice.service.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -102,11 +103,19 @@ System.out.println("heartbeat: Within free trial");
 
             // Check if we have an entry for (barIdInt, bartenderID, currentHour)
             if (!activityService.alreadyRecordedThisHour(barIdInt, bartenderID, currentHour)) {
-                activityService.recordActivity(barIdInt, bartenderID, currentHour);
-                String debugMessage = String.format("Recorded usage for bar %d, bartender %s at hour %s",
-                        barIdInt, bartenderID, currentHour.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+                Activity a1 = activityService.recordActivity(barIdInt, bartenderID, currentHour);
+                if (a1.getActivityId() != null ) {
+                    String debugMessage = String.format("Recorded usage for bar %d, bartender %s at hour %s",
+                            barIdInt, bartenderID, currentHour.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
 
-System.out.println("heartbeat: Recorded: " + debugMessage);
+                    System.out.println("heartbeat: Recorded: " + debugMessage);
+
+                    System.out.println("Attempting stripe charge");
+                    stripeService.sendMeterEvent(bar);
+                    System.out.println("Stripe charge probably successful");
+
+                }
+
                 return ResponseEntity.ok(debugMessage);
             } else {
 
