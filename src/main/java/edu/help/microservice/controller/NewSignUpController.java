@@ -52,8 +52,6 @@ public class NewSignUpController {
     private final StripeService stripeService;
     private final ActivityService activityService;
 
-
-
     /**
      * The pay-to-use "heartbeat" call from the frontend.
      *  1) if startDate == null, set it to now -> stop
@@ -63,37 +61,35 @@ public class NewSignUpController {
     @PostMapping("/heartbeat")
     public ResponseEntity<String> heartbeat(@RequestParam("barId") String barID,
                                             @RequestParam("bartenderId") String bartenderID) {
-System.out.println("heartbeat intiated for bar " + barID);
+        System.out.println("heartbeat intiated for bar " + barID);
         try {
             int barIdInt = Integer.parseInt(barID);
             Bar bar = barService.findBarById(barIdInt);
             if (bar == null) {
-System.out.println("heartbeat: no bar found");
+                System.out.println("heartbeat: no bar found");
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body("No bar found with ID " + barID);
             }
 
-System.out.println("heartbeat: Bar Found");
+            System.out.println("heartbeat: Bar Found");
 
-            // 1) if bar.startDate is null, set it and stop
+            // 1) If bar.startDate is null, set it and stop
             if (bar.getStartDate() == null) {
 
-System.out.println("heartbeat: attempting startdate setting.");
+                System.out.println("heartbeat: attempting startdate setting.");
                 barService.setStartDate(barIdInt, LocalDate.now());
-System.out.println("heartbeat: Started free trial");
+                System.out.println("heartbeat: Started free trial");
                 return ResponseEntity.ok("startDate was null, now set to today. Done.");
             }
 
-            // 2) check how long ago startDate was
+            // 2) Check how long ago startDate was
             LocalDate startDate = bar.getStartDate();
             long daysSinceStart = ChronoUnit.DAYS.between(startDate, LocalDate.now());
             if (daysSinceStart < 30) {
-                // still within free trial
-
-System.out.println("heartbeat: Within free trial");
+                // Still within free trial
+                System.out.println("heartbeat: Within free trial");
                 return ResponseEntity.ok("Within 30-day free trial. Done.");
             }
-
 
             // 3) In paid territory
             LocalDateTime currentHour = LocalDateTime.now()
@@ -104,28 +100,22 @@ System.out.println("heartbeat: Within free trial");
             // Check if we have an entry for (barIdInt, bartenderID, currentHour)
             if (!activityService.alreadyRecordedThisHour(barIdInt, bartenderID, currentHour)) {
                 Activity a1 = activityService.recordActivity(barIdInt, bartenderID, currentHour);
-                if (a1.getActivityId() != null ) {
-                    String debugMessage = String.format("Recorded usage for bar %d, bartender %s at hour %s",
-                            barIdInt, bartenderID, currentHour.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
-
+                String debugMessage = String.format("Recorded usage for bar %d, bartender %s at hour %s",
+                        barIdInt, bartenderID, currentHour.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+                if (a1.getActivityId() != null) {
                     System.out.println("heartbeat: Recorded: " + debugMessage);
 
                     System.out.println("Attempting stripe charge");
                     stripeService.sendMeterEvent(bar);
                     System.out.println("Stripe charge probably successful");
-
                 }
-
                 return ResponseEntity.ok(debugMessage);
             } else {
-
-System.out.println("heartbeat: Within Hour");
+                System.out.println("heartbeat: Within Hour");
                 return ResponseEntity.ok("Usage for this hour was already recorded. Nothing to do.");
             }
         } catch (Exception e) {
-
-System.out.println("heartbeat: failed with stacktrace: " + e.getStackTrace() + " and also this: " + e.getCause() + " anddddd this... : " + e.getMessage());
-
+            System.out.println("heartbeat: failed with stacktrace: " + e.getStackTrace() + " and also this: " + e.getCause() + " anddddd this... : " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("heartbeat: failed with stacktrace: " + e.getStackTrace() + " and also this: " + e.getCause() + " anddddd this... : " + e.getMessage());
         }
