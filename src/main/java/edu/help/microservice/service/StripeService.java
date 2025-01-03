@@ -1,8 +1,10 @@
 package edu.help.microservice.service;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 
+import com.stripe.param.v2.billing.MeterEventCreateParams;
 import org.springframework.stereotype.Service;
 
 import com.stripe.StripeClient;
@@ -48,16 +50,21 @@ public class StripeService {
         if (barOptional.isEmpty())
             throw new BarNotFoundException(barId);
 
-        PaymentMethodListParams listParams = PaymentMethodListParams.builder()
+        PaymentMethodListParams.builder()
                 .setCustomer(customerOptional.get().getStripeId())
                 .setType(PaymentMethodListParams.Type.CARD) // Specify the type (e.g., CARD)
                 .build();
 
-        var paymentMethods = stripeClient.paymentMethods().list(listParams);
-        paymentMethods.getData().stream()
-                .forEach(p -> System.out.println(p.toString()));
-
         chargeCustomer(barOptional.get(), customerOptional.get(), priceInCents + tipInCents);
+    }
+
+    public void sendMeterEvent(Bar bar) throws StripeException {
+        var params = MeterEventCreateParams.builder()
+                        .setEventName("venue")
+                        .putPayload("stripe_customer_id", bar.getSubId())
+                        .build();
+
+        stripeClient.v2().billing().meterEvents().create(params);
     }
 
     public void createStripeCustomer(Customer customer, SignUp signUp) throws StripeException {
