@@ -63,10 +63,7 @@ public class Bar implements Serializable {
     @Column(name = "happy_hour_times", columnDefinition = "jsonb")
     @Convert(converter = HashMapConverter.class)
     private Map<String, String> happyHourTimes;
-
-    // ─────────────────────────────────────────────────────────────────
-    // Added field for start_date:
-    // ─────────────────────────────────────────────────────────────────
+    
     @Column(name = "start_date")
     private LocalDate startDate;
 }
