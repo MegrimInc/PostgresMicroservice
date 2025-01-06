@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 
-import com.stripe.param.v2.billing.MeterEventCreateParams;
+import com.stripe.param.billing.MeterEventCreateParams;
 import org.springframework.stereotype.Service;
 
 import com.stripe.StripeClient;
@@ -64,7 +64,7 @@ public class StripeService {
                         .putPayload("stripe_customer_id", bar.getSubId())
                         .build();
 
-        stripeClient.v2().billing().meterEvents().create(params);
+        stripeClient.billing().meterEvents().create(params);
     }
 
     public void createStripeCustomer(Customer customer, SignUp signUp) throws StripeException {
