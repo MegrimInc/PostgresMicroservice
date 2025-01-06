@@ -59,12 +59,14 @@ public class StripeService {
     }
 
     public void sendMeterEvent(Bar bar) throws StripeException {
+        System.out.println("TEST1");
         var params = MeterEventCreateParams.builder()
                         .setEventName("venue")
                         .putPayload("stripe_customer_id", bar.getSubId())
                         .build();
-
+        System.out.println("TEST2");
         stripeClient.v2().billing().meterEvents().create(params);
+        System.out.println("TEST3");
     }
 
     public void createStripeCustomer(Customer customer, SignUp signUp) throws StripeException {
