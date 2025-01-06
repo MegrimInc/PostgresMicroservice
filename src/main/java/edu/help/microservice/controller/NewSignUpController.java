@@ -61,7 +61,7 @@ public class NewSignUpController {
     @PostMapping("/heartbeat")
     public ResponseEntity<String> heartbeat(@RequestParam("barId") String barID,
                                             @RequestParam("bartenderId") String bartenderID) {
-        System.out.println("heartbeat intiated for bar " + barID);
+        System.out.println("heartbeat initiated for bar " + barID);
         try {
             int barIdInt = Integer.parseInt(barID);
             Bar bar = barService.findBarById(barIdInt);
