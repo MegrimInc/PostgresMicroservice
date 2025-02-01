@@ -1,6 +1,6 @@
 package edu.help.microservice.controller;
 
-import edu.help.microservice.dto.GetTipsRequest;
+import edu.help.microservice.dto.GetTipsResponse;
 import edu.help.microservice.dto.OrderDTO;
 import edu.help.microservice.dto.TipClaimRequest;
 import edu.help.microservice.entity.Order;
@@ -146,45 +146,7 @@ public class OrderController {
     }
 
 
-    /**
-     * New endpoint to retrieve the total tips claimed by a bartender.
-     * It accepts a JSON payload of the form:
-     *     { "bartenderID": "A" }
-     * and returns a double (for example: 1.23).
-     */
-    @PostMapping("/getTips")
-    public ResponseEntity<Double> getTips(@RequestBody GetTipsRequest request) {
-        String bartenderID = request.getBartenderID();
-
-        // Validate that the bartenderID is a single uppercase letter A-Z.
-        if (bartenderID == null || !bartenderID.matches("^[A-Z]$")) {
-            System.err.println("Invalid bartenderID provided: " + bartenderID);
-            // Return a 400 Bad Request with a value of -2.0 (you may choose another error value).
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(-2.0);
-        }
-        try {
-            // Retrieve orders that have been claimed by this bartender.
-            List<Order> claimedOrders = orderService.getClaimedTipsByBartender(bartenderID);
-            if (claimedOrders == null || claimedOrders.isEmpty()) {
-                return ResponseEntity.ok(0.0);
-            }
-
-            // Filter out orders that did not use in-app payments (same as in claimTips).
-            claimedOrders.removeIf(order -> !order.isInAppPayments());
-
-            // Calculate the total tip amount.
-            double totalTipAmount = calculateTotalTipAmount(claimedOrders);
-            System.out.println("Total tip amount for bartender " + bartenderID + ": " + totalTipAmount);
-
-            return ResponseEntity.ok(totalTipAmount);
-        } catch (Exception e) {
-            System.err.println("Error in getTips: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(-2.0);
-        }
-    }
-
-
+    
     // Helper methods...
 
     private double calculateTotalTipAmount(List<Order> tipsList) {
@@ -226,86 +188,6 @@ public class OrderController {
 
         return emailContent.toString();
     }
-
-
-
-    /**
-     * New endpoint to retrieve the total tips claimed by a bartender.
-     * It accepts a JSON payload of the form:
-     *     { "bartenderID": "A" }
-     * and returns a double (for example: 1.23).
-     */
-    @PostMapping("/getTips")
-    public ResponseEntity<Double> getTips(@RequestBody GetTipsRequest request) {
-        String bartenderID = request.getBartenderID();
-
-        // Validate that the bartenderID is a single uppercase letter A-Z.
-        if (bartenderID == null || !bartenderID.matches("^[A-Z]$")) {
-            System.err.println("Invalid bartenderID provided: " + bartenderID);
-            // Return a 400 Bad Request with a value of -2.0 (you may choose another error value).
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(-2.0);
-        }
-        try {
-            // Retrieve orders that have been claimed by this bartender.
-            List<Order> claimedOrders = orderService.getClaimedTipsByBartender(bartenderID);
-            if (claimedOrders == null || claimedOrders.isEmpty()) {
-                return ResponseEntity.ok(0.0);
-            }
-
-            // Filter out orders that did not use in-app payments (same as in claimTips).
-            claimedOrders.removeIf(order -> !order.isInAppPayments());
-
-            // Calculate the total tip amount.
-            double totalTipAmount = calculateTotalTipAmount(claimedOrders);
-            System.out.println("Total tip amount for bartender " + bartenderID + ": " + totalTipAmount);
-
-            return ResponseEntity.ok(totalTipAmount);
-        } catch (Exception e) {
-            System.err.println("Error in getTips: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(-2.0);
-        }
-    }
-
-
-    /**
-     * New endpoint to retrieve the total tips claimed by a bartender.
-     * It accepts a JSON payload of the form:
-     *     { "bartenderID": "A" }
-     * and returns a double (for example: 1.23).
-     */
-    @PostMapping("/getTips")
-    public ResponseEntity<Double> getTips(@RequestBody GetTipsRequest request) {
-        String bartenderID = request.getBartenderID();
-
-        // Validate that the bartenderID is a single uppercase letter A-Z.
-        if (bartenderID == null || !bartenderID.matches("^[A-Z]$")) {
-            System.err.println("Invalid bartenderID provided: " + bartenderID);
-            // Return a 400 Bad Request with a value of -2.0 (you may choose another error value).
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(-2.0);
-        }
-        try {
-            // Retrieve orders that have been claimed by this bartender.
-            List<Order> claimedOrders = orderService.getClaimedTipsByBartender(bartenderID);
-            if (claimedOrders == null || claimedOrders.isEmpty()) {
-                return ResponseEntity.ok(0.0);
-            }
-
-            // Filter out orders that did not use in-app payments (same as in claimTips).
-            claimedOrders.removeIf(order -> !order.isInAppPayments());
-
-            // Calculate the total tip amount.
-            double totalTipAmount = calculateTotalTipAmount(claimedOrders);
-            System.out.println("Total tip amount for bartender " + bartenderID + ": " + totalTipAmount);
-
-            return ResponseEntity.ok(totalTipAmount);
-        } catch (Exception e) {
-            System.err.println("Error in getTips: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(-2.0);
-        }
-    }
-
 
 
     // Use your existing sendTipEmail method

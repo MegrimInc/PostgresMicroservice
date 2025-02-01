@@ -4,13 +4,13 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Properties;
 import java.util.Random;
 
-import edu.help.microservice.entity.Activity;
-import edu.help.microservice.service.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
@@ -31,14 +31,17 @@ import edu.help.microservice.dto.ResetPasswordConfirmRequest;
 import edu.help.microservice.dto.VerificationBarRequest;
 import edu.help.microservice.dto.VerificationRequest;
 import edu.help.microservice.dto.VerifyResetCodeRequest;
+import edu.help.microservice.entity.Activity;
 import edu.help.microservice.entity.Bar;
 import edu.help.microservice.entity.Customer;
 import edu.help.microservice.entity.SignUp;
+import edu.help.microservice.service.ActivityService;
+import edu.help.microservice.service.BarService;       // For "this hour"
+import edu.help.microservice.service.CustomerService; // If needed for logging
+import edu.help.microservice.service.SignUpService;
+import edu.help.microservice.service.StripeService;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
-
-import java.time.LocalDateTime;       // For "this hour"
-import java.time.format.DateTimeFormatter; // If needed for logging
 
 @RequiredArgsConstructor
 @RestController
@@ -99,7 +102,7 @@ public class NewSignUpController {
 
             // Check if we have an entry for (barIdInt, bartenderID, currentHour)
             if (!activityService.alreadyRecordedThisHour(barIdInt, bartenderID, currentHour)) {
-                Activit]y a1 = activityService.recordActivity(barIdInt, bartenderID, currentHour);
+                Activity a1 = activityService.recordActivity(barIdInt, bartenderID, currentHour);
                 String debugMessage = String.format("Recorded usage for bar %d, bartender %s at hour %s",
                         barIdInt, bartenderID, currentHour.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
                 if (a1.getActivityId() != null) {
