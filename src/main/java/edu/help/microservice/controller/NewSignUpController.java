@@ -99,7 +99,7 @@ public class NewSignUpController {
 
             // Check if we have an entry for (barIdInt, bartenderID, currentHour)
             if (!activityService.alreadyRecordedThisHour(barIdInt, bartenderID, currentHour)) {
-                Activity a1 = activityService.recordActivity(barIdInt, bartenderID, currentHour);
+                Activit]y a1 = activityService.recordActivity(barIdInt, bartenderID, currentHour);
                 String debugMessage = String.format("Recorded usage for bar %d, bartender %s at hour %s",
                         barIdInt, bartenderID, currentHour.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
                 if (a1.getActivityId() != null) {
