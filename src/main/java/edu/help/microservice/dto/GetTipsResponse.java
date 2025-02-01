@@ -1,13 +1,17 @@
 package edu.help.microservice.dto;
 
 public class GetTipsResponse {
-    private String bartenderID;
+    private double tipTotal;
 
-    public String getBartenderID() {
-        return bartenderID;
+    public GetTipsResponse(double tipTotal) {
+        this.tipTotal = tipTotal;
     }
 
-    public void setBartenderID(String bartenderID) {
-        this.bartenderID = bartenderID;
+    public double getTipTotal() {
+        return tipTotal;
+    }
+
+    public void setTipTotal(double tipTotal) {
+        this.tipTotal = tipTotal;
     }
 }

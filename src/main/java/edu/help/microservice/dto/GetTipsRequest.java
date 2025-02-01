@@ -1,3 +1,4 @@
+// src/main/java/edu/help/microservice/dto/GetTipsRequest.java
 package edu.help.microservice.dto;
 
 public class GetTipsRequest {
