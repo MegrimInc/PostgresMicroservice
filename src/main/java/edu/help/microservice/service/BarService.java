@@ -198,6 +198,8 @@ public class BarService {
                         .name(userName)
                         .build();
             }
+            //TODO: ADD LOGIC HERE FOR HANDLING SPECIFIC ENUM CASES RELATED TO CARD STATUS
+            
         }
 
         // Deduct the points
