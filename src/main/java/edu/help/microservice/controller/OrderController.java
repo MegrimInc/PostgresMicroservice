@@ -1,5 +1,6 @@
 package edu.help.microservice.controller;
 
+import edu.help.microservice.dto.GetTipsRequest;
 import edu.help.microservice.dto.GetTipsResponse;
 import edu.help.microservice.dto.OrderDTO;
 import edu.help.microservice.dto.TipClaimRequest;
@@ -59,7 +60,7 @@ public class OrderController {
         if (bartenderID == null || !bartenderID.matches("^[A-Z]$")) {
             System.err.println("Invalid bartenderID provided: " + bartenderID);
             // Here we return a 400 Bad Request. Alternatively, you could return a specific error tipTotal (e.g., -2.0).
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new GetTipsResponse(-2.0));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new GetTipsResponse(-1.0));
         }
         try {
             // Retrieve orders that have been claimed by this bartender.
