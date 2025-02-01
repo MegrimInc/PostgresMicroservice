@@ -56,6 +56,7 @@ public class OrderController {
     @PostMapping("/getTips")
     public ResponseEntity<GetTipsResponse> getTips(@RequestBody GetTipsRequest request) {
         String bartenderID = request.getBartenderID();
+        int barID = Integer.parseInt(request.getBarID());
         // Validate that the bartenderID is a single uppercase letter A-Z.
         if (bartenderID == null || !bartenderID.matches("^[A-Z]$")) {
             System.err.println("Invalid bartenderID provided: " + bartenderID);
@@ -65,7 +66,7 @@ public class OrderController {
         try {
             // Retrieve orders that have been claimed by this bartender.
             // (Assumes that orderService has a method like getClaimedTipsByBartender.)
-            List<Order> claimedOrders = orderService.getClaimedTipsByBartender(bartenderID);
+            List<Order> claimedOrders = orderService.getUnclaimedTips(barID, bartenderID);
             if (claimedOrders == null || claimedOrders.isEmpty()) {
                 return ResponseEntity.ok(new GetTipsResponse(0.0));
             }
