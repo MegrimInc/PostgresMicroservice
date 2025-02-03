@@ -4,17 +4,17 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 
+import com.stripe.model.Account;
+import com.stripe.model.PaymentIntent;
+import com.stripe.model.StripeError;
+import com.stripe.param.*;
 import com.stripe.param.billing.MeterEventCreateParams;
+import edu.help.microservice.exception.InvalidStripeChargeException;
 import org.springframework.stereotype.Service;
 
 import com.stripe.StripeClient;
 import com.stripe.exception.StripeException;
 import com.stripe.model.SetupIntent;
-import com.stripe.param.CustomerCreateParams;
-import com.stripe.param.CustomerUpdateParams;
-import com.stripe.param.PaymentIntentCreateParams;
-import com.stripe.param.PaymentMethodListParams;
-import com.stripe.param.SetupIntentCreateParams;
 
 import edu.help.microservice.dto.PaymentIdSetRequest;
 import edu.help.microservice.entity.Bar;
@@ -38,7 +38,7 @@ public class StripeService {
     private final BarRepository barRepository;
     private final SignUpRepository signUpRepository;
 
-    public void processOrder(double price, double tip, int customerId, int barId) throws StripeException {
+    public void processOrder(double price, double tip, int customerId, int barId) throws StripeException, InvalidStripeChargeException {
         Long priceInCents = Math.round(price * 100);
         Long tipInCents = Math.round(tip * 100);
 
@@ -60,9 +60,9 @@ public class StripeService {
 
     public void sendMeterEvent(Bar bar) throws StripeException {
         var params = MeterEventCreateParams.builder()
-                        .setEventName("venue")
-                        .putPayload("stripe_customer_id", bar.getSubId())
-                        .build();
+                .setEventName("venue")
+                .putPayload("stripe_customer_id", bar.getSubId())
+                .build();
 
         stripeClient.billing().meterEvents().create(params);
     }
@@ -77,12 +77,15 @@ public class StripeService {
         customer.setStripeId(stripeCustomer.getId());
     }
 
-    private void chargeCustomer(Bar bar, Customer customer, Long priceInCents) throws StripeException {
-        stripeClient.paymentIntents().create(
+    private void chargeCustomer(Bar bar, Customer customer, Long priceInCents) throws StripeException, InvalidStripeChargeException {
+        long fee = Math.round(priceInCents * 0.03) + 99;
+
+        PaymentIntent customerCharge = stripeClient.paymentIntents().create(
                 new PaymentIntentCreateParams.Builder()
                         .setAmount(priceInCents)
                         .setCurrency(CURRENCY_TYPE)
                         .setCustomer(customer.getStripeId())
+                        .setApplicationFeeAmount(fee)
                         .setAutomaticPaymentMethods(
                                 PaymentIntentCreateParams.AutomaticPaymentMethods
                                         .builder()
@@ -93,11 +96,14 @@ public class StripeService {
                         .setPaymentMethod(customer.getPaymentId())
                         .setTransferData(
                                 PaymentIntentCreateParams.TransferData.builder()
-                                        .setAmount(priceInCents)
                                         .setDestination(bar.getAccountId())
                                         .build())
                         .setConfirm(true)
                         .build());
+
+        if (!customerCharge.getStatus().equals("success")) {
+            throw new InvalidStripeChargeException(customerCharge.getStatus(), customer);
+        }
     }
 
     public void savePaymentId(PaymentIdSetRequest request) throws StripeException {
