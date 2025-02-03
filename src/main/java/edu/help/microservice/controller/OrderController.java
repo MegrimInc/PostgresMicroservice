@@ -53,10 +53,23 @@ public class OrderController {
      * and returns a JSON response of the form:
      *     { "tipTotal": 1.23 }
      */
-    @PostMapping("/getTips")
-    public ResponseEntity<GetTipsResponse> getTips(@RequestBody GetTipsRequest request) {
-        String bartenderID = request.getBartenderID();
-        int barID = Integer.parseInt(request.getBarID());
+    @GetMapping("/gettips")
+    public ResponseEntity<GetTipsResponse> getTips(
+            @RequestParam("bartenderID") String bartenderID,
+            @RequestParam("barID") String barIDStr) {
+        System.out.println("gettips");
+
+        // Convert barID from String to int
+        int barID;
+        try {
+            barID = Integer.parseInt(barIDStr);
+        } catch (NumberFormatException e) {
+            System.err.println("Invalid barID provided: " + barIDStr);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new GetTipsResponse(-1.0));
+        }
+
+        System.out.println("gettips for " + bartenderID + " " + barID);
         // Validate that the bartenderID is a single uppercase letter A-Z.
         if (bartenderID == null || !bartenderID.matches("^[A-Z]$")) {
             System.err.println("Invalid bartenderID provided: " + bartenderID);
@@ -68,6 +81,7 @@ public class OrderController {
             // (Assumes that orderService has a method like getClaimedTipsByBartender.)
             List<Order> claimedOrders = orderService.getUnclaimedTips(barID, bartenderID);
             if (claimedOrders == null || claimedOrders.isEmpty()) {
+System.out.println("gettips NULL / empty");
                 return ResponseEntity.ok(new GetTipsResponse(0.0));
             }
 
