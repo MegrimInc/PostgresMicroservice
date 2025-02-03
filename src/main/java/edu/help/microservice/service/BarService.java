@@ -197,9 +197,18 @@ public class BarService {
                         .drinks(drinkOrderResponses)
                         .name(userName)
                         .build();
+            } catch (InvalidStripeChargeException exception) {
+                System.out.println(exception.getMessage());
+                return OrderResponse.builder()
+                        .message("Customer payment error")
+                        .messageType("error")
+                        .tip(tipAmount)
+                        .totalPrice(totalMoneyPrice)
+                        .totalPointPrice(totalPointsPrice)
+                        .drinks(drinkOrderResponses)
+                        .name(userName)
+                        .build();
             }
-            //TODO: ADD LOGIC HERE FOR HANDLING SPECIFIC ENUM CASES RELATED TO CARD STATUS
-            
         }
 
         // Deduct the points
