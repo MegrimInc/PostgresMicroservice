@@ -78,7 +78,7 @@ public class StripeService {
     }
 
     private void chargeCustomer(Bar bar, Customer customer, Long priceInCents) throws StripeException, InvalidStripeChargeException {
-        long fee = Math.round(priceInCents * 0.03) + 99;
+        long fee = Math.round(priceInCents * 0.03) + 60;
 
         PaymentIntent customerCharge = stripeClient.paymentIntents().create(
                 new PaymentIntentCreateParams.Builder()
