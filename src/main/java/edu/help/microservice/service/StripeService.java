@@ -1,20 +1,20 @@
 package edu.help.microservice.service;
 
-import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 
-import com.stripe.model.Account;
-import com.stripe.model.PaymentIntent;
-import com.stripe.model.StripeError;
-import com.stripe.param.*;
-import com.stripe.param.billing.MeterEventCreateParams;
-import edu.help.microservice.exception.InvalidStripeChargeException;
 import org.springframework.stereotype.Service;
 
 import com.stripe.StripeClient;
 import com.stripe.exception.StripeException;
+import com.stripe.model.PaymentIntent;
 import com.stripe.model.SetupIntent;
+import com.stripe.param.CustomerCreateParams;
+import com.stripe.param.CustomerUpdateParams;
+import com.stripe.param.PaymentIntentCreateParams;
+import com.stripe.param.PaymentMethodListParams;
+import com.stripe.param.SetupIntentCreateParams;
+import com.stripe.param.billing.MeterEventCreateParams;
 
 import edu.help.microservice.dto.PaymentIdSetRequest;
 import edu.help.microservice.entity.Bar;
@@ -23,6 +23,7 @@ import edu.help.microservice.entity.SignUp;
 import edu.help.microservice.exception.BarNotFoundException;
 import edu.help.microservice.exception.CustomerNotFoundException;
 import edu.help.microservice.exception.CustomerStripeIdNotMachingException;
+import edu.help.microservice.exception.InvalidStripeChargeException;
 import edu.help.microservice.repository.BarRepository;
 import edu.help.microservice.repository.CustomerRepository;
 import edu.help.microservice.repository.SignUpRepository;
@@ -101,7 +102,7 @@ public class StripeService {
                         .setConfirm(true)
                         .build());
 
-        if (!customerCharge.getStatus().equals("success")) {
+        if (!customerCharge.getStatus().equals("succeeded")) {
             throw new InvalidStripeChargeException(customerCharge.getStatus(), customer);
         }
     }
