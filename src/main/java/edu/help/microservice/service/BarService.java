@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import edu.help.microservice.exception.InvalidStripeChargeException;
 import org.springframework.stereotype.Service;
 
 import com.stripe.exception.StripeException;
@@ -18,6 +17,7 @@ import edu.help.microservice.dto.OrderRequest;
 import edu.help.microservice.dto.OrderResponse;
 import edu.help.microservice.entity.Bar;
 import edu.help.microservice.entity.Drink;
+import edu.help.microservice.exception.InvalidStripeChargeException;
 import edu.help.microservice.repository.BarRepository;
 import edu.help.microservice.repository.DrinkRepository;
 import edu.help.microservice.util.DTOConverter;
@@ -85,7 +85,6 @@ public class BarService {
         return barRepository.save(bar);
     }
 
-
     /**
      * Sets the startDate column for a given bar, using our custom native query.
      *
@@ -121,7 +120,7 @@ public class BarService {
 
             String sizeType = drinkOrderRequest.getSizeType();
             if (sizeType == null || sizeType.isEmpty()) {
-                sizeType = "";  // Treat null or empty as no size specified
+                sizeType = ""; // Treat null or empty as no size specified
             }
 
             // Build the response for each drink
@@ -132,8 +131,7 @@ public class BarService {
                             .paymentType(drinkOrderRequest.getPaymentType())
                             .sizeType(sizeType)
                             .quantity(drinkOrderRequest.getQuantity())
-                            .build()
-            );
+                            .build());
 
             // Count total drinks
             totalDrinkQuantity += drinkOrderRequest.getQuantity();
@@ -190,7 +188,8 @@ public class BarService {
                 // Log Stripe exception
                 System.out.println("Stripe error: " + exception.getMessage());
                 return OrderResponse.builder()
-                        .message("Stripe error")
+                        .message(
+                                "There was an issue processing your payment. Please check your card details or try another payment method.")
                         .messageType("error")
                         .tip(tipAmount)
                         .totalPrice(totalMoneyPrice)

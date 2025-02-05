@@ -4,14 +4,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import edu.help.microservice.entity.Order;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import edu.help.microservice.entity.Customer;
+import edu.help.microservice.entity.Order;
 import edu.help.microservice.repository.CustomerRepository;
+import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @Service
@@ -21,7 +19,7 @@ public class PointService {
     private final CustomerRepository customerRepository;
 
     public boolean customerHasRequiredBalance(int needed, int customerId, int barId) {
-        int customerPoints = getPointsAtBar(customerId, barId);;
+        int customerPoints = getPointsAtBar(customerId, barId);
         return needed <= customerPoints;
     }
 

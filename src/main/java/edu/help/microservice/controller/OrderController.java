@@ -1,6 +1,24 @@
 package edu.help.microservice.controller;
 
-import edu.help.microservice.dto.GetTipsRequest;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Properties;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import edu.help.microservice.dto.GetTipsResponse;
 import edu.help.microservice.dto.OrderDTO;
 import edu.help.microservice.dto.TipClaimRequest;
@@ -9,20 +27,6 @@ import edu.help.microservice.service.BarService;
 import edu.help.microservice.service.OrderService;
 import edu.help.microservice.service.SignUpService;
 import jakarta.mail.internet.MimeMessage;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.mail.javamail.JavaMailSenderImpl;
-import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.web.bind.annotation.*;
-
-import java.time.Instant;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.ZoneId;
-import java.util.List;
-import java.util.Properties;
 
 @RestController
 @RequestMapping("/orders")
@@ -81,7 +85,7 @@ public class OrderController {
             // (Assumes that orderService has a method like getClaimedTipsByBartender.)
             List<Order> claimedOrders = orderService.getUnclaimedTips(barID, bartenderID);
             if (claimedOrders == null || claimedOrders.isEmpty()) {
-System.out.println("gettips NULL / empty");
+            System.out.println("gettips NULL / empty");
                 return ResponseEntity.ok(new GetTipsResponse(0.0));
             }
 
