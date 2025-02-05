@@ -200,7 +200,7 @@ public class BarService {
             } catch (InvalidStripeChargeException exception) {
                 System.out.println(exception.getMessage());
                 return OrderResponse.builder()
-                        .message("Customer payment error")
+                        .message("There was an issue processing your payment. Please check your card details or try another payment method.")
                         .messageType("error")
                         .tip(tipAmount)
                         .totalPrice(totalMoneyPrice)
