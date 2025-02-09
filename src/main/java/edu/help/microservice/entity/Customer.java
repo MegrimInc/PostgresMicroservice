@@ -55,4 +55,8 @@ public class Customer {
 
     @Column(name = "payment_id", nullable = true)
     private String paymentId;
+
+    @Type(JsonType.class)
+    @Column(name = "subscription", columnDefinition = "jsonb")
+    private Map<Integer, SubscriptionInfo> subscription = new HashMap<>();
 }

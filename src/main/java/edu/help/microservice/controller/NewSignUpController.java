@@ -7,10 +7,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.Base64;
-import java.util.Properties;
-import java.util.Random;
+import java.util.*;
 
+import edu.help.microservice.entity.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
@@ -31,10 +30,6 @@ import edu.help.microservice.dto.ResetPasswordConfirmRequest;
 import edu.help.microservice.dto.VerificationBarRequest;
 import edu.help.microservice.dto.VerificationRequest;
 import edu.help.microservice.dto.VerifyResetCodeRequest;
-import edu.help.microservice.entity.Activity;
-import edu.help.microservice.entity.Bar;
-import edu.help.microservice.entity.Customer;
-import edu.help.microservice.entity.SignUp;
 import edu.help.microservice.service.ActivityService;
 import edu.help.microservice.service.BarService;       // For "this hour"
 import edu.help.microservice.service.CustomerService; // If needed for logging
@@ -54,6 +49,65 @@ public class NewSignUpController {
     private final BarService barService;
     private final StripeService stripeService;
     private final ActivityService activityService;
+
+
+
+    @PostMapping("/subscriptionChange")
+    public ResponseEntity<String> subscriptionChange(
+            @RequestParam("userId") Integer userId,
+            @RequestParam("barId") Integer barId,
+            @RequestParam("subscribe") boolean subscribe) {
+
+        // Retrieve the customer using your customerService (assumes you have findById method)
+        Optional<Customer> customer2 = customerService.findById(userId);
+        if (customer2.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Customer not found");
+        }
+        Customer customer = customer2.get();
+
+        // Retrieve the subscription map from the customer entity.
+        // This map uses bar IDs as keys and SubscriptionInfo objects as values.
+        Map<Integer, SubscriptionInfo> subscriptions = customer.getSubscription();
+        if (subscriptions == null) {
+            subscriptions = new HashMap<>();
+            
+            customer.setSubscription(subscriptions);
+        }
+
+        // Retrieve the SubscriptionInfo for the given barId; create a default if not found.
+        SubscriptionInfo subscriptionInfo = subscriptions.get(barId);
+        if (subscriptionInfo == null) {
+            subscriptionInfo = new SubscriptionInfo();
+            
+            
+            // TODO: Update values, update whatever updates users points to use SUB column instead of points column
+            subscriptionInfo.setIsSubscribed(false);
+            subscriptionInfo.setRenewalDate(null);
+            subscriptionInfo.setPoints(0);
+            
+            
+            subscriptions.put(barId, subscriptionInfo);
+        }
+
+
+        
+        // Update subscription info based on the subscribe flag.
+        if (subscribe) {
+            subscriptionInfo.setIsSubscribed(true);
+            subscriptionInfo.setRenewalDate(LocalDate.now().plusDays(30));
+            
+            // TODO: STRIPE LOGIC
+        } else {
+            subscriptionInfo.setIsSubscribed(false);
+            
+        }
+
+        // Save the updated customer record.
+        customerService.save(customer);
+
+        return ResponseEntity.ok("Subscription updated successfully");
+    }
+
 
     /**
      * The pay-to-use "heartbeat" call from the frontend.
