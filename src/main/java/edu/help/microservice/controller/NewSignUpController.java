@@ -82,7 +82,6 @@ public class NewSignUpController {
             
             // TODO: Update values, update whatever updates users points to use SUB column instead of points column
             subscriptionInfo.setIsSubscribed(false);
-            subscriptionInfo.setRenewalDate(null);
             subscriptionInfo.setPoints(0);
             
             
@@ -94,7 +93,6 @@ public class NewSignUpController {
         // Update subscription info based on the subscribe flag.
         if (subscribe) {
             subscriptionInfo.setIsSubscribed(true);
-            subscriptionInfo.setRenewalDate(LocalDate.now().plusDays(30));
             
             // TODO: STRIPE LOGIC
         } else {
