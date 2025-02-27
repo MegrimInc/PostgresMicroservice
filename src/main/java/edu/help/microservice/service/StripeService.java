@@ -79,14 +79,15 @@ public class StripeService {
     }
 
     private void chargeCustomer(Bar bar, Customer customer, Long priceInCents) throws StripeException, InvalidStripeChargeException {
-        long fee = Math.round(priceInCents * 0.04) + 60;
+        long serviceFeeCents = Math.round(priceInCents * 0.04) + 40;
+        long totalChargeCents = priceInCents + serviceFeeCents;
 
         PaymentIntent customerCharge = stripeClient.paymentIntents().create(
                 new PaymentIntentCreateParams.Builder()
-                        .setAmount(priceInCents)
+                        .setAmount(totalChargeCents)
                         .setCurrency(CURRENCY_TYPE)
                         .setCustomer(customer.getStripeId())
-                        .setApplicationFeeAmount(fee)
+                        .setApplicationFeeAmount(serviceFeeCents)
                         .setAutomaticPaymentMethods(
                                 PaymentIntentCreateParams.AutomaticPaymentMethods
                                         .builder()
