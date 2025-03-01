@@ -7,9 +7,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.Random;
 
-import edu.help.microservice.entity.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
@@ -27,12 +31,17 @@ import edu.help.microservice.dto.AcceptTOSRequest;
 import edu.help.microservice.dto.AcceptTOSRequest2;
 import edu.help.microservice.dto.LoginRequest;
 import edu.help.microservice.dto.ResetPasswordConfirmRequest;
-import edu.help.microservice.dto.VerificationBarRequest;
-import edu.help.microservice.dto.VerificationRequest;
+import edu.help.microservice.dto.VerificationBarRequest;       // For "this hour"
+import edu.help.microservice.dto.VerificationRequest; // If needed for logging
 import edu.help.microservice.dto.VerifyResetCodeRequest;
+import edu.help.microservice.entity.Activity;
+import edu.help.microservice.entity.Bar;
+import edu.help.microservice.entity.Customer;
+import edu.help.microservice.entity.SignUp;
+import edu.help.microservice.entity.SubscriptionInfo;
 import edu.help.microservice.service.ActivityService;
-import edu.help.microservice.service.BarService;       // For "this hour"
-import edu.help.microservice.service.CustomerService; // If needed for logging
+import edu.help.microservice.service.BarService;
+import edu.help.microservice.service.CustomerService;
 import edu.help.microservice.service.SignUpService;
 import edu.help.microservice.service.StripeService;
 import jakarta.mail.internet.MimeMessage;
@@ -49,8 +58,6 @@ public class NewSignUpController {
     private final BarService barService;
     private final StripeService stripeService;
     private final ActivityService activityService;
-
-
 
     @PostMapping("/subscriptionChange")
     public ResponseEntity<String> subscriptionChange(
@@ -70,7 +77,7 @@ public class NewSignUpController {
         Map<Integer, SubscriptionInfo> subscriptions = customer.getSubscription();
         if (subscriptions == null) {
             subscriptions = new HashMap<>();
-            
+
             customer.setSubscription(subscriptions);
         }
 
@@ -78,26 +85,22 @@ public class NewSignUpController {
         SubscriptionInfo subscriptionInfo = subscriptions.get(barId);
         if (subscriptionInfo == null) {
             subscriptionInfo = new SubscriptionInfo();
-            
-            
+
             // TODO: Update values, update whatever updates users points to use SUB column instead of points column
             subscriptionInfo.setIsSubscribed(false);
             subscriptionInfo.setPoints(0);
-            
-            
+
             subscriptions.put(barId, subscriptionInfo);
         }
 
-
-        
         // Update subscription info based on the subscribe flag.
         if (subscribe) {
             subscriptionInfo.setIsSubscribed(true);
-            
+
             // TODO: STRIPE LOGIC
         } else {
             subscriptionInfo.setIsSubscribed(false);
-            
+
         }
 
         // Save the updated customer record.
@@ -105,7 +108,6 @@ public class NewSignUpController {
 
         return ResponseEntity.ok("Subscription updated successfully");
     }
-
 
     /**
      * The pay-to-use "heartbeat" call from the frontend.
@@ -115,7 +117,7 @@ public class NewSignUpController {
      */
     @PostMapping("/heartbeat")
     public ResponseEntity<String> heartbeat(@RequestParam("barId") String barID,
-                                            @RequestParam("bartenderId") String bartenderID) {
+            @RequestParam("bartenderId") String bartenderID) {
         System.out.println("heartbeat initiated for bar " + barID);
         try {
             int barIdInt = Integer.parseInt(barID);
@@ -170,9 +172,11 @@ public class NewSignUpController {
                 return ResponseEntity.ok("Usage for this hour was already recorded. Nothing to do.");
             }
         } catch (Exception e) {
-            System.out.println("heartbeat: failed with stacktrace: " + e.getStackTrace() + " and also this: " + e.getCause() + " anddddd this... : " + e.getMessage());
+            System.out.println("heartbeat: failed with stacktrace: " + e.getStackTrace() + " and also this: "
+                    + e.getCause() + " anddddd this... : " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("heartbeat: failed with stacktrace: " + e.getStackTrace() + " and also this: " + e.getCause() + " anddddd this... : " + e.getMessage());
+                    .body("heartbeat: failed with stacktrace: " + e.getStackTrace() + " and also this: " + e.getCause()
+                            + " anddddd this... : " + e.getMessage());
         }
     }
 
@@ -285,7 +289,7 @@ public class NewSignUpController {
             System.out.println("    Status Code: " + e.getStatusCode());
             System.out.println("    Type: " + e.getCause());
             System.out.println("    Request ID: " + e.getRequestId());
-            e.printStackTrace();  // Prints the full stack trace for further diagnosis
+            e.printStackTrace(); // Prints the full stack trace for further diagnosis
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error creating Stripe customer");
         }
@@ -294,6 +298,17 @@ public class NewSignUpController {
         customerService.save(customer);
         newSignUp.setCustomer(customer);
         signUpService.save(newSignUp);
+
+        //TODO: REMOVE THIS WHENEVER WERE NOT DOING PROMOTION 
+        Map<Integer, Map<Integer, Integer>> pointsMap = customer.getPoints();
+        if (pointsMap == null) {
+            pointsMap = new HashMap<>();
+            customer.setPoints(pointsMap);
+        }
+        Map<Integer, Integer> userPoints = pointsMap.getOrDefault(customer.getCustomerID(), new HashMap<>());
+        userPoints.put(95, 150); // Assign 150 points for bar id 95
+        pointsMap.put(customer.getCustomerID(), userPoints);
+        customerService.save(customer);
 
         // Return the customer ID as a string
         return ResponseEntity.ok(String.valueOf(customer.getCustomerID()));
