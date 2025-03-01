@@ -14,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Service
 public class PointService {
-    private static final int DRINK_QUANTITY_MULTIPLIER = 75;
 
     private final CustomerRepository customerRepository;
 
@@ -40,19 +39,6 @@ public class PointService {
         customerRepository.save(customerOpt.get());
     }
 
-    public void rewardCustomer(int drinkQuantity, int customerId, int barId) {
-        Optional<Customer> customerOpt = customerRepository.findById(customerId);
-        if (customerOpt.isEmpty())
-            return;
-
-        var pointsMap = getPointsForCustomer(customerId);
-        if (pointsMap == null)
-            return;
-
-        pointsMap.put(barId, pointsMap.get(barId) + drinkQuantity * DRINK_QUANTITY_MULTIPLIER);
-        customerRepository.save(customerOpt.get());
-    }
-
     public Map<Integer, Map<Integer, Integer>> getPointsForCustomerTempForEndpoint(int userId) {
         Optional<Customer> customerOpt = customerRepository.findById(userId);
         return customerOpt.map(Customer::getPoints).orElse(null);
@@ -73,13 +59,24 @@ public class PointService {
     }
 
     public void rewardPointsForOrder(Order order) {
-        if (!order.isInAppPayments() && order.getStatus().equals("canceled"))
+
+        Optional<Customer> customerOpt = customerRepository.findById(order.getUserId());
+        if (customerOpt.isEmpty())
             return;
 
-        int totalDrinkQuantity = 0;
-        for (Order.DrinkOrder drinkOrder : order.getDrinks())
-            totalDrinkQuantity += drinkOrder.getQuantity();
-        rewardCustomer(totalDrinkQuantity, order.getUserId(), order.getBarId());
+        var pointsMap = getPointsForCustomer(order.getUserId());
+        if (pointsMap == null)
+            return;
+
+        if (order.getTotalRegularPrice() <= 0) {
+            return;
+        }
+
+        double pointsExact = order.getTotalRegularPrice() * 10;
+        int rewardPoints = (int) Math.round(pointsExact);
+
+        pointsMap.put(order.getBarId(), pointsMap.get(order.getBarId()) + rewardPoints);
+        customerRepository.save(customerOpt.get());
     }
 
     private int getPointsAtBar(int customerId, int barId) {
