@@ -72,7 +72,7 @@ public class PointService {
             return;
         }
 
-        double pointsExact = order.getTotalRegularPrice() * 10;
+        double pointsExact = order.getTotalRegularPrice() * 10 * 1.2;
         int rewardPoints = (int) Math.round(pointsExact);
 
         pointsMap.put(order.getBarId(), pointsMap.get(order.getBarId()) + rewardPoints);
