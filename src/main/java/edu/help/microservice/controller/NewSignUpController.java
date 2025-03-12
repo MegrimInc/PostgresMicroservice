@@ -1,5 +1,6 @@
 package edu.help.microservice.controller;
 
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
@@ -14,6 +15,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
 
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
@@ -25,10 +27,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+
 import com.stripe.exception.StripeException;
+
 
 import edu.help.microservice.dto.AcceptTOSRequest;
 import edu.help.microservice.dto.AcceptTOSRequest2;
+import edu.help.microservice.dto.BarRegistrationRequest;
 import edu.help.microservice.dto.LoginRequest;
 import edu.help.microservice.dto.ResetPasswordConfirmRequest;
 import edu.help.microservice.dto.VerificationBarRequest;       // For "this hour"
@@ -47,23 +52,90 @@ import edu.help.microservice.service.StripeService;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 
+
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/newsignup")
 public class NewSignUpController {
     private static final String SECRET_KEY = "YourSecretKey";
 
+
     private final SignUpService signUpService;
     private final CustomerService customerService;
     private final BarService barService;
     private final StripeService stripeService;
     private final ActivityService activityService;
+//BAR REGISTRATION/LOGIN STUFF HERE
+///________________________________________________________________
+@PostMapping("/registerbar")
+public ResponseEntity<String> registerBar(@RequestBody BarRegistrationRequest req) {
+    // 1) Check if there's already a SignUp record with this email
+    SignUp existingSignUp = signUpService.findByEmail(req.getEmail());
+    if (existingSignUp != null) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                             .body("Email already in use");
+    }
+
+
+    // 2) Create the SignUp record
+    SignUp newSignUp = new SignUp();
+    newSignUp.setEmail(req.getEmail());
+    newSignUp.setIsBar(true);
+   
+    // Hash and store the password
+    try {
+        String hashedPassword = hash(req.getPassword());
+        newSignUp.setPasscode(hashedPassword);
+    } catch (NoSuchAlgorithmException e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                             .body("Error hashing password");
+    }
+
+
+    // 3) Create the Bar entity
+    Bar bar = new Bar();
+    bar.setBarEmail(req.getEmail());
+    bar.setBarName(req.getCompanyName());
+    bar.setBarTag(req.getCompanyNickname());
+    bar.setBarCountry(req.getCountry());
+    bar.setBarState(req.getRegion());
+    bar.setBarCity(req.getCity());
+    bar.setBarAddress(req.getAddress());
+   
+    // Combine open & close time into openHours, or adapt as needed
+    bar.setOpenHours(req.getOpenTime() + " - " + req.getCloseTime());
+   
+    // Set optional fields to null or defaults
+    bar.setAccountId(null);
+    bar.setSubId(null);
+    bar.setRewardsSubId(null);
+    bar.setHappyHourTimes(null);  // or an empty Map
+    bar.setStartDate(null);
+    bar.setTagImage("");
+    bar.setBarImage("");
+
+
+    // 4) Link Bar to SignUp
+    newSignUp.setBar(bar);
+
+
+    // 5) Save everything
+    signUpService.save(newSignUp); // Cascade = ALL should save Bar automatically
+
+
+    // 6) Return the negative Bar ID
+    return ResponseEntity.ok("-" + bar.getBarId());
+}
+
+
+
 
     @PostMapping("/subscriptionChange")
     public ResponseEntity<String> subscriptionChange(
             @RequestParam("userId") Integer userId,
             @RequestParam("barId") Integer barId,
             @RequestParam("subscribe") boolean subscribe) {
+
 
         // Retrieve the customer using your customerService (assumes you have findById method)
         Optional<Customer> customer2 = customerService.findById(userId);
@@ -72,42 +144,53 @@ public class NewSignUpController {
         }
         Customer customer = customer2.get();
 
+
         // Retrieve the subscription map from the customer entity.
         // This map uses bar IDs as keys and SubscriptionInfo objects as values.
         Map<Integer, SubscriptionInfo> subscriptions = customer.getSubscription();
         if (subscriptions == null) {
             subscriptions = new HashMap<>();
 
+
             customer.setSubscription(subscriptions);
         }
+
 
         // Retrieve the SubscriptionInfo for the given barId; create a default if not found.
         SubscriptionInfo subscriptionInfo = subscriptions.get(barId);
         if (subscriptionInfo == null) {
             subscriptionInfo = new SubscriptionInfo();
 
+
             // TODO: Update values, update whatever updates users points to use SUB column instead of points column
             subscriptionInfo.setIsSubscribed(false);
             subscriptionInfo.setPoints(0);
 
+
             subscriptions.put(barId, subscriptionInfo);
         }
+
 
         // Update subscription info based on the subscribe flag.
         if (subscribe) {
             subscriptionInfo.setIsSubscribed(true);
 
+
             // TODO: STRIPE LOGIC
         } else {
             subscriptionInfo.setIsSubscribed(false);
 
+
         }
+
 
         // Save the updated customer record.
         customerService.save(customer);
 
+
         return ResponseEntity.ok("Subscription updated successfully");
     }
+
 
     /**
      * The pay-to-use "heartbeat" call from the frontend.
@@ -128,16 +211,20 @@ public class NewSignUpController {
                         .body("No bar found with ID " + barID);
             }
 
+
             System.out.println("heartbeat: Bar Found");
+
 
             // 1) If bar.startDate is null, set it and stop
             if (bar.getStartDate() == null) {
+
 
                 System.out.println("heartbeat: attempting startdate setting.");
                 barService.setStartDate(barIdInt, LocalDate.now());
                 System.out.println("heartbeat: Started free trial");
                 return ResponseEntity.ok("startDate was null, now set to today. Done.");
             }
+
 
             // 2) Check how long ago startDate was
             LocalDate startDate = bar.getStartDate();
@@ -148,11 +235,13 @@ public class NewSignUpController {
                 return ResponseEntity.ok("Within 30-day free trial. Done.");
             }
 
+
             // 3) In paid territory
             LocalDateTime currentHour = LocalDateTime.now()
                     .withMinute(0)
                     .withSecond(0)
                     .withNano(0);
+
 
             // Check if we have an entry for (barIdInt, bartenderID, currentHour)
             if (!activityService.alreadyRecordedThisHour(barIdInt, bartenderID, currentHour)) {
@@ -161,6 +250,7 @@ public class NewSignUpController {
                         barIdInt, bartenderID, currentHour.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
                 if (a1.getActivityId() != null) {
                     System.out.println("heartbeat: Recorded: " + debugMessage);
+
 
                     System.out.println("Attempting stripe charge");
                     stripeService.sendMeterEvent(bar);
@@ -180,11 +270,13 @@ public class NewSignUpController {
         }
     }
 
+
     // ENDPOINT #2: Resend verification code
     @PostMapping("/send-verification")
     public ResponseEntity<String> sendVerification(@RequestBody AcceptTOSRequest request) {
         String email = request.getEmail();
         SignUp signUp = signUpService.findByEmail(email);
+
 
         if (signUp != null) {
             String verificationCode = generateVerificationCode();
@@ -203,6 +295,7 @@ public class NewSignUpController {
         }
     }
 
+
     // ENDPOINT #3: Verification for Customer
     @PostMapping("/verify")
     public ResponseEntity<String> verify(@RequestBody VerificationRequest verificationRequest) {
@@ -212,7 +305,9 @@ public class NewSignUpController {
         String firstName = verificationRequest.getFirstName();
         String lastName = verificationRequest.getLastName();
 
+
         SignUp signUp = signUpService.findByEmail(email);
+
 
         if (signUp != null && signUp.getCustomer() == null) {
             if (isVerificationCodeExpired(signUp.getExpiryTimestamp())) {
@@ -227,18 +322,23 @@ public class NewSignUpController {
                     customer.setFirstName(firstName);
                     customer.setLastName(lastName);
 
+
                     // Hash the password and set passcode
                     String hashedPassword = hash(password);
                     signUp.setPasscode(hashedPassword);
+
 
                     // Clear the verification code and expiry timestamp
                     signUp.setVerificationCode(null);
                     signUp.setExpiryTimestamp(null);
 
+
                     customerService.save(customer); // Save customer
+
 
                     signUp.setCustomer(customer);
                     signUpService.save(signUp); // Save sign-up details with linked customer
+
 
                     // Return customerID
                     return ResponseEntity.ok(customer.getCustomerID().toString());
@@ -254,22 +354,27 @@ public class NewSignUpController {
         }
     }
 
+
     @PostMapping("/register2")
     public ResponseEntity<String> register(@RequestBody AcceptTOSRequest2 request) {
         String email = request.getEmail();
         SignUp existingSignUp = signUpService.findByEmail(email);
 
+
         if (existingSignUp != null)
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
+
 
         // Create new sign-up and customer
         SignUp newSignUp = new SignUp();
         newSignUp.setEmail(email);
         newSignUp.setIsBar(false);
 
+
         Customer customer = new Customer();
         customer.setFirstName(request.getFirstName());
         customer.setLastName(request.getLastName());
+
 
         // Hash and store the password immediately
         try {
@@ -279,6 +384,7 @@ public class NewSignUpController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error hashing password");
         }
+
 
         // Create Stripe customer and save the customer ID
         try {
@@ -294,12 +400,14 @@ public class NewSignUpController {
                     .body("Error creating Stripe customer");
         }
 
+
         // Save customer and link with sign-up
         customerService.save(customer);
         newSignUp.setCustomer(customer);
         signUpService.save(newSignUp);
 
-        //TODO: REMOVE THIS WHENEVER WERE NOT DOING PROMOTION 
+
+        //TODO: REMOVE THIS WHENEVER WERE NOT DOING PROMOTION
         Map<Integer, Map<Integer, Integer>> pointsMap = customer.getPoints();
         if (pointsMap == null) {
             pointsMap = new HashMap<>();
@@ -310,9 +418,11 @@ public class NewSignUpController {
         pointsMap.put(customer.getCustomerID(), userPoints);
         customerService.save(customer);
 
+
         // Return the customer ID as a string
         return ResponseEntity.ok(String.valueOf(customer.getCustomerID()));
     }
+
 
     // ENDPOINT: Verify Bar Registration
     @PostMapping("/verify/bar")
@@ -321,7 +431,9 @@ public class NewSignUpController {
         String verificationCode = verificationRequest.getVerificationCode();
         String password = verificationRequest.getPassword();
 
+
         SignUp signUp = signUpService.findByEmail(email);
+
 
         if (signUp != null && signUp.getBar() == null && signUp.getIsBar()) {
             if (isVerificationCodeExpired(signUp.getExpiryTimestamp())) {
@@ -344,18 +456,23 @@ public class NewSignUpController {
                     bar.setBarImage(""); // Set default or handle accordingly
                     bar.setOpenHours(verificationRequest.getOpenTime() + " - " + verificationRequest.getCloseTime());
 
+
                     // Hash the password and set passcode
                     String hashedPassword = hash(password);
                     signUp.setPasscode(hashedPassword);
+
 
                     // Clear the verification code and expiry timestamp
                     signUp.setVerificationCode(null);
                     signUp.setExpiryTimestamp(null);
 
+
                     barService.save(bar); // Save the Bar entity
+
 
                     signUp.setBar(bar); // Associate the Bar with SignUp
                     signUpService.save(signUp); // Save SignUp with the associated Bar
+
 
                     // Return negative Bar ID to differentiate from customer IDs
                     return ResponseEntity.ok("-" + bar.getBarId().toString());
@@ -371,11 +488,13 @@ public class NewSignUpController {
         }
     }
 
+
     // ENDPOINT #4: Accept terms of service
     @PostMapping("/accept-tos")
     public ResponseEntity<String> acceptTOS(@RequestBody AcceptTOSRequest request) {
         String email = request.getEmail();
         SignUp signUp = signUpService.findByEmail(email);
+
 
         if (signUp != null && signUp.getCustomer() != null) {
             Customer customer = signUp.getCustomer();
@@ -387,13 +506,16 @@ public class NewSignUpController {
         }
     }
 
+
     // ENDPOINT #5: Login with email and password
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
         String email = loginRequest.getEmail();
         String password = loginRequest.getPassword();
 
+
         SignUp signUp = signUpService.findByEmail(email);
+
 
         if (signUp != null) {
             try {
@@ -422,6 +544,7 @@ public class NewSignUpController {
         }
     }
 
+
     // ENDPOINT: Delete Account
     @PostMapping("/deleteaccount")
     public ResponseEntity<String> deleteAccount(@RequestBody LoginRequest loginRequest) {
@@ -429,9 +552,11 @@ public class NewSignUpController {
         String password = loginRequest.getPassword();
         SignUp signUp = signUpService.findByEmail(email);
 
+
         if (signUp != null) {
             try {
                 String hashedPassword = hash(password);
+
 
                 // Verify the password
                 if (signUp.getPasscode() != null && signUp.getPasscode().equals(hashedPassword)) {
@@ -465,6 +590,7 @@ public class NewSignUpController {
         }
     }
 
+
     // Helper methods
     private String generateVerificationCode() {
         // Generate a 6-digit random verification code
@@ -472,14 +598,18 @@ public class NewSignUpController {
         return String.format("%06d", rand.nextInt(999999));
     }
 
+
     private void sendVerificationEmail(String email, String code, String title) {
         JavaMailSenderImpl test = new JavaMailSenderImpl();
+
 
         test.setHost("email-smtp.us-east-1.amazonaws.com");
         test.setPort(587);
 
+
         test.setUsername("AKIARKMXJUVKGK3ZC6FH");
         test.setPassword("BJ0EwGiCXsXWcZT2QSI5eR+5yFzbimTnquszEXPaEXsd");
+
 
         Properties props = test.getJavaMailProperties();
         props.put("mail.transport.protocol", "smtp");
@@ -487,28 +617,34 @@ public class NewSignUpController {
         props.put("mail.smtp.starttls.enable", "true");
         props.put("mail.debug", "true");
 
+
         try {
             // Create a MimeMessage
             MimeMessage message = test.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
+
 
             // Set the basic email attributes
             helper.setTo(email);
             helper.setFrom("noreply@barzzy.site");
             helper.setSubject("Barzzy Verification Code - " + title);
 
+
             // Generate hash for the email
             String unsubscribeHash = generateHash(email);
             String unsubscribeUrl = "https://www.barzzy.site/signup/unsubscribe?email=" + email + "&hash="
                     + unsubscribeHash;
+
 
             // HTML content with clickable link
             String htmlContent = "<p>Your verification code is: <strong>" + code + "</strong>.</p>"
                     + "<p>If you did not wish to receive this email, click here to <a href='" + unsubscribeUrl
                     + "'>unsubscribe from all emails</a>.</p>";
 
+
             // Set the email content as HTML
             helper.setText(htmlContent, true); // Set 'true' to indicate HTML content
+
 
             // Send the email
             test.send(message);
@@ -518,6 +654,7 @@ public class NewSignUpController {
             System.err.println(ex.getMessage());
         }
     }
+
 
     @GetMapping("/unsubscribe")
     public ResponseEntity<String> unsubscribe(@RequestParam("email") String email,
@@ -536,13 +673,16 @@ public class NewSignUpController {
         }
     }
 
+
     // ... existing code ...
+
 
     // Endpoint 1: Check if an account exists and send a verification code
     @PostMapping("/reset-password-validate-email")
     public ResponseEntity<String> resetPasswordValidateEmail(@RequestBody AcceptTOSRequest request) {
         String email = request.getEmail();
         SignUp signUp = signUpService.findByEmail(email);
+
 
         if (signUp != null) {
             // Generate a new verification code
@@ -563,13 +703,16 @@ public class NewSignUpController {
         }
     }
 
+
     // Endpoint 2: Verify the verification code
     @PostMapping("/reset-password-validate-code")
     public ResponseEntity<String> resetPasswordVerifyCode(@RequestBody VerifyResetCodeRequest request) {
         String email = request.getEmail();
         String verificationCode = request.getCode();
 
+
         SignUp signUp = signUpService.findByEmail(email);
+
 
         if (signUp != null) {
             if (isVerificationCodeExpired(signUp.getExpiryTimestamp())) {
@@ -592,6 +735,7 @@ public class NewSignUpController {
         }
     }
 
+
     // Endpoint 3: Reset the password
     @PostMapping("/reset-password-final")
     public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordConfirmRequest request) {
@@ -599,7 +743,9 @@ public class NewSignUpController {
         String verificationCode = request.getCode();
         String newPassword = request.getPassword();
 
+
         SignUp signUp = signUpService.findByEmail(email);
+
 
         if (signUp != null) {
             if (isVerificationCodeExpired(signUp.getExpiryTimestamp())) {
@@ -629,12 +775,14 @@ public class NewSignUpController {
         }
     }
 
+
     private String generateHash(String email) throws NoSuchAlgorithmException {
         String text = email + SECRET_KEY;
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         byte[] hashBytes = md.digest(text.getBytes());
         return Base64.getEncoder().encodeToString(hashBytes);
     }
+
 
     private String hash(String input) throws NoSuchAlgorithmException {
         String text = input + SECRET_KEY;
@@ -643,12 +791,18 @@ public class NewSignUpController {
         return Base64.getEncoder().encodeToString(hash);
     }
 
+
     private Timestamp generateExpiryTimestamp() {
         long expiryTime = System.currentTimeMillis() + 15 * 60 * 1000; // 15 minutes from now
         return new Timestamp(expiryTime);
     }
 
+
     private boolean isVerificationCodeExpired(Timestamp expiryTimestamp) {
         return expiryTimestamp != null && expiryTimestamp.before(new Timestamp(System.currentTimeMillis()));
     }
 }
+
+
+
+
