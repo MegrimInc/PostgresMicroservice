@@ -1,9 +1,11 @@
 package edu.help.microservice.service;
 
-import java.time.Instant;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import edu.help.microservice.dto.OrderDTO;
@@ -64,6 +66,29 @@ public class OrderService {
     public void claimTipsForOrders(List<Order> orders, String bartenderName) {
         List<Integer> orderIds = orders.stream().map(Order::getOrderId).toList();
         orderRepository.updateTipsClaimed(bartenderName, orderIds);
+    }
+
+    /**
+     * Retrieves all orders for a given bar.
+     */
+    public List<Order> getAllOrdersForBar(int barId) {
+        return orderRepository.findByBarId(barId);
+    }
+
+    /**
+     * Retrieves orders for a given bar within the specified date range.
+     */
+    public List<Order> getOrdersByDateRange(int barId, Instant start, Instant end) {
+        return orderRepository.findByBarIdAndTimestampBetween(barId, start, end);
+    }
+
+    /**
+     * Retrieves 50 orders for the given bar that have a timestamp less than or equal to the provided startingInstant.
+     * The results are ordered descending by timestamp. The index parameter allows for pagination (e.g. index=0 returns the first 50).
+     */
+    public List<Order> getFiftyOrders(int barId, Instant startingInstant, int index) {
+        Pageable pageable = PageRequest.of(index, 50, Sort.by("timestamp").descending());
+        return orderRepository.findByBarIdAndTimestampLessThanEqualOrderByTimestampDesc(barId, startingInstant, pageable).getContent();
     }
 }
 

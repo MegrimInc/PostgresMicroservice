@@ -14,7 +14,7 @@ import java.util.List;
 public class OrderDTO {
     private int barId;
     private int userId;
-    private String timestamp; // Receive as String from frontend
+    private String timestamp; // Note it is a string.
     private List<DrinkOrder> drinks;
     private int totalPointPrice;
     private double totalRegularPrice;

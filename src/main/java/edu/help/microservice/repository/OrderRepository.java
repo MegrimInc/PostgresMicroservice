@@ -17,4 +17,7 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     @Modifying
     @Query("UPDATE Order o SET o.tipsClaimed = :bartenderName WHERE o.orderId IN :orderIds")
     void updateTipsClaimed(@Param("bartenderName") String bartenderName, @Param("orderIds") List<Integer> orderIds);
+    
+    
+    
 }
