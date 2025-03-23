@@ -1,5 +1,6 @@
 package edu.help.microservice.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.help.microservice.dto.GetTipsResponse;
 import edu.help.microservice.dto.OrderDTO;
 import edu.help.microservice.dto.TipClaimRequest;
@@ -62,12 +63,9 @@ public class WebController {
             if (!hashedPassword.equals(signUp.getPasscode())) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("login failed");
             }
-            // Retrieve the barId from the bar object
             int barID = signUp.getBar().getBarId();
-
-            // Get all orders for this bar
             List<Order> orders = orderService.getAllOrdersForBar(barID);
-            // Order the orders from most recent to least recent
+            // Order from most recent to least recent
             orders.sort((o1, o2) -> o2.getTimestamp().compareTo(o1.getTimestamp()));
 
             double revenue = orders.stream().mapToDouble(Order::getTotalRegularPrice).sum();
@@ -83,20 +81,22 @@ public class WebController {
                     .sum();
             int pointsSpent = orders.stream().mapToInt(Order::getTotalPointPrice).sum();
 
-            // Build response JSON (profit = revenue - tips if needed)
-            String responseJson = String.format("{\"revenue\":%.2f, \"drinks\":%d, \"tips\":%.2f, \"drinksPoints\":%d, \"points\":%d}",
+            String responseJson = String.format(
+                    "{\"revenue\":%.2f, \"drinks\":%d, \"tips\":%.2f, \"drinksPoints\":%d, \"points\":%d}",
                     revenue, drinks, tips, drinksPoints, pointsSpent);
+
             return ResponseEntity.ok(responseJson);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing request");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error processing request");
         }
     }
 
     /**
      * GET /contributionByDateRange
      * Request Parameters: barEmail, barPW, start, end (timestamps as long)
-     * Response JSON: { "orders": [ order1, order2, … ] }
+     * Response JSON: { "orders": [ order1, order2, … orderN] }
      */
     @GetMapping("/contributionByDateRange")
     public ResponseEntity<?> contributionByDateRange(@RequestParam("barEmail") String barEmail,
@@ -113,7 +113,6 @@ public class WebController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("login failed");
             }
             int barID = signUp.getBar().getBarId();
-            // Convert the long timestamps to Instant
             Instant startInstant = Instant.ofEpochMilli(start);
             Instant endInstant = Instant.ofEpochMilli(end);
 
@@ -121,19 +120,20 @@ public class WebController {
             // Order from most recent to least recent
             orders.sort((o1, o2) -> o2.getTimestamp().compareTo(o1.getTimestamp()));
 
-            // Build JSON response
-            // (Assuming Order has proper getters and your JSON library serializes it correctly)
-            return ResponseEntity.ok("{\"orders\":" + new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(orders) + "}");
+            ObjectMapper mapper = new ObjectMapper();
+            String ordersJson = mapper.writeValueAsString(orders);
+            return ResponseEntity.ok("{\"orders\":" + ordersJson + "}");
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing request");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error processing request");
         }
     }
 
     /**
      * GET /fiftyOrders
      * Request Parameters: barEmail, barPW, timestamp (long), index (int)
-     * Response JSON: { "orders": [ order1, order2, … ] }
+     * Response JSON: { "orders": [ order1, order2, … orderN] }
      * Returns 50 orders starting from the given timestamp (most recent first).
      */
     @GetMapping("/fiftyOrders")
@@ -151,17 +151,18 @@ public class WebController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("login failed");
             }
             int barID = signUp.getBar().getBarId();
-            // Convert the given timestamp to an Instant
             Instant startingInstant = Instant.ofEpochMilli(timestamp);
-            // Retrieve 50 orders starting from the given timestamp (page index)
+
             List<Order> orders = orderService.getFiftyOrders(barID, startingInstant, index);
-            // Order from most recent to least recent (if not already ordered)
             orders.sort((o1, o2) -> o2.getTimestamp().compareTo(o1.getTimestamp()));
 
-            return ResponseEntity.ok("{\"orders\":" + new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(orders) + "}");
+            ObjectMapper mapper = new ObjectMapper();
+            String ordersJson = mapper.writeValueAsString(orders);
+            return ResponseEntity.ok("{\"orders\":" + ordersJson + "}");
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing request");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error processing request");
         }
     }
 
