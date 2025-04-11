@@ -1,5 +1,6 @@
 package edu.help.microservice.service;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.stripe.StripeClient;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.PaymentMethod;
 import com.stripe.model.SetupIntent;
 import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.CustomerUpdateParams;
@@ -215,4 +217,19 @@ public class StripeService {
             throw e;
         }
     }
+
+
+    public Map<String, String> getCardDetails(String paymentMethodId) throws StripeException {
+    PaymentMethod paymentMethod = stripeClient.paymentMethods().retrieve(paymentMethodId);
+    
+    Map<String, String> cardInfo = new HashMap<>();
+    cardInfo.put("brand", paymentMethod.getCard().getBrand());
+    cardInfo.put("last4", paymentMethod.getCard().getLast4());
+    cardInfo.put("exp_month", String.valueOf(paymentMethod.getCard().getExpMonth()));
+    cardInfo.put("exp_year", String.valueOf(paymentMethod.getCard().getExpYear()));
+    
+    return cardInfo;
+}
+
+    
 }

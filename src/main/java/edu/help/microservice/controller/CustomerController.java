@@ -70,4 +70,26 @@ public class CustomerController {
         stripeService.savePaymentId(request);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/cardDetails/{userId}")
+public ResponseEntity<Map<String, String>> getCardDetails(@PathVariable int userId) {
+    Optional<Customer> customerOpt = customerService.findById(userId);
+    if (customerOpt.isEmpty()) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", "Customer not found"));
+    }
+    Customer customer = customerOpt.get();
+    if (customer.getPaymentId() == null || customer.getPaymentId().isEmpty()) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", "No payment method on file"));
+    }
+    try {
+        Map<String, String> cardDetails = stripeService.getCardDetails(customer.getPaymentId());
+        return ResponseEntity.ok(cardDetails);
+    } catch (StripeException e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Stripe error: " + e.getMessage()));
+    }
+}
+
 }
