@@ -26,9 +26,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.Base64;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 @RestController
 @RequestMapping("/orders")
@@ -173,4 +171,73 @@ public class WebController {
         byte[] hash = md.digest(text.getBytes());
         return Base64.getEncoder().encodeToString(hash);
     }
+
+
+
+
+
+
+    /**
+     * 
+     */
+    @GetMapping("/byDay")
+    public ResponseEntity<?> byDay(@RequestParam("barEmail") String barEmail,
+                                         @RequestParam("barPW") String barPW,
+                                         @RequestParam("date") Date day) {
+        try {
+            SignUp signUp = signUpService.findByEmail(barEmail);
+            if (signUp == null || signUp.getBar() == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("login failed");
+            }
+            String hashedPassword = hash(barPW);
+            if (!hashedPassword.equals(signUp.getPasscode())) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("login failed");
+            }
+            int barID = signUp.getBar().getBarId();
+            
+            
+            
+
+            List<Order> orders = orderService.getByDay(barID, day);
+            orders.sort((o1, o2) -> o2.getTimestamp().compareTo(o1.getTimestamp()));
+
+            ObjectMapper mapper = new ObjectMapper();
+            String ordersJson = mapper.writeValueAsString(orders);
+            return ResponseEntity.ok("{\"orders\":" + ordersJson + "}");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error processing request");
+        }
+    }
+
+
+    /**
+     * GET /top5Drinks
+     * Request Parameters: barEmail, barPW
+     * Response JSON: { "data": { "drinkName1": quantity, "drinkName2": quantity, ... } }
+     */
+    @GetMapping("/top5Drinks")
+    public ResponseEntity<?> top5Drinks(@RequestParam("barEmail") String barEmail,
+                                        @RequestParam("barPW") String barPW) {
+        try {
+            SignUp signUp = signUpService.findByEmail(barEmail);
+            if (signUp == null || signUp.getBar() == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("login failed");
+            }
+            String hashedPassword = hash(barPW);
+            if (!hashedPassword.equals(signUp.getPasscode())) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("login failed");
+            }
+            int barID = signUp.getBar().getBarId();
+            Map<String, Integer> top5 = orderService.getTop5Drinks(barID);
+            String jsonResponse = "{\"data\":" + new ObjectMapper().writeValueAsString(top5) + "}";
+            return ResponseEntity.ok(jsonResponse);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing request");
+        }
+    }
+
+    
 }

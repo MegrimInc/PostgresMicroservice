@@ -4,7 +4,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -82,11 +85,31 @@ public class OrderService {
         return orderRepository.findByBarIdAndTimestampBetween(barId, start, end);
     }
 
+
+    @Transactional(readOnly = true)
+    public List<Order> getByDay(int barId, Date day) {
+        return orderRepository.findByBarIdAndDate(barId, day);
+    }
+
     @Transactional(readOnly = true)
     public List<Order> getFiftyOrders(int barId, Instant startingInstant, int index) {
         Pageable pageable = PageRequest.of(index, 50, Sort.by("timestamp").descending());
         Page<Order> page = orderRepository.findByBarIdAndTimestampLessThanEqualOrderByTimestampDesc(barId, startingInstant, pageable);
         return page.getContent();
+    }
+
+
+    // New method: Get top 5 most ordered drinks for a bar
+    @Transactional(readOnly = true)
+    public Map<String, Integer> getTop5Drinks(int barId) {
+        List<Object[]> results = orderRepository.findTop5DrinksByBarId(barId);
+        Map<String, Integer> top5Drinks = new HashMap<>();
+        for (Object[] row : results) {
+            String drinkName = (String) row[0];
+            Integer totalQuantity = ((Number) row[1]).intValue();
+            top5Drinks.put(drinkName, totalQuantity);
+        }
+        return top5Drinks;
     }
 }
 

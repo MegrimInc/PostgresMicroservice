@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 
 public interface OrderRepository extends JpaRepository<Order, Integer> {
@@ -29,5 +30,16 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     @Query("SELECT o FROM Order o WHERE o.barId = :barId AND o.timestamp <= :startingInstant ORDER BY o.timestamp DESC")
     org.springframework.data.domain.Page<Order> findByBarIdAndTimestampLessThanEqualOrderByTimestampDesc(
             @Param("barId") int barId, @Param("startingInstant") Instant startingInstant, Pageable pageable);
-    
+
+    @Query("SELECT o FROM Order o WHERE o.barId = :barId AND FUNCTION('DATE', o.timestamp) = :day")
+    List<Order> findByBarIdAndDate(@Param("barId") int barId, @Param("day") Date day);
+
+
+    @Query(value = "SELECT d->>'drinkName' as drinkName, SUM((d->>'quantity')::int) as totalQuantity " +
+            "FROM orders, jsonb_array_elements(drinks) d " +
+            "WHERE bar_id = :barId " +
+            "GROUP BY d->>'drinkName' " +
+            "ORDER BY totalQuantity DESC " +
+            "LIMIT 5", nativeQuery = true)
+    List<Object[]> findTop5DrinksByBarId(@Param("barId") int barId);
 }
