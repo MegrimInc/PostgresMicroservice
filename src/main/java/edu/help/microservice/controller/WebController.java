@@ -1,9 +1,12 @@
 package edu.help.microservice.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import edu.help.microservice.dto.DrinkCountDTO;
 import edu.help.microservice.dto.GetTipsResponse;
 import edu.help.microservice.dto.OrderDTO;
 import edu.help.microservice.dto.TipClaimRequest;
+import edu.help.microservice.entity.Drink;
 import edu.help.microservice.entity.Order;
 import edu.help.microservice.entity.SignUp;
 import edu.help.microservice.service.BarService;
@@ -35,6 +38,7 @@ public class WebController {
     private final OrderService orderService;
     private final SignUpService signUpService;
     private final BarService barService;
+
     private static final String SECRET_KEY = "YourSecretKey";
 
     @Autowired
@@ -177,14 +181,12 @@ public class WebController {
 
 
 
-    /**
-     * 
-     */
     @GetMapping("/byDay")
     public ResponseEntity<?> byDay(@RequestParam("barEmail") String barEmail,
-                                         @RequestParam("barPW") String barPW,
-                                         @RequestParam("date") Date day) {
+                                   @RequestParam("barPW") String barPW,
+                                   @RequestParam("date") String dayStr) { // expects "yyyy-MM-dd"
         try {
+            // Authenticate the bar (same as before)
             SignUp signUp = signUpService.findByEmail(barEmail);
             if (signUp == null || signUp.getBar() == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("login failed");
@@ -194,15 +196,25 @@ public class WebController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("login failed");
             }
             int barID = signUp.getBar().getBarId();
-            
-            
-            
 
+            // Parse the incoming date string assuming format "yyyy-MM-dd"
+            // and interpret it as local date in America/New_York (accounting for DST)
+            LocalDate localDate = LocalDate.parse(dayStr);
+            ZoneId newYorkZone = ZoneId.of("America/New_York");
+            ZonedDateTime startOfDayNY = localDate.atStartOfDay(newYorkZone);
+            // Convert the ZonedDateTime to a Date (which is in UTC)
+            Date day = Date.from(startOfDayNY.toInstant());
+
+            // Get orders for that day (assuming your repository's FUNCTION('DATE', ...) will match)
             List<Order> orders = orderService.getByDay(barID, day);
             orders.sort((o1, o2) -> o2.getTimestamp().compareTo(o1.getTimestamp()));
 
             ObjectMapper mapper = new ObjectMapper();
+            mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+            mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
             String ordersJson = mapper.writeValueAsString(orders);
+
             return ResponseEntity.ok("{\"orders\":" + ordersJson + "}");
         } catch (Exception e) {
             e.printStackTrace();
@@ -239,5 +251,28 @@ public class WebController {
         }
     }
 
-    
+    @GetMapping("/allDrinkCounts")
+    public ResponseEntity<?> getAllDrinkCounts(@RequestParam("barEmail") String barEmail,
+                                               @RequestParam("barPW") String barPW) {
+        try {
+            SignUp signUp = signUpService.findByEmail(barEmail);
+            if (signUp == null || signUp.getBar() == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("login failed");
+            }
+            String hashedPassword = hash(barPW);
+            if (!hashedPassword.equals(signUp.getPasscode())) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("login failed");
+            }
+
+            int barId = signUp.getBar().getBarId();
+            List<DrinkCountDTO> responseList = orderService.getAllDrinkCountsForBar(barId);
+            return ResponseEntity.ok(Map.of("data", responseList));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error processing request");
+        }
+    }
+
+
 }

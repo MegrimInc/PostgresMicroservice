@@ -42,4 +42,12 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
             "ORDER BY totalQuantity DESC " +
             "LIMIT 5", nativeQuery = true)
     List<Object[]> findTop5DrinksByBarId(@Param("barId") int barId);
+
+    @Query(value = "SELECT d->>'drinkName' AS drinkName, SUM((d->>'quantity')::int) AS totalQuantity " +
+            "FROM orders, jsonb_array_elements(drinks) d " +
+            "WHERE bar_id = :barId " +
+            "GROUP BY d->>'drinkName' " +
+            "ORDER BY totalQuantity DESC", nativeQuery = true)
+    List<Object[]> findAllDrinkCountsByBarId(@Param("barId") int barId);
+
 }

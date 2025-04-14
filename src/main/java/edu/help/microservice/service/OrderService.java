@@ -1,13 +1,13 @@
 package edu.help.microservice.service;
 
+import edu.help.microservice.dto.DrinkCountDTO;
+import edu.help.microservice.entity.Drink;
+import edu.help.microservice.repository.DrinkRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;import java.time.Instant;
 import java.time.format.DateTimeParseException;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class OrderService {
 
+    private final DrinkRepository  drinkRepository;
     private final OrderRepository orderRepository;
     private final PointService pointService;
 
@@ -111,5 +112,55 @@ public class OrderService {
         }
         return top5Drinks;
     }
+
+
+    @Transactional(readOnly = true)
+    public List<DrinkCountDTO> getAllDrinkCountsForBar(int barId) {
+        // 1. Fetch all drinks for the bar
+        List<Drink> drinks = drinkRepository.findAllDrinksByBarIdExcludingFields(barId);
+
+        // 2. Fetch all orders for the bar
+        List<Order> orders = orderRepository.findByBarId(barId);
+
+        // 3. Map: drinkId → [dollarCount, pointCount]
+        Map<Integer, int[]> drinkStats = new HashMap<>();
+
+        for (Order order : orders) {
+            for (Order.DrinkOrder drinkOrder : order.getDrinks()) {
+                int id = drinkOrder.getDrinkId();
+                int quantity = drinkOrder.getQuantity();
+                String payment = drinkOrder.getPaymentType();
+
+                int[] stats = drinkStats.getOrDefault(id, new int[]{0, 0});
+                if ("points".equalsIgnoreCase(payment)) {
+                    stats[1] += quantity;
+                } else {
+                    stats[0] += quantity; // default to regular/dollars
+                }
+                drinkStats.put(id, stats);
+            }
+        }
+
+        // 4. Build DTO list from drinks + stats
+        List<DrinkCountDTO> result = new ArrayList<>();
+        for (Drink drink : drinks) {
+            int drinkId = drink.getDrinkId();
+            String name = drink.getDrinkName();
+            double doublePrice = drink.getDoublePrice() != null ? drink.getDoublePrice() : 0.0;
+
+            int[] stats = drinkStats.getOrDefault(drinkId, new int[]{0, 0});
+            int soldWithDollars = stats[0];
+            int soldWithPoints = stats[1];
+            int totalSold = soldWithDollars + soldWithPoints;
+
+            result.add(new DrinkCountDTO(drinkId, name, doublePrice, soldWithDollars, soldWithPoints, totalSold));
+        }
+
+        // Sort by totalSold DESC
+        result.sort((a, b) -> Integer.compare(b.getTotalSold(), a.getTotalSold()));
+        return result;
+
+    }
+
 }
 
