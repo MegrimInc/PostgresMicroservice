@@ -50,7 +50,7 @@ public class Order {
     private String status; // Final status of the order ('claimed', 'delivered', 'canceled')
 
     @Column(length = 1)
-    private String station; // Merchanttender station identifier (A-Z)
+    private String station; // Station station identifier (A-Z)
 
     @Column(length = 255)
     private String tipsClaimed; // "NULL" (as a string) if not claimed, or the station's name

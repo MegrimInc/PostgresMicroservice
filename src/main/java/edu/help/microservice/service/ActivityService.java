@@ -14,7 +14,7 @@ public class ActivityService {
     private final ActivityRepository activityRepository;
 
     public boolean alreadyRecordedThisHour(Integer merchantId, String stationId, LocalDateTime hour) {
-        return activityRepository.existsByMerchantIdAndMerchanttenderIdAndActivityDate(merchantId, stationId, hour);
+        return activityRepository.existsByMerchantIdAndStationIdAndActivityDate(merchantId, stationId, hour);
     }
 
     public Activity recordActivity(Integer merchantId, String stationId, LocalDateTime hour) {

@@ -6,14 +6,14 @@ public class GetTipsRequest {
     private String merchantID;
 
 
-    public String getMerchanttenderID() {
+    public String getStationID() {
         return stationID;
     }
     public String getMerchantID() {
         return merchantID;
     }
 
-    public void setMerchanttenderID(String stationID) {
+    public void setStationID(String stationID) {
         this.stationID = stationID;
     }
     public void setMerchantID(String merchantID) {

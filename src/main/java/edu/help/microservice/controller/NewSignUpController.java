@@ -626,13 +626,13 @@ public ResponseEntity<String> registerMerchant(@RequestBody MerchantRegistration
 
             // Set the basic email attributes
             helper.setTo(email);
-            helper.setFrom("noreply@merchantzzy.site");
-            helper.setSubject("Merchantzzy Verification Code - " + title);
+            helper.setFrom("noreply@barzzy.site"); // SHOULD BE RENAMED TO MEGRIM LATER
+            helper.setSubject("Barzzy Verification Code - " + title); // SHOULD BE RENAMED TO MEGRIM LATER
 
 
             // Generate hash for the email
             String unsubscribeHash = generateHash(email);
-            String unsubscribeUrl = "https://www.merchantzzy.site/signup/unsubscribe?email=" + email + "&hash="
+            String unsubscribeUrl = "https://www.barzzy.site/signup/unsubscribe?email=" + email + "&hash=" // SHOULD BE RENAMED TO MEGRIM LATER
                     + unsubscribeHash;
 
 
@@ -802,4 +802,3 @@ public ResponseEntity<String> registerMerchant(@RequestBody MerchantRegistration
         return expiryTimestamp != null && expiryTimestamp.before(new Timestamp(System.currentTimeMillis()));
     }
 }
-

@@ -82,7 +82,7 @@ public class OrderController {
         }
         try {
             // Retrieve orders that have been claimed by this station.
-            // (Assumes that orderService has a method like getClaimedTipsByMerchanttender.)
+            // (Assumes that orderService has a method like getClaimedTipsByStation.)
             List<Order> claimedOrders = orderService.getUnclaimedTips(merchantID, stationID);
             if (claimedOrders == null || claimedOrders.isEmpty()) {
             System.out.println("gettips NULL / empty");
@@ -108,8 +108,8 @@ public class OrderController {
     public ResponseEntity<Double> claimTips(@RequestBody TipClaimRequest request) {
         try {
             int merchantID = request.getMerchantId();
-            String stationName = request.getMerchanttenderName();
-            String stationEmail = request.getMerchanttenderEmail(); // Optional
+            String stationName = request.getStationName();
+            String stationEmail = request.getStationEmail(); // Optional
             String station = request.getStation();
 
             System.out.println("Request received with merchantID: " + merchantID + ", stationName: " + stationName
@@ -187,8 +187,8 @@ public class OrderController {
         StringBuilder emailContent = new StringBuilder();
         emailContent.append("<h1 style='text-align:center;'>Tip Report</h1>")
                 .append("<h2 style='text-align:center;'>Merchant Name: ").append(merchantService.findMerchantById(merchantID).getMerchantName()).append("</h2>")
-                .append("<p style='text-align:center; font-weight:bold;'>Merchanttender Station: <span style='color:blue;'>")
-                .append(station).append("</span> | Merchanttender Name: <span style='color:blue;'>")
+                .append("<p style='text-align:center; font-weight:bold;'>Station Station: <span style='color:blue;'>")
+                .append(station).append("</span> | Station Name: <span style='color:blue;'>")
                 .append(stationName).append("</span></p>")
                 .append("<p style='text-align:center;'>Claimed at: <span style='color:green;'>")
                 .append(formattedDate).append("</span></p>")
@@ -232,7 +232,7 @@ public class OrderController {
 
             // Set the basic email attributes
             helper.setTo(email);
-            helper.setFrom("noreply@merchantzzy.site");
+            helper.setFrom("noreply@barzzy.site"); // SHOULD BE RENAMED TO MEGRIM LATER
             helper.setSubject(subject);
 
             // Set the email content as HTML

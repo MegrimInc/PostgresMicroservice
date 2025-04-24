@@ -10,7 +10,7 @@ import edu.help.microservice.entity.Activity;
 public interface ActivityRepository extends JpaRepository<Activity, Long> {
 
     // If you want to check if a row already exists for (merchantID, stationID, hour):
-    boolean existsByMerchantIdAndMerchanttenderIdAndActivityDate(Integer merchantId, String stationId, LocalDateTime activityDate);
+    boolean existsByMerchantIdAndStationIdAndActivityDate(Integer merchantId, String stationId, LocalDateTime activityDate);
 
     // You could add more custom queries if needed
 }
