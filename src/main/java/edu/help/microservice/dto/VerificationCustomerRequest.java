@@ -1,6 +1,6 @@
 package edu.help.microservice.dto;
 
-public class VerificationRequest {
+public class VerificationCustomerRequest {
     private String email;
     private String verificationCode;
     private String password;

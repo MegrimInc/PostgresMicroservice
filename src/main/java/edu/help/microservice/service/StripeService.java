@@ -16,8 +16,6 @@ import com.stripe.param.CustomerUpdateParams;
 import com.stripe.param.PaymentIntentCreateParams;
 import com.stripe.param.PaymentMethodListParams;
 import com.stripe.param.SetupIntentCreateParams;
-import com.stripe.param.billing.MeterEventCreateParams;
-
 import edu.help.microservice.dto.PaymentIdSetRequest;
 import edu.help.microservice.entity.Merchant;
 import edu.help.microservice.entity.Customer;
@@ -61,14 +59,6 @@ public class StripeService {
         chargeCustomer(merchantOptional.get(), customerOptional.get(), priceInCents + tipInCents);
     }
 
-    public void sendMeterEvent(Merchant merchant) throws StripeException {
-        var params = MeterEventCreateParams.builder()
-                .setEventName("venue")
-                .putPayload("stripe_customer_id", merchant.getSubId())
-                .build();
-
-        stripeClient.billing().meterEvents().create(params);
-    }
 
     public void createStripeCustomer(Customer customer, SignUp signUp) throws StripeException {
         CustomerCreateParams params = CustomerCreateParams.builder()

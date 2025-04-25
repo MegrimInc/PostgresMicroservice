@@ -4,7 +4,7 @@ import edu.help.microservice.entity.Customer;
 
 public class InvalidStripeChargeException extends Exception {
     public InvalidStripeChargeException(String status, Customer customer) {
-        super("Invalid payment\nStatus: " + status + "\nCustomer id: " + customer.getCustomerID());
+        super("Invalid payment\nStatus: " + status + "\nCustomer id: " + customer.getCustomerId());
     }
 }
 

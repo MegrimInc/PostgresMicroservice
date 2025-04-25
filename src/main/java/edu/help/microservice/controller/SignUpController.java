@@ -4,14 +4,7 @@ package edu.help.microservice.controller;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
 
@@ -33,18 +26,15 @@ import com.stripe.exception.StripeException;
 
 import edu.help.microservice.dto.AcceptTOSRequest;
 import edu.help.microservice.dto.AcceptTOSRequest2;
-import edu.help.microservice.dto.MerchantRegistrationRequest;
 import edu.help.microservice.dto.LoginRequest;
+import edu.help.microservice.dto.MerchantRegistrationRequest;
 import edu.help.microservice.dto.ResetPasswordConfirmRequest;
 import edu.help.microservice.dto.VerificationMerchantRequest;       // For "this hour"
-import edu.help.microservice.dto.VerificationRequest; // If needed for logging
+import edu.help.microservice.dto.VerificationCustomerRequest; // If needed for logging
 import edu.help.microservice.dto.VerifyResetCodeRequest;
-import edu.help.microservice.entity.Activity;
 import edu.help.microservice.entity.Merchant;
 import edu.help.microservice.entity.Customer;
 import edu.help.microservice.entity.SignUp;
-import edu.help.microservice.entity.SubscriptionInfo;
-import edu.help.microservice.service.ActivityService;
 import edu.help.microservice.service.MerchantService;
 import edu.help.microservice.service.CustomerService;
 import edu.help.microservice.service.SignUpService;
@@ -55,223 +45,18 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/newsignup")
-public class NewSignUpController {
+@RequestMapping("/signup")
+public class SignUpController {
     private static final String SECRET_KEY = "YourSecretKey";
-
 
     private final SignUpService signUpService;
     private final CustomerService customerService;
     private final MerchantService merchantService;
     private final StripeService stripeService;
-    private final ActivityService activityService;
-//BAR REGISTRATION/LOGIN STUFF HERE
-///________________________________________________________________
-@PostMapping("/registermerchant")
-public ResponseEntity<String> registerMerchant(@RequestBody MerchantRegistrationRequest req) {
-    // 1) Check if there's already a SignUp record with this email
-    SignUp existingSignUp = signUpService.findByEmail(req.getEmail());
-    if (existingSignUp != null) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                             .body("Email already in use");
-    }
-
-
-    // 2) Create the SignUp record
-    SignUp newSignUp = new SignUp();
-    newSignUp.setEmail(req.getEmail());
-    newSignUp.setIsMerchant(true);
-   
-    // Hash and store the password
-    try {
-        String hashedPassword = hash(req.getPassword());
-        newSignUp.setPasscode(hashedPassword);
-    } catch (NoSuchAlgorithmException e) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                             .body("Error hashing password");
-    }
-
-
-    // 3) Create the Merchant entity
-    Merchant merchant = new Merchant();
-    merchant.setMerchantEmail(req.getEmail());
-    merchant.setMerchantName(req.getCompanyName());
-    merchant.setMerchantTag(req.getCompanyNickname());
-    merchant.setMerchantCountry(req.getCountry());
-    merchant.setMerchantState(req.getRegion());
-    merchant.setMerchantCity(req.getCity());
-    merchant.setMerchantAddress(req.getAddress());
-   
-    // Combine open & close time into openHours, or adapt as needed
-    merchant.setOpenHours(req.getOpenTime() + " - " + req.getCloseTime());
-   
-    // Set optional fields to null or defaults
-    merchant.setAccountId(null);
-    merchant.setSubId(null);
-    merchant.setRewardsSubId(null);
-    merchant.setHappyHourTimes(null);  // or an empty Map
-    merchant.setStartDate(null);
-    merchant.setTagImage("");
-    merchant.setMerchantImage("");
-
-
-    // 4) Link Merchant to SignUp
-    newSignUp.setMerchant(merchant);
-
-
-    // 5) Save everything
-    signUpService.save(newSignUp); // Cascade = ALL should save Merchant automatically
-
-
-    // 6) Return the negative Merchant ID
-    return ResponseEntity.ok("-" + merchant.getMerchantId());
-}
 
 
 
-
-    @PostMapping("/subscriptionChange")
-    public ResponseEntity<String> subscriptionChange(
-            @RequestParam("userId") Integer userId,
-            @RequestParam("merchantId") Integer merchantId,
-            @RequestParam("subscribe") boolean subscribe) {
-
-
-        // Retrieve the customer using your customerService (assumes you have findById method)
-        Optional<Customer> customer2 = customerService.findById(userId);
-        if (customer2.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Customer not found");
-        }
-        Customer customer = customer2.get();
-
-
-        // Retrieve the subscription map from the customer entity.
-        // This map uses merchant IDs as keys and SubscriptionInfo objects as values.
-        Map<Integer, SubscriptionInfo> subscriptions = customer.getSubscription();
-        if (subscriptions == null) {
-            subscriptions = new HashMap<>();
-
-
-            customer.setSubscription(subscriptions);
-        }
-
-
-        // Retrieve the SubscriptionInfo for the given merchantId; create a default if not found.
-        SubscriptionInfo subscriptionInfo = subscriptions.get(merchantId);
-        if (subscriptionInfo == null) {
-            subscriptionInfo = new SubscriptionInfo();
-
-
-            // TODO: Update values, update whatever updates users points to use SUB column instead of points column
-            subscriptionInfo.setIsSubscribed(false);
-            subscriptionInfo.setPoints(0);
-
-
-            subscriptions.put(merchantId, subscriptionInfo);
-        }
-
-
-        // Update subscription info based on the subscribe flag.
-        if (subscribe) {
-            subscriptionInfo.setIsSubscribed(true);
-
-
-            // TODO: STRIPE LOGIC
-        } else {
-            subscriptionInfo.setIsSubscribed(false);
-
-
-        }
-
-
-        // Save the updated customer record.
-        customerService.save(customer);
-
-
-        return ResponseEntity.ok("Subscription updated successfully");
-    }
-
-
-    /**
-     * The pay-to-use "heartbeat" call from the frontend.
-     *  1) if startDate == null, set it to now -> stop
-     *  2) if startDate < 30 days old, do nothing -> stop
-     *  3) otherwise, record usage for this hour (placeholder).
-     */
-    @PostMapping("/heartbeat")
-    public ResponseEntity<String> heartbeat(@RequestParam("merchantId") String merchantID,
-            @RequestParam("stationId") String stationID) {
-        System.out.println("heartbeat initiated for merchant " + merchantID);
-        try {
-            int merchantIdInt = Integer.parseInt(merchantID);
-            Merchant merchant = merchantService.findMerchantById(merchantIdInt);
-            if (merchant == null) {
-                System.out.println("heartbeat: no merchant found");
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("No merchant found with ID " + merchantID);
-            }
-
-
-            System.out.println("heartbeat: Merchant Found");
-
-
-            // 1) If merchant.startDate is null, set it and stop
-            if (merchant.getStartDate() == null) {
-
-
-                System.out.println("heartbeat: attempting startdate setting.");
-                merchantService.setStartDate(merchantIdInt, LocalDate.now());
-                System.out.println("heartbeat: Started free trial");
-                return ResponseEntity.ok("startDate was null, now set to today. Done.");
-            }
-
-
-            // 2) Check how long ago startDate was
-            LocalDate startDate = merchant.getStartDate();
-            long daysSinceStart = ChronoUnit.DAYS.between(startDate, LocalDate.now());
-            if (daysSinceStart < 30) {
-                // Still within free trial
-                System.out.println("heartbeat: Within free trial");
-                return ResponseEntity.ok("Within 30-day free trial. Done.");
-            }
-
-
-            // 3) In paid territory
-            LocalDateTime currentHour = LocalDateTime.now()
-                    .withMinute(0)
-                    .withSecond(0)
-                    .withNano(0);
-
-
-            // Check if we have an entry for (merchantIdInt, stationID, currentHour)
-            if (!activityService.alreadyRecordedThisHour(merchantIdInt, stationID, currentHour)) {
-                Activity a1 = activityService.recordActivity(merchantIdInt, stationID, currentHour);
-                String debugMessage = String.format("Recorded usage for merchant %d, station %s at hour %s",
-                        merchantIdInt, stationID, currentHour.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
-                if (a1.getActivityId() != null) {
-                    System.out.println("heartbeat: Recorded: " + debugMessage);
-
-
-                    System.out.println("Attempting stripe charge");
-                    stripeService.sendMeterEvent(merchant);
-                    System.out.println("Stripe charge probably successful");
-                }
-                return ResponseEntity.ok(debugMessage);
-            } else {
-                System.out.println("heartbeat: Within Hour");
-                return ResponseEntity.ok("Usage for this hour was already recorded. Nothing to do.");
-            }
-        } catch (Exception e) {
-            System.out.println("heartbeat: failed with stacktrace: " + e.getStackTrace() + " and also this: "
-                    + e.getCause() + " anddddd this... : " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("heartbeat: failed with stacktrace: " + e.getStackTrace() + " and also this: " + e.getCause()
-                            + " anddddd this... : " + e.getMessage());
-        }
-    }
-
-
-    // ENDPOINT #2: Resend verification code
+    // ENDPOINT: Resend verification code
     @PostMapping("/send-verification")
     public ResponseEntity<String> sendVerification(@RequestBody AcceptTOSRequest request) {
         String email = request.getEmail();
@@ -296,16 +81,14 @@ public ResponseEntity<String> registerMerchant(@RequestBody MerchantRegistration
     }
 
 
-    // ENDPOINT #3: Verification for Customer
-    @PostMapping("/verify")
-    public ResponseEntity<String> verify(@RequestBody VerificationRequest verificationRequest) {
+    // ENDPOINT: Verification for Registration
+    @PostMapping("/verify/customer")
+    public ResponseEntity<String> verifyCustomer(@RequestBody VerificationCustomerRequest verificationRequest) {
         String email = verificationRequest.getEmail();
         String verificationCode = verificationRequest.getVerificationCode();
         String password = verificationRequest.getPassword();
         String firstName = verificationRequest.getFirstName();
         String lastName = verificationRequest.getLastName();
-
-
         SignUp signUp = signUpService.findByEmail(email);
 
 
@@ -341,7 +124,7 @@ public ResponseEntity<String> registerMerchant(@RequestBody MerchantRegistration
 
 
                     // Return customerID
-                    return ResponseEntity.ok(customer.getCustomerID().toString());
+                    return ResponseEntity.ok(customer.getCustomerId().toString());
                 } else {
                     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                             .body("registration failed: incorrect verification code");
@@ -355,26 +138,23 @@ public ResponseEntity<String> registerMerchant(@RequestBody MerchantRegistration
     }
 
 
-    @PostMapping("/register2")
-    public ResponseEntity<String> register(@RequestBody AcceptTOSRequest2 request) {
+    // ENDPOINT: Registration for Customers
+    @PostMapping("/register/customer")
+    public ResponseEntity<String> registerCustomer(@RequestBody AcceptTOSRequest2 request) {
         String email = request.getEmail();
         SignUp existingSignUp = signUpService.findByEmail(email);
 
-
         if (existingSignUp != null)
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
-
 
         // Create new sign-up and customer
         SignUp newSignUp = new SignUp();
         newSignUp.setEmail(email);
         newSignUp.setIsMerchant(false);
 
-
         Customer customer = new Customer();
         customer.setFirstName(request.getFirstName());
         customer.setLastName(request.getLastName());
-
 
         // Hash and store the password immediately
         try {
@@ -384,7 +164,6 @@ public ResponseEntity<String> registerMerchant(@RequestBody MerchantRegistration
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error hashing password");
         }
-
 
         // Create Stripe customer and save the customer ID
         try {
@@ -400,30 +179,16 @@ public ResponseEntity<String> registerMerchant(@RequestBody MerchantRegistration
                     .body("Error creating Stripe customer");
         }
 
-
         // Save customer and link with sign-up
         customerService.save(customer);
         newSignUp.setCustomer(customer);
         signUpService.save(newSignUp);
 
-
-        //TODO: REMOVE THIS WHENEVER WERE NOT DOING PROMOTION
-        Map<Integer, Map<Integer, Integer>> pointsMap = customer.getPoints();
-        if (pointsMap == null) {
-            pointsMap = new HashMap<>();
-            customer.setPoints(pointsMap);
-        }
-        Map<Integer, Integer> userPoints = pointsMap.getOrDefault(customer.getCustomerID(), new HashMap<>());
-        userPoints.put(95, 150); // Assign 150 points for merchant id 95
-        pointsMap.put(customer.getCustomerID(), userPoints);
-        customerService.save(customer);
-
-
         // Return the customer ID as a string
-        return ResponseEntity.ok(String.valueOf(customer.getCustomerID()));
+        return ResponseEntity.ok(String.valueOf(customer.getCustomerId()));
     }
-
-
+    
+     
     // ENDPOINT: Verify Merchant Registration
     @PostMapping("/verify/merchant")
     public ResponseEntity<String> verifyMerchant(@RequestBody VerificationMerchantRequest verificationRequest) {
@@ -431,9 +196,7 @@ public ResponseEntity<String> registerMerchant(@RequestBody MerchantRegistration
         String verificationCode = verificationRequest.getVerificationCode();
         String password = verificationRequest.getPassword();
 
-
         SignUp signUp = signUpService.findByEmail(email);
-
 
         if (signUp != null && signUp.getMerchant() == null && signUp.getIsMerchant()) {
             if (isVerificationCodeExpired(signUp.getExpiryTimestamp())) {
@@ -445,37 +208,30 @@ public ResponseEntity<String> registerMerchant(@RequestBody MerchantRegistration
                 if (signUp.getVerificationCode().equals(hashedCode)) {
                     // Verification successful
                     Merchant merchant = new Merchant();
-                    merchant.setMerchantEmail(email);
-                    merchant.setMerchantName(verificationRequest.getCompanyName());
-                    merchant.setMerchantTag(verificationRequest.getCompanyNickname());
-                    merchant.setMerchantCountry(verificationRequest.getCountry());
-                    merchant.setMerchantState(verificationRequest.getRegion());
-                    merchant.setMerchantCity(verificationRequest.getCity());
-                    merchant.setMerchantAddress(verificationRequest.getAddress());
-                    merchant.setTagImage(""); // Set default or handle accordingly
-                    merchant.setMerchantImage(""); // Set default or handle accordingly
-                    merchant.setOpenHours(verificationRequest.getOpenTime() + " - " + verificationRequest.getCloseTime());
-
-
+                    merchant.setName(verificationRequest.getCompanyName());
+                    merchant.setNickname(verificationRequest.getCompanyNickname());
+                    merchant.setCountry(verificationRequest.getCountry());
+                    merchant.setStateOrProvince(verificationRequest.getStateOrProvince());
+                    merchant.setCity(verificationRequest.getCity());
+                    merchant.setAddress(verificationRequest.getAddress());
+                    merchant.setLogoImage(""); // Set default or handle accordingly
+                    merchant.setStoreImage(""); // Set default or handle accordingly
+                    merchant.setOpen(false);
                     // Hash the password and set passcode
                     String hashedPassword = hash(password);
                     signUp.setPasscode(hashedPassword);
-
 
                     // Clear the verification code and expiry timestamp
                     signUp.setVerificationCode(null);
                     signUp.setExpiryTimestamp(null);
 
-
                     merchantService.save(merchant); // Save the Merchant entity
-
 
                     signUp.setMerchant(merchant); // Associate the Merchant with SignUp
                     signUpService.save(signUp); // Save SignUp with the associated Merchant
 
-
                     // Return negative Merchant ID to differentiate from customer IDs
-                    return ResponseEntity.ok("-" + merchant.getMerchantId().toString());
+                    return ResponseEntity.ok("-" + merchant.getId().toString());
                 } else {
                     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                             .body("registration failed: incorrect verification code");
@@ -488,6 +244,59 @@ public ResponseEntity<String> registerMerchant(@RequestBody MerchantRegistration
         }
     }
 
+   // ENDPOINT: Verify Merchant Registration
+@PostMapping("/register/merchant")
+public ResponseEntity<String> registerMerchant(@RequestBody MerchantRegistrationRequest req) {
+    // 1) Check if there's already a SignUp record with this email
+    SignUp existingSignUp = signUpService.findByEmail(req.getEmail());
+    if (existingSignUp != null) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                             .body("Email already in use");
+    }
+
+
+    // 2) Create the SignUp record
+    SignUp newSignUp = new SignUp();
+    newSignUp.setEmail(req.getEmail());
+    newSignUp.setIsMerchant(true);
+   
+    // Hash and store the password
+    try {
+        String hashedPassword = hash(req.getPassword());
+        newSignUp.setPasscode(hashedPassword);
+    } catch (NoSuchAlgorithmException e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                             .body("Error hashing password");
+    }
+
+
+    // 3) Create the Merchant entity
+    Merchant merchant = new Merchant();
+    merchant.setName(req.getName());
+    merchant.setNickname(req.getNickname());
+    merchant.setCountry(req.getCountry());
+    merchant.setStateOrProvince(req.getStateOrProvince());
+    merchant.setCity(req.getCity());
+    merchant.setAddress(req.getAddress());
+    merchant.setOpen(false);
+    merchant.setAccountId(null);
+    merchant.setDiscountSchedule(null);  // or an empty Map
+    merchant.setLogoImage("");
+    merchant.setStoreImage("");
+
+
+    // 4) Link Merchant to SignUp
+    newSignUp.setMerchant(merchant);
+
+
+    // 5) Save everything
+    signUpService.save(newSignUp); // Cascade = ALL should save Merchant automatically
+
+
+    // 6) Return the negative Merchant ID
+    return ResponseEntity.ok("-" + merchant.getId());
+}
+  
 
     // ENDPOINT #4: Accept terms of service
     @PostMapping("/accept-tos")
@@ -523,10 +332,10 @@ public ResponseEntity<String> registerMerchant(@RequestBody MerchantRegistration
                 if (signUp.getPasscode() != null && signUp.getPasscode().equals(hashedPassword)) {
                     if (signUp.getMerchant() != null) {
                         // Merchant login
-                        return ResponseEntity.ok("" + signUp.getMerchant().getMerchantId() * -1);
+                        return ResponseEntity.ok("" + signUp.getMerchant().getId() * -1);
                     } else if (signUp.getCustomer() != null) {
                         // Customer login
-                        return ResponseEntity.ok(signUp.getCustomer().getCustomerID().toString());
+                        return ResponseEntity.ok(signUp.getCustomer().getCustomerId().toString());
                     } else {
                         // No associated customer or merchant
                         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("login failed");
@@ -672,10 +481,6 @@ public ResponseEntity<String> registerMerchant(@RequestBody MerchantRegistration
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing request");
         }
     }
-
-
-    // ... existing code ...
-
 
     // Endpoint 1: Check if an account exists and send a verification code
     @PostMapping("/reset-password-validate-email")

@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,6 +22,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import edu.help.microservice.dto.GetTipsResponse;
 import edu.help.microservice.dto.OrderDTO;
+import edu.help.microservice.dto.OrderRequest;
+import edu.help.microservice.dto.OrderResponse;
 import edu.help.microservice.dto.TipClaimRequest;
 import edu.help.microservice.entity.Order;
 import edu.help.microservice.service.MerchantService;
@@ -48,6 +51,15 @@ public class OrderController {
     public ResponseEntity<String> saveOrder(@RequestBody OrderDTO order) {
         orderService.saveOrder(order);
         return ResponseEntity.ok("Order saved successfully");
+    }
+
+
+@PostMapping("/{merchantId}/processOrder")
+    public ResponseEntity<OrderResponse> processOrder(@PathVariable int merchantId, @RequestBody OrderRequest orderRequest) {
+        // Delegate processing to the service layer
+        OrderResponse response = merchantService.processOrder(merchantId, orderRequest);
+        // Return the processed order response
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -144,7 +156,7 @@ public class OrderController {
             String emailContent = prepareEmailContent(merchantID, stationName, stationEmail, station, tipsList);
 
             // Send emails
-            String subject = "Tip Receipt for " + stationName + " at " + merchantService.findMerchantById(merchantID).getMerchantName();
+            String subject = "Tip Receipt for " + stationName + " at " + merchantService.findMerchantById(merchantID).getName();
             if (merchantEmail != null && !merchantEmail.isEmpty()) {
                 sendTipEmail(merchantEmail, subject, emailContent);
             }
@@ -186,7 +198,7 @@ public class OrderController {
         // Build email content
         StringBuilder emailContent = new StringBuilder();
         emailContent.append("<h1 style='text-align:center;'>Tip Report</h1>")
-                .append("<h2 style='text-align:center;'>Merchant Name: ").append(merchantService.findMerchantById(merchantID).getMerchantName()).append("</h2>")
+                .append("<h2 style='text-align:center;'>Merchant Name: ").append(merchantService.findMerchantById(merchantID).getName()).append("</h2>")
                 .append("<p style='text-align:center; font-weight:bold;'>Station Station: <span style='color:blue;'>")
                 .append(station).append("</span> | Station Name: <span style='color:blue;'>")
                 .append(stationName).append("</span></p>")

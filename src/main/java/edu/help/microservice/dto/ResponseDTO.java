@@ -3,23 +3,14 @@ package edu.help.microservice.dto;
 import java.util.List;
 
 public class ResponseDTO {
-    private List<MerchantDto> merchants;
-    private List<TagDTO> tags;
-
+    private List<MerchantDTO> merchants;
+   
     // Getters and Setters
-    public List<MerchantDto> getMerchants() {
+    public List<MerchantDTO> getMerchants() {
         return merchants;
     }
 
-    public void setMerchants(List<MerchantDto> merchants) {
+    public void setMerchants(List<MerchantDTO> merchants) {
         this.merchants = merchants;
-    }
-
-    public List<TagDTO> getTags() {
-        return tags;
-    }
-
-    public void setTags(List<TagDTO> tags) {
-        this.tags = tags;
     }
 }

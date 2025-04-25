@@ -23,7 +23,7 @@ public class SignUp {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer ID;
+    private Integer Id;
 
     @Column(nullable = false, unique = true)
     private String email;
@@ -35,15 +35,15 @@ public class SignUp {
     private String verificationCode;  // Verification code hash, nullable
 
     @Column(name = "is_merchant", nullable = false)
-    private Boolean isMerchant = false;
+    private Boolean isMerchant;
 
-    @Column(name = "expiry_Timestamp", nullable = true)
+    @Column(name = "expiry_timestamp", nullable = true)
     private Timestamp expiryTimestamp;
 
     // Optional one-to-one relationship with Customer
     @ToString.Exclude 
     @OneToOne(optional = true, cascade = CascadeType.ALL)
-    @JoinColumn(name = "customerID", referencedColumnName = "customerID")
+    @JoinColumn(name = "customer_id", referencedColumnName = "customer_id")
     private Customer customer;
 
     // Optional one-to-one relationship with Merchant

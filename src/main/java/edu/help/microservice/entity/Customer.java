@@ -31,9 +31,10 @@ public class Customer {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer customerID;
+    @Column(name = "customer_id", nullable = false)
+    private Integer customerId;
 
-    @Column(name = "acceptedtos", nullable = false)
+    @Column(name = "accepted_tos", nullable = false)
     private Boolean acceptedTOS = false;
 
     @Column(name = "first_name", nullable = false)
@@ -55,8 +56,4 @@ public class Customer {
 
     @Column(name = "payment_id", nullable = true)
     private String paymentId;
-
-    @Type(JsonType.class)
-    @Column(name = "subscription", columnDefinition = "jsonb")
-    private Map<Integer, SubscriptionInfo> subscription = new HashMap<>();
 }

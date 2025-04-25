@@ -19,43 +19,44 @@ public class Order {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "order_id")
     private int orderId; // Unique identifier for each order
 
-    @Column(nullable = false)
+    @Column(name = "merchant_id", nullable = false)
     private int merchantId; // ID of the merchant where the order was placed
 
-    @Column(nullable = false)
+    @Column(name = "user_id", nullable = false)
     private int userId; // ID of the user who placed the order
 
-    @Column(nullable = false)
+    @Column(name = "timestamp", nullable = false)
     private Instant timestamp; // Timestamp when the order was completed
 
     @Type(JsonBinaryType.class)
-    @Column(columnDefinition = "jsonb", nullable = false)
+    @Column(name = "items", columnDefinition = "jsonb", nullable = false)
     private List<ItemOrder> items;
 
-    @Column(nullable = false)
+    @Column(name = "total_point_price", nullable = false)
     private int totalPointPrice; // Total price in points if used for payment
 
-    @Column(nullable = false)
+    @Column(name = "total_regular_price", nullable = false)
     private double totalRegularPrice; // Total price in dollars
 
-    @Column(nullable = false)
+    @Column(name = "tip", nullable = false)
     private double tip; // Tip amount given by the user for the order
 
-    @Column(nullable = false)
+    @Column(name = "in_app_payments", nullable = false)
     private boolean inAppPayments; // Indicates if the payment was made in-app
 
-    @Column(length = 20, nullable = false)
+    @Column(name = "status", nullable = false)
     private String status; // Final status of the order ('claimed', 'delivered', 'canceled')
 
-    @Column(length = 1)
-    private String station; // Station station identifier (A-Z)
+    @Column(name = "terminal", length = 1)
+    private String terminal; // Station station identifier (A-Z)
 
-    @Column(length = 255)
-    private String tipsClaimed; // "NULL" (as a string) if not claimed, or the station's name
+    @Column(name = "claimer")
+    private String claimer; // "NULL" (as a string) if not claimed, or the station's name
 
-    @Column
+    @Column(name = "point_of_sale", nullable = false)
     private boolean pointOfSale; // Indicates if this is a point of sale purchase or not
 
     // Inner class for ItemOrder

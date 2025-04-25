@@ -1,6 +1,5 @@
 package edu.help.microservice.service;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -10,7 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.stripe.exception.StripeException;
 
-import edu.help.microservice.dto.MerchantDto;
+import edu.help.microservice.dto.MerchantDTO;
 import edu.help.microservice.dto.ItemOrderRequest;
 import edu.help.microservice.dto.ItemOrderResponse;
 import edu.help.microservice.dto.OrderRequest;
@@ -36,7 +35,7 @@ public class MerchantService {
     /**
      * Returns all Merchants in the database as MerchantDTO objects.
      */
-    public List<MerchantDto> findAllMerchants() {
+    public List<MerchantDTO> findAllMerchants() {
         List<Merchant> merchants = merchantRepository.findAll();
         return merchants.stream()
                 .map(DTOConverter::convertToMerchantDTO)
@@ -85,20 +84,6 @@ public class MerchantService {
         return merchantRepository.save(merchant);
     }
 
-    /**
-     * Sets the startDate column for a given merchant, using our custom native query.
-     *
-     * @param merchantId The ID of the merchant.
-     * @param date The LocalDate to set (works best if the column is a DATE type).
-     */
-    public void setStartDate(Integer merchantId, LocalDate date) {
-        merchantRepository.updateStartDate(merchantId, date);
-    }
-
-    public LocalDate getStartDate(Integer merchantId) {
-        Merchant merchant = findMerchantById(merchantId);
-        return (merchant != null) ? merchant.getStartDate() : null;
-    }
 
     /**
      * Processes an order (e.g. purchase or points usage) for a given Merchant.
@@ -118,18 +103,14 @@ public class MerchantService {
             Item item = itemRepository.findById(itemOrderRequest.getItemId())
                     .orElseThrow(() -> new RuntimeException("Item not found"));
 
-            String sizeType = itemOrderRequest.getSizeType();
-            if (sizeType == null || sizeType.isEmpty()) {
-                sizeType = ""; // Treat null or empty as no size specified
-            }
+        
 
             // Build the response for each item
             itemOrderResponses.add(
                     ItemOrderResponse.builder()
-                            .itemId(item.getItemId())
-                            .itemName(item.getItemName())
+                            .itemId(item.getId())
+                            .itemName(item.getName())
                             .paymentType(itemOrderRequest.getPaymentType())
-                            .sizeType(sizeType)
                             .quantity(itemOrderRequest.getQuantity())
                             .build());
 
@@ -139,26 +120,20 @@ public class MerchantService {
             // If user pays with points
             if ("points".equalsIgnoreCase(itemOrderRequest.getPaymentType())) {
                 // Price in points
-                totalPointsPrice += item.getPoint() * itemOrderRequest.getQuantity();
+                totalPointsPrice += item.getPointPrice() * itemOrderRequest.getQuantity();
                 continue;
             }
 
             // If user pays with money, calculate price
             double price;
-            if (request.isHappyHour()) {
-                // Use the happy hour price
-                if ("double".equals(sizeType)) {
-                    price = item.getDoubleHappyPrice();
-                } else {
-                    price = item.getSingleHappyPrice();
-                }
+            if (request.isDiscount()) {
+        
+                price = item.getDiscountPrice();
+                
             } else {
-                // Use the regular price
-                if ("double".equals(sizeType)) {
-                    price = item.getDoublePrice();
-                } else {
-                    price = item.getSinglePrice();
-                }
+             
+            price = item.getRegularPrice();
+                
             }
 
             totalMoneyPrice += price * itemOrderRequest.getQuantity();

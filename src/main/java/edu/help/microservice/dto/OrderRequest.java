@@ -17,5 +17,5 @@ public class OrderRequest {
     private double tip; // Renamed field
     private List<ItemOrderRequest> items;
     private boolean inAppPayments;
-    private boolean happyHour;
+    private boolean discount;
 }

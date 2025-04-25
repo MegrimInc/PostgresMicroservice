@@ -51,11 +51,9 @@ public class OrderService {
         order.setTip(orderDTO.getTip());
         order.setInAppPayments(orderDTO.isInAppPayments());
         order.setStatus(orderDTO.getStatus());
-        order.setStation(orderDTO.getClaimer());
+        order.setTerminal(orderDTO.getTerminal());
         order.setPointOfSale(orderDTO.isPointOfSale());
-
-        // Set tipsClaimed to null
-        order.setTipsClaimed(null);
+        order.setClaimer(null);
 
         // Save the order to the database
         orderRepository.save(order);
@@ -144,16 +142,16 @@ public class OrderService {
         // 4. Build DTO list from items + stats
         List<ItemCountDTO> result = new ArrayList<>();
         for (Item item : items) {
-            int itemId = item.getItemId();
-            String name = item.getItemName();
-            double doublePrice = item.getDoublePrice() != null ? item.getDoublePrice() : 0.0;
+            int itemId = item.getId();
+            String name = item.getName();
+            double regularPrice = item.getRegularPrice();
 
             int[] stats = itemStats.getOrDefault(itemId, new int[]{0, 0});
             int soldWithDollars = stats[0];
             int soldWithPoints = stats[1];
             int totalSold = soldWithDollars + soldWithPoints;
 
-            result.add(new ItemCountDTO(itemId, name, doublePrice, soldWithDollars, soldWithPoints, totalSold));
+            result.add(new ItemCountDTO(itemId, name, regularPrice, soldWithDollars, soldWithPoints, totalSold));
         }
 
         // Sort by totalSold DESC

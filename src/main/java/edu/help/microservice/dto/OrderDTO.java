@@ -4,8 +4,6 @@ import edu.help.microservice.entity.Order.ItemOrder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.Instant;
 import java.util.List;
 
 @Data
@@ -21,7 +19,7 @@ public class OrderDTO {
     private double tip;
     private boolean inAppPayments;
     private String status;
-    private String claimer;
+    private String terminal;
     private boolean pointOfSale;
     // Exclude fields not present in the Order entity
 }

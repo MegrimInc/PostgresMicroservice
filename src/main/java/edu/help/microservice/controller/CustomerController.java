@@ -1,18 +1,23 @@
 package edu.help.microservice.controller;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import com.stripe.exception.StripeException;
 import edu.help.microservice.dto.CustomerNameRequest;
 import edu.help.microservice.dto.CustomerNameResponse;
+import edu.help.microservice.dto.MerchantDTO;
 import edu.help.microservice.dto.PaymentIdSetRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import edu.help.microservice.entity.Customer;
+import edu.help.microservice.entity.Item;
+import edu.help.microservice.entity.Merchant;
 import edu.help.microservice.service.CustomerService;
+import edu.help.microservice.service.MerchantService;
 import edu.help.microservice.service.PointService;
 import edu.help.microservice.service.StripeService;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +29,7 @@ public class CustomerController {
     private final PointService pointService;
     private final CustomerService customerService;
     private final StripeService stripeService;
+    private final MerchantService merchantService;
 
     @GetMapping("/points/{userId}")
     public ResponseEntity<Map<Integer, Map<Integer, Integer>>> getPointsForUser(@PathVariable int userId) {
@@ -72,24 +78,43 @@ public class CustomerController {
     }
 
     @GetMapping("/cardDetails/{userId}")
-public ResponseEntity<Map<String, String>> getCardDetails(@PathVariable int userId) {
-    Optional<Customer> customerOpt = customerService.findById(userId);
-    if (customerOpt.isEmpty()) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("error", "Customer not found"));
+    public ResponseEntity<Map<String, String>> getCardDetails(@PathVariable int userId) {
+        Optional<Customer> customerOpt = customerService.findById(userId);
+        if (customerOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Customer not found"));
+        }
+        Customer customer = customerOpt.get();
+        if (customer.getPaymentId() == null || customer.getPaymentId().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "No payment method on file"));
+        }
+        try {
+            Map<String, String> cardDetails = stripeService.getCardDetails(customer.getPaymentId());
+            return ResponseEntity.ok(cardDetails);
+        } catch (StripeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Stripe error: " + e.getMessage()));
+        }
     }
-    Customer customer = customerOpt.get();
-    if (customer.getPaymentId() == null || customer.getPaymentId().isEmpty()) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("error", "No payment method on file"));
+
+     @GetMapping("/customer/seeAllMerchants")
+    public List<MerchantDTO> seeAllMerchants() {
+        return merchantService.findAllMerchants();
     }
-    try {
-        Map<String, String> cardDetails = stripeService.getCardDetails(customer.getPaymentId());
-        return ResponseEntity.ok(cardDetails);
-    } catch (StripeException e) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Stripe error: " + e.getMessage()));
+
+    @GetMapping("/customer/getAllItemsByMerchant/{merchantId}")
+    public List<Item> getAllItemsByMerchant(@PathVariable Integer merchantId) {
+        return merchantService.getItemsByMerchantId(merchantId);
     }
-}
+
+    @GetMapping("/customer/{merchantId}")
+    public ResponseEntity<Merchant> getMerchantById(@PathVariable Integer merchantId) {
+        Merchant merchant = merchantService.findMerchantById(merchantId); // Fetch the merchant by ID
+        if (merchant == null) {
+            return ResponseEntity.notFound().build(); // Return 404 if not found
+        }
+        return ResponseEntity.ok(merchant); // Return the merchant if found
+    }
 
 }

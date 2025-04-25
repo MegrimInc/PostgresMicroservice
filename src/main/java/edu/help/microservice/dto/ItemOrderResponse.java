@@ -14,5 +14,4 @@ public class ItemOrderResponse {
     private String itemName;
     private int quantity;
     private String paymentType; // "points" or "regular"
-    private String sizeType; // "single" or "double" or empty for items without size variations
 }

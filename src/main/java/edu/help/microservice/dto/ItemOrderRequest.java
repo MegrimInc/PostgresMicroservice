@@ -13,5 +13,4 @@ public class ItemOrderRequest {
     private int itemId;
     private int quantity;
     private String paymentType; // "points" or "regular"
-    private String sizeType; // "single" or "double" or empty for items without size variations
 }
