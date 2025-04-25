@@ -13,6 +13,7 @@ public class MerchantDTO {
     private String name;
     private String nickname;
     private String city;
+    private String zipCode;
     private String stateOrProvince;
     private String country; 
     private String address;
