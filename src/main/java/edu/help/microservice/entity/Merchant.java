@@ -29,7 +29,7 @@ public class Merchant implements Serializable {
     private String city;
 
 
-    @Column(name = "state/province", nullable = false, length = 255)
+    @Column(name = "state_or_province", nullable = false, length = 255)
     private String stateOrProvince;
 
 
