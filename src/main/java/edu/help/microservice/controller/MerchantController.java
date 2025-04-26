@@ -38,6 +38,8 @@ public class MerchantController {
         this.merchantService = merchantService;
     }
 
+
+
     /**
      * GET /generalData
      * Request Parameters: merchantEmail, merchantPW

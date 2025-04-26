@@ -9,6 +9,8 @@ import java.util.Properties;
 import java.util.Random;
 
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
@@ -42,19 +44,84 @@ import edu.help.microservice.service.StripeService;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 
+import static edu.help.microservice.util.Cookies.generateSignature;
+import static edu.help.microservice.util.Cookies.validateSignature;
+
 
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/signup")
 public class SignUpController {
+    
+    
+    /*
+    In the context of merchants:
+    
+    Registration is by WEBSITE ONLY
+    Verification is by WEBSITE ONLY
+    Login is by WEBSITE(cookies) AND APP(local-storage)
+    
+    For Customers:
+    Registration is by APP ONLY
+    Verification is by APP ONLY
+    Login is by APP ONLY
+    
+    
+     */
     private static final String SECRET_KEY = "YourSecretKey";
 
     private final SignUpService signUpService;
     private final CustomerService customerService;
     private final MerchantService merchantService;
     private final StripeService stripeService;
+    
+
+    
+    @PostMapping("/login-merchant")
+    public ResponseEntity<String> loginMerchant(HttpServletResponse response) {
+
+        // TODO check if cookie exists. If so, validate signature. if not, get input required.
+        String hasCookie = ""; 
+        
+        // Prepare to store if any kind of login is successful.
+        boolean loginSuccessful = false;
+        
+        
+        if( hasCookie == "true") {
+            // If it has a cookie, make sure it is still valid.
+            
+            //TODO: Check expiry
+            
+            // Check signature
+            loginSuccessful = validateSignature("extract id and timestamp", "extract signature");
+        } else {
+            // If it doesn't have a cookie and instead sent email and pw, check that
+            loginSuccessful = "does baremail and barpw create a match?" == "yes";
+        }
+        
+        // If fail, return unauthorized please login again
+        if(!loginSuccessful) return (ResponseEntity<String>) ResponseEntity.status(401);
 
 
+        // If successful login by cookie OR pw, generate a new cookie, essentially refreshing
+        // the session
+
+        // To do this, lookup the merchant id (for future stateless requests)
+        int merchantId = -1; //TODO LOOKUP MERCHANT ID
+        
+        // Set the expiry to 1h in the future (auto-logout after session expires)
+        Cookie cookie = new Cookie("auth", generateSignature(merchantId + "|" + (System.currentTimeMillis() + 3600 * 1000)));
+        cookie.setMaxAge(3600); // Cookie expires in 1 hour
+        cookie.setSecure(true); // Send cookie over HTTPS only
+        cookie.setHttpOnly(true); // Prevent client-side JavaScript access
+        cookie.setPath("/"); // Cookie is valid for the entire application
+        response.addCookie(cookie);
+        return ResponseEntity.ok("Cookie has been set");
+        
+        // User, by this point, now stores the cookie containing the ID and expiry and server
+        // signature.
+    }
+    
 
     // ENDPOINT: Resend verification code
     @PostMapping("/send-verification")
@@ -606,4 +673,7 @@ public ResponseEntity<String> registerMerchant(@RequestBody MerchantRegistration
     private boolean isVerificationCodeExpired(Timestamp expiryTimestamp) {
         return expiryTimestamp != null && expiryTimestamp.before(new Timestamp(System.currentTimeMillis()));
     }
+    
+    
+    
 }
