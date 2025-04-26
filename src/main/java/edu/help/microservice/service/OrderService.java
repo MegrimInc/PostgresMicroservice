@@ -31,7 +31,7 @@ public class OrderService {
 
         // Map fields from OrderDTO to Order entity
         order.setMerchantId(orderDTO.getMerchantId());
-        order.setUserId(orderDTO.getUserId());
+        order.setCustomerId(orderDTO.getUserId());
 
         // Parse timestamp from String to Instant
         try {

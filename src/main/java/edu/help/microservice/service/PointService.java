@@ -60,11 +60,11 @@ public class PointService {
 
     public void rewardPointsForOrder(Order order) {
 
-        Optional<Customer> customerOpt = customerRepository.findById(order.getUserId());
+        Optional<Customer> customerOpt = customerRepository.findById(order.getCustomerId());
         if (customerOpt.isEmpty())
             return;
 
-        var pointsMap = getPointsForCustomer(order.getUserId());
+        var pointsMap = getPointsForCustomer(order.getCustomerId());
         if (pointsMap == null)
             return;
 

@@ -25,8 +25,8 @@ public class Order {
     @Column(name = "merchant_id", nullable = false)
     private int merchantId; // ID of the merchant where the order was placed
 
-    @Column(name = "user_id", nullable = false)
-    private int userId; // ID of the user who placed the order
+    @Column(name = "customer_id", nullable = false)
+    private int customerId; // ID of the user who placed the order
 
     @Column(name = "timestamp", nullable = false)
     private Instant timestamp; // Timestamp when the order was completed
