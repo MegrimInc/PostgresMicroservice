@@ -42,14 +42,6 @@ public class MerchantService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Finds a Merchant by its email.
-     * @param merchant_email The email of the merchant.
-     * @return The Merchant if found, otherwise null.
-     */
-    public Merchant findByMerchantEmail(String merchant_email) {
-        return merchantRepository.findByMerchantEmail(merchant_email).orElse(null);
-    }
 
     /**
      * Finds a Merchant by its ID.
