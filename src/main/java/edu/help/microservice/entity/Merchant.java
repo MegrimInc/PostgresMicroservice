@@ -73,8 +73,8 @@ public class Merchant implements Serializable {
     private String discountSchedule;
 
 
-    @Column(name = "signup_bonus") // Store as plain text
-    private int signupBonus;
+    @Column(name = "bonus") // Store as plain text
+    private int bonus;
 
 }
 

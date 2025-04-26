@@ -38,7 +38,7 @@ public class DTOConverter {
             merchantDto.setDiscountSchedule(new HashMap<>());
         }
     
-        merchantDto.setSignupBonus(merchant.getSignupBonus());
+        merchantDto.setSignupBonus(merchant.getBonus());
         return merchantDto;
     }
 }
