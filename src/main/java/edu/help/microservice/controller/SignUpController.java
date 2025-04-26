@@ -82,7 +82,7 @@ public class SignUpController {
 
 
     // ENDPOINT: Verification for Registration
-    @PostMapping("/verify/customer")
+    @PostMapping("/verify-customer")
     public ResponseEntity<String> verifyCustomer(@RequestBody VerificationCustomerRequest verificationRequest) {
         String email = verificationRequest.getEmail();
         String verificationCode = verificationRequest.getVerificationCode();
@@ -139,7 +139,7 @@ public class SignUpController {
 
 
     // ENDPOINT: Registration for Customers
-    @PostMapping("/register/customer")
+    @PostMapping("/register-customer")
     public ResponseEntity<String> registerCustomer(@RequestBody AcceptTOSRequest2 request) {
         String email = request.getEmail();
         SignUp existingSignUp = signUpService.findByEmail(email);
@@ -190,7 +190,7 @@ public class SignUpController {
     
      
     // ENDPOINT: Verify Merchant Registration
-    @PostMapping("/verify/merchant")
+    @PostMapping("/verify-merchant")
     public ResponseEntity<String> verifyMerchant(@RequestBody VerificationMerchantRequest verificationRequest) {
         String email = verificationRequest.getEmail();
         String verificationCode = verificationRequest.getVerificationCode();
@@ -245,7 +245,7 @@ public class SignUpController {
     }
 
    // ENDPOINT: Verify Merchant Registration
-@PostMapping("/register/merchant")
+@PostMapping("/register-merchant")
 public ResponseEntity<String> registerMerchant(@RequestBody MerchantRegistrationRequest req) {
     // 1) Check if there's already a SignUp record with this email
     SignUp existingSignUp = signUpService.findByEmail(req.getEmail());
@@ -317,7 +317,7 @@ public ResponseEntity<String> registerMerchant(@RequestBody MerchantRegistration
 
 
     // ENDPOINT #5: Login with email and password
-    @PostMapping("/login")
+    @PostMapping("/login-app")
     public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
         String email = loginRequest.getEmail();
         String password = loginRequest.getPassword();
@@ -355,7 +355,7 @@ public ResponseEntity<String> registerMerchant(@RequestBody MerchantRegistration
 
 
     // ENDPOINT: Delete Account
-    @PostMapping("/deleteaccount")
+    @PostMapping("/deleteaccount-app")
     public ResponseEntity<String> deleteAccount(@RequestBody LoginRequest loginRequest) {
         String email = loginRequest.getEmail();
         String password = loginRequest.getPassword();
