@@ -16,14 +16,15 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 @Entity
-@Table(name = "signup")
+@Table(name = "signups")
 @Data
 @NoArgsConstructor
 public class SignUp {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer Id;
+    @Column(name = "signup_id", nullable = true)
+    private Integer signupId;
 
     @Column(nullable = false, unique = true)
     private String email;
