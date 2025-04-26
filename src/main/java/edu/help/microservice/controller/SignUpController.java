@@ -317,7 +317,7 @@ public ResponseEntity<String> registerMerchant(@RequestBody MerchantRegistration
 
 
     // ENDPOINT #5: Login with email and password
-    @PostMapping("/login-app")
+    @PostMapping("/login-customer")
     public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
         String email = loginRequest.getEmail();
         String password = loginRequest.getPassword();
@@ -355,7 +355,7 @@ public ResponseEntity<String> registerMerchant(@RequestBody MerchantRegistration
 
 
     // ENDPOINT: Delete Account
-    @PostMapping("/deleteaccount-app")
+    @PostMapping("/delete-customer")
     public ResponseEntity<String> deleteAccount(@RequestBody LoginRequest loginRequest) {
         String email = loginRequest.getEmail();
         String password = loginRequest.getPassword();
