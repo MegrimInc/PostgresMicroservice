@@ -298,7 +298,7 @@ public class SignUpController {
                     signUpService.save(signUp); // Save SignUp with the associated Merchant
 
                     // Return negative Merchant ID to differentiate from customer IDs
-                    return ResponseEntity.ok("-" + merchant.getId().toString());
+                    return ResponseEntity.ok("-" + merchant.getMerchantId().toString());
                 } else {
                     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                             .body("registration failed: incorrect verification code");
@@ -361,7 +361,7 @@ public ResponseEntity<String> registerMerchant(@RequestBody MerchantRegistration
 
 
     // 6) Return the negative Merchant ID
-    return ResponseEntity.ok("-" + merchant.getId());
+    return ResponseEntity.ok("-" + merchant.getMerchantId());
 }
   
 
@@ -399,7 +399,7 @@ public ResponseEntity<String> registerMerchant(@RequestBody MerchantRegistration
                 if (signUp.getPasscode() != null && signUp.getPasscode().equals(hashedPassword)) {
                     if (signUp.getMerchant() != null) {
                         // Merchant login
-                        return ResponseEntity.ok("" + signUp.getMerchant().getId() * -1);
+                        return ResponseEntity.ok("" + signUp.getMerchant().getMerchantId() * -1);
                     } else if (signUp.getCustomer() != null) {
                         // Customer login
                         return ResponseEntity.ok(signUp.getCustomer().getCustomerId().toString());

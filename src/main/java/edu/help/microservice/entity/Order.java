@@ -67,7 +67,6 @@ public class Order {
         private int itemId;
         private String itemName;
         private String paymentType;
-        private String sizeType;
         private int quantity;
     }
 }

@@ -1,4 +1,4 @@
-package edu.help.microservice.entity;
+package edu.help.microservice.util;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;

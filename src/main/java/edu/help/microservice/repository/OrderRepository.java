@@ -14,12 +14,12 @@ import java.util.List;
 
 public interface OrderRepository extends JpaRepository<Order, Integer> {
 
-    @Query("SELECT o FROM Order o WHERE o.merchantId = :merchantId AND o.station = :station AND o.tipsClaimed IS NULL AND o.tip > 0")
-    List<Order> findUnclaimedTipsByMerchantIdAndStation(@Param("merchantId") int merchantId, @Param("station") String station);
+    @Query("SELECT o FROM Order o WHERE o.merchantId = :merchantId AND o.terminal = :terminal AND o.claimer IS NULL AND o.tip > 0")
+    List<Order> findUnclaimedTipsByMerchantIdAndTerminal(@Param("merchantId") int merchantId, @Param("terminal") String terminal);
 
     @Modifying
-    @Query("UPDATE Order o SET o.tipsClaimed = :stationName WHERE o.orderId IN :orderIds")
-    void updateTipsClaimed(@Param("stationName") String stationName, @Param("orderIds") List<Integer> orderIds);
+    @Query("UPDATE Order o SET o.claimer = :claimer WHERE o.orderId IN :orderIds")
+    void updateClaimer(@Param("claimer") String claimer, @Param("orderIds") List<Integer> orderIds);
 
     @Query("SELECT o FROM Order o WHERE o.merchantId = :merchantId")
     List<Order> findByMerchantId(@Param("merchantId") int merchantId);

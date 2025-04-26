@@ -14,10 +14,11 @@ public class DTOConverter {
 
     public static MerchantDTO convertToMerchantDTO(Merchant merchant) {
         MerchantDTO merchantDto = new MerchantDTO();
-        merchantDto.setId(merchant.getId());
+        merchantDto.setId(merchant.getMerchantId());
         merchantDto.setName(merchant.getName());
         merchantDto.setNickname(merchant.getNickname());      
         merchantDto.setCity(merchant.getCity());
+        merchantDto.setZipCode(merchant.getZipCode());
         merchantDto.setStateOrProvince(merchant.getStateOrProvince());
         merchantDto.setCountry(merchant.getCountry());
         merchantDto.setAddress(merchant.getAddress());

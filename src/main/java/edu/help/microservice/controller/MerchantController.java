@@ -57,7 +57,7 @@ public class MerchantController {
             if (!hashedPassword.equals(signUp.getPasscode())) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("login failed");
             }
-            int merchantID = signUp.getMerchant().getId();
+            int merchantID = signUp.getMerchant().getMerchantId();
             List<Order> orders = orderService.getAllOrdersForMerchant(merchantID);
             // Order from most recent to least recent
             orders.sort((o1, o2) -> o2.getTimestamp().compareTo(o1.getTimestamp()));
@@ -106,7 +106,7 @@ public class MerchantController {
             if (!hashedPassword.equals(signUp.getPasscode())) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("login failed");
             }
-            int merchantID = signUp.getMerchant().getId();
+            int merchantID = signUp.getMerchant().getMerchantId();
             Instant startInstant = Instant.ofEpochMilli(start);
             Instant endInstant = Instant.ofEpochMilli(end);
 
@@ -144,7 +144,7 @@ public class MerchantController {
             if (!hashedPassword.equals(signUp.getPasscode())) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("login failed");
             }
-            int merchantID = signUp.getMerchant().getId();
+            int merchantID = signUp.getMerchant().getMerchantId();
             Instant startingInstant = Instant.ofEpochMilli(timestamp);
 
             List<Order> orders = orderService.getFiftyOrders(merchantID, startingInstant, index);
@@ -184,7 +184,7 @@ public class MerchantController {
             if (!hashedPassword.equals(signUp.getPasscode())) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("login failed");
             }
-            int merchantID = signUp.getMerchant().getId();
+            int merchantID = signUp.getMerchant().getMerchantId();
 
             // Parse the incoming date string assuming format "yyyy-MM-dd"
             // and interpret it as local date in America/New_York (accounting for DST)
@@ -230,7 +230,7 @@ public class MerchantController {
             if (!hashedPassword.equals(signUp.getPasscode())) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("login failed");
             }
-            int merchantID = signUp.getMerchant().getId();
+            int merchantID = signUp.getMerchant().getMerchantId();
             Map<String, Integer> top5 = orderService.getTop5Items(merchantID);
             String jsonResponse = "{\"data\":" + new ObjectMapper().writeValueAsString(top5) + "}";
             return ResponseEntity.ok(jsonResponse);
@@ -253,7 +253,7 @@ public class MerchantController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("login failed");
             }
 
-            int merchantId = signUp.getMerchant().getId();
+            int merchantId = signUp.getMerchant().getMerchantId();
             List<ItemCountDTO> responseList = orderService.getAllItemCountsForMerchant(merchantId);
             return ResponseEntity.ok(Map.of("data", responseList));
         } catch (Exception e) {

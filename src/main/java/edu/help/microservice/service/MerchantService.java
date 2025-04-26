@@ -100,7 +100,7 @@ public class MerchantService {
             // Build the response for each item
             itemOrderResponses.add(
                     ItemOrderResponse.builder()
-                            .itemId(item.getId())
+                            .itemId(item.getItemId())
                             .itemName(item.getName())
                             .paymentType(itemOrderRequest.getPaymentType())
                             .quantity(itemOrderRequest.getQuantity())

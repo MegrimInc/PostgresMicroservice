@@ -1,6 +1,8 @@
 package edu.help.microservice.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import edu.help.microservice.util.IntegerArrayConverter;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -28,7 +30,7 @@ public class Item {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "item_id")
-    private Integer id;
+    private Integer itemId;
 
     @Column(name = "name")
     private String name;

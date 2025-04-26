@@ -62,13 +62,13 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public List<Order> getUnclaimedTips(int merchantId, String station) {
-        return orderRepository.findUnclaimedTipsByMerchantIdAndStation(merchantId, station);
+        return orderRepository.findUnclaimedTipsByMerchantIdAndTerminal(merchantId, station);
     }
 
     @Transactional
-    public void claimTipsForOrders(List<Order> orders, String stationName) {
+    public void claimTipsForOrders(List<Order> orders, String claimer) {
         List<Integer> orderIds = orders.stream().map(Order::getOrderId).toList();
-        orderRepository.updateTipsClaimed(stationName, orderIds);
+        orderRepository.updateClaimer(claimer, orderIds);
     }
 
     /**
@@ -142,7 +142,7 @@ public class OrderService {
         // 4. Build DTO list from items + stats
         List<ItemCountDTO> result = new ArrayList<>();
         for (Item item : items) {
-            int itemId = item.getId();
+            int itemId = item.getItemId();
             String name = item.getName();
             double regularPrice = item.getRegularPrice();
 
