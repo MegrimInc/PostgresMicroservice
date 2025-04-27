@@ -1,7 +1,12 @@
 package edu.help.microservice.controller;
 
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
@@ -40,6 +45,7 @@ import edu.help.microservice.service.SignUpService;
 import edu.help.microservice.service.StripeService;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
 import static edu.help.microservice.util.Cookies.*;
 
@@ -72,6 +78,104 @@ public class SignUpController {
     private final CustomerService customerService;
     private final MerchantService merchantService;
     private final StripeService stripeService;
+
+
+
+
+    @PostMapping(value = "/register-merchant", consumes = {"multipart/form-data"})
+    public ResponseEntity<String> registerMerchantWithImage(
+            @RequestPart("info") MerchantRegistrationRequest req,
+            @RequestPart("logoImage") MultipartFile logoImage,
+            @RequestPart(value = "storeImage", required = false) MultipartFile storeImage,
+            HttpServletResponse response) {
+
+        // 1. Check for existing signup
+        SignUp existingSignUp = signUpService.findByEmail(req.getEmail());
+        if (existingSignUp != null) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Email already in use");
+        }
+
+        // 2. Hash password
+        SignUp newSignUp = new SignUp();
+        newSignUp.setEmail(req.getEmail());
+        newSignUp.setIsMerchant(true);
+        try {
+            String hashedPassword = hash(req.getPassword());
+            newSignUp.setPasscode(hashedPassword);
+        } catch (NoSuchAlgorithmException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error hashing password");
+        }
+
+        // 3. Save images
+        String logoImagePath = null;
+        String storeImagePath = null;
+        if (!TESTING) {
+            logoImagePath = saveImageFile(logoImage);
+            storeImagePath = (storeImage != null) ? saveImageFile(storeImage) : logoImagePath;
+        } 
+
+        // 4. Create Merchant entity
+        Merchant merchant = new Merchant();
+        merchant.setName(req.getName());
+        merchant.setNickname(req.getNickname());
+        merchant.setCity(req.getCity());
+        merchant.setStateOrProvince(req.getStateOrProvince());
+        merchant.setAddress(req.getAddress());
+        merchant.setCountry(req.getCountry());
+        merchant.setZipCode(req.getZipCode());
+        merchant.setOpen(false);
+        merchant.setBonus(0);
+        merchant.setLogoImage(logoImagePath);
+        merchant.setStoreImage(storeImagePath);
+        merchant.setAccountId(null);
+        merchant.setDiscountSchedule(null);
+
+        // 5. Link signup and merchant
+        newSignUp.setMerchant(merchant);
+
+        // 6. Save
+        signUpService.save(newSignUp);
+
+        // 7. Issue cookie
+        String id = String.valueOf(merchant.getMerchantId());
+        String expiry = String.valueOf(System.currentTimeMillis() + 3600 * 1000);
+        String payload = id + "." + expiry;
+        String signature = generateSignature(payload);
+        String cookieValueRaw = payload + "." + signature;
+        String cookieValueEncoded = Base64.getEncoder().encodeToString(cookieValueRaw.getBytes(StandardCharsets.UTF_8));
+
+        response.addHeader("Set-Cookie", String.format(
+                "auth=%s; Max-Age=3600; Path=/; HttpOnly; SameSite=Lax;",
+                cookieValueEncoded
+        ));
+
+        return ResponseEntity.ok("Registered and Logged In!");
+    }
+
+    private String saveImageFile(MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new RuntimeException("Empty file upload!");
+        }
+        try {
+            String uploadsDir = "/uploads/merchants/";
+            File dir = new File(uploadsDir);
+            if (!dir.exists()) dir.mkdirs();
+
+            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            Path filePath = Paths.get(uploadsDir + fileName);
+
+            Files.copy(file.getInputStream(), filePath);
+
+            // Return the path or public URL
+            return "/uploads/merchants/" + fileName;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to save image", e);
+        }
+    }
+
+
 
     @PostMapping("/login-merchant")
     public ResponseEntity<String> loginMerchant(
@@ -358,58 +462,6 @@ public class SignUpController {
         }
     }
 
-   // ENDPOINT: Verify Merchant Registration
-@PostMapping("/register-merchant")
-public ResponseEntity<String> registerMerchant(@RequestBody MerchantRegistrationRequest req) {
-    // 1) Check if there's already a SignUp record with this email
-    SignUp existingSignUp = signUpService.findByEmail(req.getEmail());
-    if (existingSignUp != null) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                             .body("Email already in use");
-    }
-
-
-    // 2) Create the SignUp record
-    SignUp newSignUp = new SignUp();
-    newSignUp.setEmail(req.getEmail());
-    newSignUp.setIsMerchant(true);
-   
-    // Hash and store the password
-    try {
-        String hashedPassword = hash(req.getPassword());
-        newSignUp.setPasscode(hashedPassword);
-    } catch (NoSuchAlgorithmException e) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                             .body("Error hashing password");
-    }
-
-
-    // 3) Create the Merchant entity
-    Merchant merchant = new Merchant();
-    merchant.setName(req.getName());
-    merchant.setNickname(req.getNickname());
-    merchant.setCountry(req.getCountry());
-    merchant.setStateOrProvince(req.getStateOrProvince());
-    merchant.setCity(req.getCity());
-    merchant.setAddress(req.getAddress());
-    merchant.setOpen(false);
-    merchant.setAccountId(null);
-    merchant.setDiscountSchedule(null);  // or an empty Map
-    merchant.setLogoImage("");
-    merchant.setStoreImage("");
-
-
-    // 4) Link Merchant to SignUp
-    newSignUp.setMerchant(merchant);
-
-
-    // 5) Save everything
-    signUpService.save(newSignUp); // Cascade = ALL should save Merchant automatically
-
-
-    // 6) Return the negative Merchant ID
-    return ResponseEntity.ok("-" + merchant.getMerchantId());
-}
   
 
     // ENDPOINT #4: Accept terms of service
