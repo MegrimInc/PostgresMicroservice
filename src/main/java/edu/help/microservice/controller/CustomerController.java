@@ -98,17 +98,17 @@ public class CustomerController {
         }
     }
 
-     @GetMapping("/customer/seeAllMerchants")
+     @GetMapping("/seeAllMerchants")
     public List<MerchantDTO> seeAllMerchants() {
         return merchantService.findAllMerchants();
     }
 
-    @GetMapping("/customer/getAllItemsByMerchant/{merchantId}")
+    @GetMapping("/getAllItemsByMerchant/{merchantId}")
     public List<Item> getAllItemsByMerchant(@PathVariable Integer merchantId) {
         return merchantService.getItemsByMerchantId(merchantId);
     }
 
-    @GetMapping("/customer/{merchantId}")
+    @GetMapping("/{merchantId}")
     public ResponseEntity<Merchant> getMerchantById(@PathVariable Integer merchantId) {
         Merchant merchant = merchantService.findMerchantById(merchantId); // Fetch the merchant by ID
         if (merchant == null) {
