@@ -1,6 +1,7 @@
 package edu.help.microservice.controller;
 
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
@@ -9,18 +10,14 @@ import java.util.Properties;
 import java.util.Random;
 
 
+import edu.help.microservice.util.Cookies;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 
 import com.stripe.exception.StripeException;
@@ -44,8 +41,7 @@ import edu.help.microservice.service.StripeService;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 
-import static edu.help.microservice.util.Cookies.generateSignature;
-import static edu.help.microservice.util.Cookies.validateSignature;
+import static edu.help.microservice.util.Cookies.*;
 
 
 @RequiredArgsConstructor
@@ -68,59 +64,110 @@ public class SignUpController {
     
     
      */
+    
+    private final boolean TESTING = false;
     private static final String SECRET_KEY = "YourSecretKey";
 
     private final SignUpService signUpService;
     private final CustomerService customerService;
     private final MerchantService merchantService;
     private final StripeService stripeService;
-    
 
-    
     @PostMapping("/login-merchant")
-    public ResponseEntity<String> loginMerchant(HttpServletResponse response) {
+    public ResponseEntity<String> loginMerchant(
+            @RequestBody LoginRequest loginRequest,
+            HttpServletResponse response,
+            @CookieValue(value = "auth", required = false) String authCookie) {
 
-        // TODO check if cookie exists. If so, validate signature. if not, get input required.
-        String hasCookie = ""; 
-        
-        // Prepare to store if any kind of login is successful.
         boolean loginSuccessful = false;
-        
-        
-        if( hasCookie == "true") {
-            // If it has a cookie, make sure it is still valid.
-            
-            //TODO: Check expiry
-            
-            // Check signature
-            loginSuccessful = validateSignature("extract id and timestamp", "extract signature");
-        } else {
-            // If it doesn't have a cookie and instead sent email and pw, check that
-            loginSuccessful = "does baremail and barpw create a match?" == "yes";
+        int merchantId = -1;
+
+        // 1. Attempt Cookie Authentication First
+        if (authCookie != null) {
+            try {
+                String decoded = new String(Base64.getDecoder().decode(authCookie), StandardCharsets.UTF_8);
+                String[] parts = decoded.split("\\.");
+
+                if (parts.length == 3) {
+                    String id = parts[0];
+                    String expiry = parts[1];
+                    String receivedSignature = parts[2];
+                    String signedData = id + "." + expiry;
+
+                    if (System.currentTimeMillis() <= Long.parseLong(expiry) && validateSignature(signedData, receivedSignature)) {
+                        merchantId = Integer.parseInt(id);
+                        loginSuccessful = true;
+                    }
+                } else {
+                    System.out.println("Invalid cookie parts: " + decoded);
+                }
+            } catch (Exception e) {
+                System.out.println("Invalid cookie format or verification failed.");
+                e.printStackTrace();
+            }
         }
+
+        // 2. Attempt Email/Password Authentication if Cookie Failed
+        if (!loginSuccessful) {
+            String email = loginRequest.getEmail();
+            String password = loginRequest.getPassword();
+
+            // 2a. If both empty, stay on login page quietly (no error)
+            if ((email == null || email.isEmpty()) && (password == null || password.isEmpty())) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("EMPTY");
+            }
+
+            // 2b. Otherwise, attempt credential verification
+            SignUp signUp = signUpService.findByEmail(email);
+            if (signUp != null && signUp.getMerchant() != null) {
+                try {
+                    String hashedPassword = hash(password);
+                    if (hashedPassword.equals(signUp.getPasscode())) {
+                        merchantId = signUp.getMerchant().getMerchantId();
+                        loginSuccessful = true;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+            // 2c. If credential login failed
+            if (!loginSuccessful) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("INVALID_CREDENTIALS");
+            }
+        }
+
+        // 3. If Authentication Successful → Set a fresh Cookie
+        String id = String.valueOf(merchantId);
+        String expiry = String.valueOf(System.currentTimeMillis() + 3600 * 1000); // 1 hour later
+        String payload = id + "." + expiry;
+        System.out.println("Generating signature for cookie for bar id " + merchantId);
+        String signature = generateSignature(payload);
+        System.out.println("Signature generated for cookie for bar id " + merchantId);
         
-        // If fail, return unauthorized please login again
-        if(!loginSuccessful) return (ResponseEntity<String>) ResponseEntity.status(401);
+        System.out.println("Signature verified for cookie for bar id " + Cookies.getIdFromCookie(authCookie));
 
 
-        // If successful login by cookie OR pw, generate a new cookie, essentially refreshing
-        // the session
 
-        // To do this, lookup the merchant id (for future stateless requests)
-        int merchantId = -1; //TODO LOOKUP MERCHANT ID
+        String cookieValueRaw = payload + "." + signature;
+        String cookieValueEncoded = Base64.getEncoder().encodeToString(cookieValueRaw.getBytes(StandardCharsets.UTF_8));
+
         
-        // Set the expiry to 1h in the future (auto-logout after session expires)
-        Cookie cookie = new Cookie("auth", generateSignature(merchantId + "|" + (System.currentTimeMillis() + 3600 * 1000)));
-        cookie.setMaxAge(3600); // Cookie expires in 1 hour
-        cookie.setSecure(true); // Send cookie over HTTPS only
-        cookie.setHttpOnly(true); // Prevent client-side JavaScript access
-        cookie.setPath("/"); // Cookie is valid for the entire application
-        response.addCookie(cookie);
-        return ResponseEntity.ok("Cookie has been set");
         
-        // User, by this point, now stores the cookie containing the ID and expiry and server
-        // signature.
+        Cookie cookie = new Cookie("auth", cookieValueEncoded);
+        cookie.setMaxAge(3600); // 1 hour
+        cookie.setSecure(!TESTING); //TODO:Set this to TRUE when in production and FALSE when in testing
+        cookie.setHttpOnly(true);
+        cookie.setPath("/");
+        // Manually override SameSite to Lax for local testing
+      response.addHeader("Set-Cookie", String.format(
+                "auth=%s; Max-Age=3600; Path=/; HttpOnly; SameSite=Lax;",
+                cookieValueEncoded
+        ));
+
+        return ResponseEntity.ok("OK");
     }
+
     
 
     // ENDPOINT: Resend verification code

@@ -107,6 +107,13 @@
             <version>2.15.2</version> <!-- use the latest version available -->
         </dependency>
 
+
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>8.4.0</version> <!-- Latest stable as of now -->
+        </dependency>
+
     </dependencies>
 
     <build>
