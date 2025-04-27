@@ -14,7 +14,7 @@ public class DTOConverter {
 
     public static MerchantDTO convertToMerchantDTO(Merchant merchant) {
         MerchantDTO merchantDto = new MerchantDTO();
-        merchantDto.setId(merchant.getMerchantId());
+        merchantDto.setMerchantId(merchant.getMerchantId());
         merchantDto.setName(merchant.getName());
         merchantDto.setNickname(merchant.getNickname());      
         merchantDto.setCity(merchant.getCity());
@@ -39,7 +39,7 @@ public class DTOConverter {
             merchantDto.setDiscountSchedule(new HashMap<>());
         }
     
-        merchantDto.setSignupBonus(merchant.getBonus());
+        merchantDto.setBonus(merchant.getBonus());
         return merchantDto;
     }
 }

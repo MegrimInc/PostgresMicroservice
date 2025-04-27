@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MerchantDTO {
-    private Integer id;
+    private Integer merchantId;
     private String name;
     private String nickname;
     private String city;
@@ -21,5 +21,5 @@ public class MerchantDTO {
     private String storeImage;
     private Boolean open;
     private Map<String, String> discountSchedule; // Keep this as a Map
-    private Integer signupBonus;
+    private Integer bonus;
 }
