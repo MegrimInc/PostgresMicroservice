@@ -32,7 +32,7 @@ import edu.help.microservice.service.SignUpService;
 import jakarta.mail.internet.MimeMessage;
 
 @RestController
-@RequestMapping("/orders")
+@RequestMapping("/postgres-test/order")
 public class OrderController {
 
     private final OrderService orderService;

@@ -24,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/customer")
+@RequestMapping("/postgres-test/customer")
 public class CustomerController {
     private final PointService pointService;
     private final CustomerService customerService;

@@ -2,8 +2,13 @@ package edu.help.microservice.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+
+import edu.help.microservice.dto.CreateItemRequestDTO;
 import edu.help.microservice.dto.ItemCountDTO;
+import edu.help.microservice.dto.ItemDTO;
+import edu.help.microservice.dto.UpdateItemRequestDTO;
 import edu.help.microservice.entity.Order;
+import edu.help.microservice.service.ItemService;
 import edu.help.microservice.service.MerchantService;
 import edu.help.microservice.service.OrderService;
 import edu.help.microservice.service.SignUpService;
@@ -12,9 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
@@ -22,16 +24,21 @@ import java.time.ZoneId;
 import java.util.*;
 
 @RestController
-@RequestMapping("/orders")
+@RequestMapping("/postgres-test/merchant")
 public class MerchantController {
-
     private final OrderService orderService;
-
-    private static final String SECRET_KEY = "YourSecretKey";
+    private final SignUpService signUpService;
+    private final MerchantService merchantService;
+    private final ItemService itemService;
+   
+    
 
     @Autowired
-    public MerchantController(OrderService orderService, SignUpService signUpService, MerchantService merchantService) {
+    public MerchantController(OrderService orderService, SignUpService signUpService, MerchantService merchantService, ItemService itemService) {
         this.orderService = orderService;
+        this.signUpService = signUpService;
+        this.merchantService = merchantService;
+        this.itemService = itemService;
     }
 
     @GetMapping("/generalData")
@@ -184,6 +191,39 @@ public class MerchantController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error processing request");
         }
+    }
+
+
+     /** Replace this with your real auth mechanism; for now we rely on header */
+    private Integer merchantId(@RequestHeader("X-MERCHANT-ID") String header) {
+        return Integer.valueOf(header);
+    }
+
+    /* ---------------------- ROUTES ---------------------- */
+
+    @GetMapping
+    public List<ItemDTO> menu(@RequestHeader("X-MERCHANT-ID") String header) {
+        return itemService.getMenu(merchantId(header));
+    }
+
+    @PostMapping
+    public ItemDTO create(@RequestHeader("X-MERCHANT-ID") String header,
+                          @RequestBody CreateItemRequestDTO req) {
+        return itemService.create(merchantId(header), req);
+    }
+
+    @PatchMapping("/{itemId}")
+    public ItemDTO update(@RequestHeader("X-MERCHANT-ID") String header,
+                          @PathVariable Integer itemId,
+                          @RequestBody UpdateItemRequestDTO req) {
+        return itemService.update(merchantId(header), itemId, req);
+    }
+
+    @DeleteMapping("/{itemId}")
+    public ResponseEntity<Void> delete(@RequestHeader("X-MERCHANT-ID") String header,
+                                       @PathVariable Integer itemId) {
+        itemService.delete(merchantId(header), itemId);
+        return ResponseEntity.noContent().build();
     }
 
     
