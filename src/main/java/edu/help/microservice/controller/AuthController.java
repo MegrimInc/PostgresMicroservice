@@ -157,7 +157,7 @@ public class AuthController {
         String cookieValueEncoded = Base64.getEncoder().encodeToString(cookieValueRaw.getBytes(StandardCharsets.UTF_8));
 
         response.addHeader("Set-Cookie", String.format(
-                "auth=%s; Max-Age=3600; Path=/; HttpOnly; SameSite=Lax;",
+                "auth=%s; Max-Age=86400; Path=/; HttpOnly; SameSite=Lax;",
                 cookieValueEncoded
         ));
 
