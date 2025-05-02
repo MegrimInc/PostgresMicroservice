@@ -1,12 +1,7 @@
 package edu.help.microservice.controller;
 
 
-import java.io.File;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
@@ -22,7 +17,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 
 import com.stripe.exception.StripeException;
@@ -43,6 +44,7 @@ import edu.help.microservice.service.MerchantService;
 import edu.help.microservice.service.CustomerService;
 import edu.help.microservice.service.SignUpService;
 import edu.help.microservice.service.StripeService;
+import edu.help.microservice.util.Cookies;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
@@ -52,7 +54,7 @@ import static edu.help.microservice.util.Cookies.*;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/signup")
+@RequestMapping("/postgres-test/signup")
 public class SignUpController {
     
     
@@ -176,8 +178,8 @@ public class SignUpController {
     }
 
 
-
-    @PostMapping("/login-merchant")
+    
+   @PostMapping("/login-merchant")
     public ResponseEntity<String> loginMerchant(
             @RequestBody LoginRequest loginRequest,
             HttpServletResponse response,
@@ -260,18 +262,17 @@ public class SignUpController {
         
         Cookie cookie = new Cookie("auth", cookieValueEncoded);
         cookie.setMaxAge(3600); // 1 hour
-        cookie.setSecure(!TESTING); //TODO:Set this to TRUE when in production and FALSE when in testing
+        cookie.setSecure(true); //TODO:Set this to TRUE when in production and FALSE when in testing
         cookie.setHttpOnly(true);
         cookie.setPath("/");
         // Manually override SameSite to Lax for local testing
-      response.addHeader("Set-Cookie", String.format(
-                "auth=%s; Max-Age=3600; Path=/; HttpOnly; SameSite=Lax;",
+        response.addHeader("Set-Cookie", String.format(
+                "auth=%s; Max-Age=3600; Path=/; Secure; HttpOnly; SameSite=None",
                 cookieValueEncoded
         ));
 
         return ResponseEntity.ok("OK");
     }
-
     
 
     // ENDPOINT: Resend verification code
