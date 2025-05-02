@@ -28,7 +28,7 @@ import edu.help.microservice.dto.TipClaimRequest;
 import edu.help.microservice.entity.Order;
 import edu.help.microservice.service.MerchantService;
 import edu.help.microservice.service.OrderService;
-import edu.help.microservice.service.SignUpService;
+import edu.help.microservice.service.AuthService;
 import jakarta.mail.internet.MimeMessage;
 
 @RestController
@@ -36,11 +36,11 @@ import jakarta.mail.internet.MimeMessage;
 public class OrderController {
 
     private final OrderService orderService;
-    private final SignUpService signUpService;
+    private final AuthService signUpService;
     private final MerchantService merchantService;
 
     @Autowired
-    public OrderController(OrderService orderService, SignUpService signUpService, MerchantService merchantService) {
+    public OrderController(OrderService orderService, AuthService signUpService, MerchantService merchantService) {
         this.orderService = orderService;
         this.signUpService = signUpService;
         this.merchantService = merchantService;
@@ -65,37 +65,37 @@ public class OrderController {
     /**
      * New endpoint to retrieve the total tips claimed by a station.
      * It accepts a JSON payload of the form:
-     *     { "stationID": "A" }
+     *     { "terminalId": "A" }
      * and returns a JSON response of the form:
      *     { "tipTotal": 1.23 }
      */
     @GetMapping("/gettips")
     public ResponseEntity<GetTipsResponse> getTips(
-            @RequestParam("stationID") String stationID,
-            @RequestParam("merchantID") String merchantIDStr) {
+            @RequestParam("terminalId") String terminalId,
+            @RequestParam("merchantId") String merchantIdStr) {
         System.out.println("gettips");
 
         // Convert merchantID from String to int
         int merchantID;
         try {
-            merchantID = Integer.parseInt(merchantIDStr);
+            merchantID = Integer.parseInt(merchantIdStr);
         } catch (NumberFormatException e) {
-            System.err.println("Invalid merchantID provided: " + merchantIDStr);
+            System.err.println("Invalid merchantID provided: " + merchantIdStr);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new GetTipsResponse(-1.0));
         }
 
-        System.out.println("gettips for " + stationID + " " + merchantID);
+        System.out.println("gettips for " + terminalId + " " + merchantID);
         // Validate that the stationID is a single uppercase letter A-Z.
-        if (stationID == null || !stationID.matches("^[A-Z]$")) {
-            System.err.println("Invalid stationID provided: " + stationID);
+        if (terminalId == null || !terminalId.matches("^[A-Z]$")) {
+            System.err.println("Invalid stationID provided: " + terminalId);
             // Here we return a 400 Bad Request. Alternatively, you could return a specific error tipTotal (e.g., -2.0).
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new GetTipsResponse(-1.0));
         }
         try {
             // Retrieve orders that have been claimed by this station.
             // (Assumes that orderService has a method like getClaimedTipsByStation.)
-            List<Order> claimedOrders = orderService.getUnclaimedTips(merchantID, stationID);
+            List<Order> claimedOrders = orderService.getUnclaimedTips(merchantID, terminalId);
             if (claimedOrders == null || claimedOrders.isEmpty()) {
             System.out.println("gettips NULL / empty");
                 return ResponseEntity.ok(new GetTipsResponse(0.0));
@@ -106,7 +106,7 @@ public class OrderController {
 
             // Calculate the total tip amount.
             double totalTipAmount = calculateTotalTipAmount(claimedOrders);
-            System.out.println("Total tip amount for station " + stationID + ": " + totalTipAmount);
+            System.out.println("Total tip amount for station " + terminalId + ": " + totalTipAmount);
 
             return ResponseEntity.ok(new GetTipsResponse(totalTipAmount));
         } catch (Exception e) {

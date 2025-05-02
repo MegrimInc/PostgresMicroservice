@@ -1,7 +1,7 @@
 package edu.help.microservice.service;
 
-import edu.help.microservice.entity.SignUp;
-import edu.help.microservice.repository.SignUpRepository;
+import edu.help.microservice.entity.Auth;
+import edu.help.microservice.repository.AuthRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -9,10 +9,10 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class SignUpService {
+public class AuthService {
 
     @Autowired
-    private SignUpRepository signUpRepository;
+    private AuthRepository authRepository;
 
     /**
      * Finds a SignUp entity by email.
@@ -20,13 +20,13 @@ public class SignUpService {
      * @param email the email of the SignUp entity
      * @return the SignUp entity with the given email, or null if not found
      */
-    public SignUp findByEmail(String email) {
-        return signUpRepository.findByEmail(email);
+    public Auth findByEmail(String email) {
+        return authRepository.findByEmail(email);
     }
 
     public String findEmailByMerchantId(int merchantId)
     {
-        Optional<SignUp> entity = signUpRepository.findByMerchant_MerchantId(merchantId);
+        Optional<Auth> entity = authRepository.findByMerchant_MerchantId(merchantId);
         return entity.get().getEmail();
     }
 
@@ -36,8 +36,8 @@ public class SignUpService {
      * @param signUp the SignUp entity to save
      * @return the saved SignUp entity
      */
-    public SignUp save(SignUp signUp) {
-        return signUpRepository.save(signUp);
+    public Auth save(Auth signUp) {
+        return authRepository.save(signUp);
     }
 
     /**
@@ -46,8 +46,8 @@ public class SignUpService {
      * @param id the ID of the SignUp entity
      * @return an Optional containing the SignUp entity if found, or empty if not
      */
-    public Optional<SignUp> findById(Integer id) {
-        return signUpRepository.findById(id);
+    public Optional<Auth> findById(Integer id) {
+        return authRepository.findById(id);
     }
 
     /**
@@ -55,8 +55,8 @@ public class SignUpService {
      *
      * @return a list of all SignUp entities
      */
-    public List<SignUp> findAll() {
-        return signUpRepository.findAll();
+    public List<Auth> findAll() {
+        return authRepository.findAll();
     }
 
     /**
@@ -65,7 +65,7 @@ public class SignUpService {
      * @param id the ID of the SignUp entity to delete
      */
     public void deleteById(Integer id) {
-        signUpRepository.deleteById(id);
+        authRepository.deleteById(id);
     }
 
     /**
@@ -75,11 +75,11 @@ public class SignUpService {
      * @return true if a SignUp entity with the given email exists, false otherwise
      */
     public boolean existsByEmail(String email) {
-        return signUpRepository.findByEmail(email) != null;
+        return authRepository.findByEmail(email) != null;
     }
 
-    public void delete(SignUp signUp) {
-        signUpRepository.delete(signUp);
+    public void delete(Auth signUp) {
+       authRepository.delete(signUp);
     }
     
 }

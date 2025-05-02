@@ -19,14 +19,14 @@ import com.stripe.param.SetupIntentCreateParams;
 import edu.help.microservice.dto.PaymentIdSetRequest;
 import edu.help.microservice.entity.Merchant;
 import edu.help.microservice.entity.Customer;
-import edu.help.microservice.entity.SignUp;
+import edu.help.microservice.entity.Auth;
 import edu.help.microservice.exception.MerchantNotFoundException;
 import edu.help.microservice.exception.CustomerNotFoundException;
 import edu.help.microservice.exception.CustomerStripeIdNotMachingException;
 import edu.help.microservice.exception.InvalidStripeChargeException;
 import edu.help.microservice.repository.MerchantRepository;
 import edu.help.microservice.repository.CustomerRepository;
-import edu.help.microservice.repository.SignUpRepository;
+import edu.help.microservice.repository.AuthRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -37,7 +37,7 @@ public class StripeService {
     private final StripeClient stripeClient;
     private final CustomerRepository customerRepository;
     private final MerchantRepository merchantRepository;
-    private final SignUpRepository signUpRepository;
+    private final AuthRepository signUpRepository;
 
     public void processOrder(double price, double tip, int customerId, int merchantId) throws StripeException, InvalidStripeChargeException {
         Long priceInCents = Math.round(price * 100);
@@ -60,7 +60,7 @@ public class StripeService {
     }
 
 
-    public void createStripeCustomer(Customer customer, SignUp signUp) throws StripeException {
+    public void createStripeCustomer(Customer customer, Auth signUp) throws StripeException {
         CustomerCreateParams params = CustomerCreateParams.builder()
                 .setEmail(signUp.getEmail())
                 .setName(customer.getFirstName() + " " + customer.getLastName())
@@ -154,12 +154,12 @@ public class StripeService {
                 System.out.println("No Stripe ID found for customer. Creating a new Stripe customer...");
 
                 // Fetch the associated SignUp record for email
-                Optional<SignUp> signUpOpt = signUpRepository.findById(customerId);
+                Optional<Auth> signUpOpt = signUpRepository.findById(customerId);
                 if (signUpOpt.isEmpty()) {
                     throw new IllegalStateException("No SignUp record found for customerId: " + customerId);
                 }
 
-                SignUp signUp = signUpOpt.get();
+                Auth signUp = signUpOpt.get();
                 String email = signUp.getEmail();
 
                 // Log email being used

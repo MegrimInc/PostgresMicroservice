@@ -11,7 +11,7 @@ import edu.help.microservice.entity.Order;
 import edu.help.microservice.service.ItemService;
 import edu.help.microservice.service.MerchantService;
 import edu.help.microservice.service.OrderService;
-import edu.help.microservice.service.SignUpService;
+import edu.help.microservice.service.AuthService;
 import edu.help.microservice.util.Cookies;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -27,14 +27,14 @@ import java.util.*;
 @RequestMapping("/postgres-test/merchant")
 public class MerchantController {
     private final OrderService orderService;
-    private final SignUpService signUpService;
+    private final AuthService signUpService;
     private final MerchantService merchantService;
     private final ItemService itemService;
    
     
 
     @Autowired
-    public MerchantController(OrderService orderService, SignUpService signUpService, MerchantService merchantService, ItemService itemService) {
+    public MerchantController(OrderService orderService, AuthService signUpService, MerchantService merchantService, ItemService itemService) {
         this.orderService = orderService;
         this.signUpService = signUpService;
         this.merchantService = merchantService;

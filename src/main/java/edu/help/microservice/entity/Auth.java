@@ -19,12 +19,12 @@ import lombok.ToString;
 @Table(name = "signups")
 @Data
 @NoArgsConstructor
-public class SignUp {
+public class Auth {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "signup_id", nullable = true)
-    private Integer signupId;
+    @Column(name = "auth_id", nullable = true)
+    private Integer authId;
 
     @Column(nullable = false, unique = true)
     private String email;

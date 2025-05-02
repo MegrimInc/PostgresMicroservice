@@ -1,13 +1,13 @@
 package edu.help.microservice.repository;
 
-import edu.help.microservice.entity.SignUp;
+import edu.help.microservice.entity.Auth;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 @Repository
-public interface SignUpRepository extends JpaRepository<SignUp, Integer> {
+public interface AuthRepository extends JpaRepository<Auth, Integer> {
 
     /**
      * Finds a SignUp entity by email.
@@ -15,8 +15,8 @@ public interface SignUpRepository extends JpaRepository<SignUp, Integer> {
      * @param email the email of the SignUp entity
      * @return the SignUp entity with the given email, or null if not found
      */
-    SignUp findByEmail(String email);
+    Auth findByEmail(String email);
 
     // Corrected method
-    Optional<SignUp> findByMerchant_MerchantId(Integer merchantId);
+    Optional<Auth> findByMerchant_MerchantId(Integer merchantId);
 }

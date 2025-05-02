@@ -43,10 +43,10 @@ import edu.help.microservice.dto.VerificationCustomerRequest; // If needed for l
 import edu.help.microservice.dto.VerifyResetCodeRequest;
 import edu.help.microservice.entity.Merchant;
 import edu.help.microservice.entity.Customer;
-import edu.help.microservice.entity.SignUp;
+import edu.help.microservice.entity.Auth;
 import edu.help.microservice.service.MerchantService;
 import edu.help.microservice.service.CustomerService;
-import edu.help.microservice.service.SignUpService;
+import edu.help.microservice.service.AuthService;
 import edu.help.microservice.service.StripeService;
 import edu.help.microservice.util.Cookies;
 import jakarta.mail.internet.MimeMessage;
@@ -62,8 +62,8 @@ import static edu.help.microservice.util.Cookies.*;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/postgres-test/signup")
-public class SignUpController {
+@RequestMapping("/postgres-test/auth")
+public class AuthController {
     
     
     /*
@@ -84,7 +84,7 @@ public class SignUpController {
     private final boolean TESTING = false;
     private static final String SECRET_KEY = "YourSecretKey";
 
-    private final SignUpService signUpService;
+    private final AuthService signUpService;
     private final CustomerService customerService;
     private final MerchantService merchantService;
     private final StripeService stripeService;
@@ -100,14 +100,14 @@ public class SignUpController {
             HttpServletResponse response) {
 
         // 1. Check for existing signup
-        SignUp existingSignUp = signUpService.findByEmail(req.getEmail());
+        Auth existingSignUp = signUpService.findByEmail(req.getEmail());
         if (existingSignUp != null) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body("Email already in use");
         }
 
         // 2. Hash password
-        SignUp newSignUp = new SignUp();
+        Auth newSignUp = new Auth();
         newSignUp.setEmail(req.getEmail());
         newSignUp.setIsMerchant(true);
         try {
@@ -211,7 +211,7 @@ public class SignUpController {
             }
 
             // 2b. Otherwise, attempt credential verification
-            SignUp signUp = signUpService.findByEmail(email);
+            Auth signUp = signUpService.findByEmail(email);
             if (signUp != null && signUp.getMerchant() != null) {
                 try {
                     String hashedPassword = hash(password);
@@ -266,7 +266,7 @@ public class SignUpController {
     @PostMapping("/send-verification")
     public ResponseEntity<String> sendVerification(@RequestBody AcceptTOSRequest request) {
         String email = request.getEmail();
-        SignUp signUp = signUpService.findByEmail(email);
+        Auth signUp = signUpService.findByEmail(email);
 
 
         if (signUp != null) {
@@ -295,7 +295,7 @@ public class SignUpController {
         String password = verificationRequest.getPassword();
         String firstName = verificationRequest.getFirstName();
         String lastName = verificationRequest.getLastName();
-        SignUp signUp = signUpService.findByEmail(email);
+        Auth signUp = signUpService.findByEmail(email);
 
 
         if (signUp != null && signUp.getCustomer() == null) {
@@ -348,13 +348,13 @@ public class SignUpController {
     @PostMapping("/register-customer")
     public ResponseEntity<String> registerCustomer(@RequestBody AcceptTOSRequest2 request) {
         String email = request.getEmail();
-        SignUp existingSignUp = signUpService.findByEmail(email);
+        Auth existingSignUp = signUpService.findByEmail(email);
 
         if (existingSignUp != null)
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
 
         // Create new sign-up and customer
-        SignUp newSignUp = new SignUp();
+        Auth newSignUp = new Auth();
         newSignUp.setEmail(email);
         newSignUp.setIsMerchant(false);
 
@@ -402,7 +402,7 @@ public class SignUpController {
         String verificationCode = verificationRequest.getVerificationCode();
         String password = verificationRequest.getPassword();
 
-        SignUp signUp = signUpService.findByEmail(email);
+        Auth signUp = signUpService.findByEmail(email);
 
         if (signUp != null && signUp.getMerchant() == null && signUp.getIsMerchant()) {
             if (isVerificationCodeExpired(signUp.getExpiryTimestamp())) {
@@ -456,7 +456,7 @@ public class SignUpController {
     @PostMapping("/accept-tos")
     public ResponseEntity<String> acceptTOS(@RequestBody AcceptTOSRequest request) {
         String email = request.getEmail();
-        SignUp signUp = signUpService.findByEmail(email);
+        Auth signUp = signUpService.findByEmail(email);
 
 
         if (signUp != null && signUp.getCustomer() != null) {
@@ -477,7 +477,7 @@ public class SignUpController {
         String password = loginRequest.getPassword();
 
 
-        SignUp signUp = signUpService.findByEmail(email);
+        Auth signUp = signUpService.findByEmail(email);
 
 
         if (signUp != null) {
@@ -513,7 +513,7 @@ public class SignUpController {
     public ResponseEntity<String> deleteAccount(@RequestBody LoginRequest loginRequest) {
         String email = loginRequest.getEmail();
         String password = loginRequest.getPassword();
-        SignUp signUp = signUpService.findByEmail(email);
+        Auth signUp = signUpService.findByEmail(email);
 
 
         if (signUp != null) {
@@ -640,7 +640,7 @@ public class SignUpController {
     @PostMapping("/reset-password-validate-email")
     public ResponseEntity<String> resetPasswordValidateEmail(@RequestBody AcceptTOSRequest request) {
         String email = request.getEmail();
-        SignUp signUp = signUpService.findByEmail(email);
+        Auth signUp = signUpService.findByEmail(email);
 
 
         if (signUp != null) {
@@ -670,7 +670,7 @@ public class SignUpController {
         String verificationCode = request.getCode();
 
 
-        SignUp signUp = signUpService.findByEmail(email);
+        Auth signUp = signUpService.findByEmail(email);
 
 
         if (signUp != null) {
@@ -703,7 +703,7 @@ public class SignUpController {
         String newPassword = request.getPassword();
 
 
-        SignUp signUp = signUpService.findByEmail(email);
+        Auth signUp = signUpService.findByEmail(email);
 
 
         if (signUp != null) {
