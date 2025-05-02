@@ -194,37 +194,84 @@ public class MerchantController {
     }
 
 
+    //Not a route, just a helper function?
      /** Replace this with your real auth mechanism; for now we rely on header */
-    private Integer merchantId(@RequestHeader("X-MERCHANT-ID") String header) {
-        return Integer.valueOf(header);
-    }
+     private Integer merchantId(@CookieValue(value = "auth", required = false) String authCookie) {
+         if (authCookie == null) {
+             throw new IllegalArgumentException("Missing authentication cookie");
+         }
 
+         try {
+             return Cookies.getIdFromCookie(authCookie);
+         } catch (Exception e) {
+             throw new IllegalArgumentException("Invalid authentication cookie");
+         }
+     }
+     
+     
+     
     /* ---------------------- ROUTES ---------------------- */
-
     @GetMapping
-    public List<ItemDTO> menu(@RequestHeader("X-MERCHANT-ID") String header) {
-        return itemService.getMenu(merchantId(header));
+    public ResponseEntity<?> menu(@CookieValue(value = "auth", required = false) String authCookie) {
+        try {
+            Integer merchantId = Cookies.getIdFromCookie(authCookie);
+            if (merchantId <= -1) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid session. Please log in again.");
+            }
+            return ResponseEntity.ok(itemService.getMenu(merchantId));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing request");
+        }
     }
 
     @PostMapping
-    public ItemDTO create(@RequestHeader("X-MERCHANT-ID") String header,
-                          @RequestBody CreateItemRequestDTO req) {
-        return itemService.create(merchantId(header), req);
+    public ResponseEntity<?> create(@CookieValue(value = "auth", required = false) String authCookie,
+                                    @RequestBody CreateItemRequestDTO req) {
+        try {
+            Integer merchantId = Cookies.getIdFromCookie(authCookie);
+            if (merchantId <= -1) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid session. Please log in again.");
+            }
+            return ResponseEntity.ok(itemService.create(merchantId, req));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating item");
+        }
     }
 
     @PatchMapping("/{itemId}")
-    public ItemDTO update(@RequestHeader("X-MERCHANT-ID") String header,
-                          @PathVariable Integer itemId,
-                          @RequestBody UpdateItemRequestDTO req) {
-        return itemService.update(merchantId(header), itemId, req);
+    public ResponseEntity<?> update(@CookieValue(value = "auth", required = false) String authCookie,
+                                    @PathVariable Integer itemId,
+                                    @RequestBody UpdateItemRequestDTO req) {
+        try {
+            Integer merchantId = Cookies.getIdFromCookie(authCookie);
+            if (merchantId <= -1) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid session. Please log in again.");
+            }
+            return ResponseEntity.ok(itemService.update(merchantId, itemId, req));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating item");
+        }
     }
 
     @DeleteMapping("/{itemId}")
-    public ResponseEntity<Void> delete(@RequestHeader("X-MERCHANT-ID") String header,
-                                       @PathVariable Integer itemId) {
-        itemService.delete(merchantId(header), itemId);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> delete(@CookieValue(value = "auth", required = false) String authCookie,
+                                    @PathVariable Integer itemId) {
+        try {
+            Integer merchantId = Cookies.getIdFromCookie(authCookie);
+            if (merchantId <= -1) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            itemService.delete(merchantId, itemId);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
+
 
     
 }
