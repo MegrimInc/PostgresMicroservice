@@ -1,7 +1,10 @@
 package edu.help.microservice.controller;
 
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
@@ -23,6 +26,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 
 
@@ -48,7 +52,11 @@ import edu.help.microservice.util.Cookies;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
-
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import static edu.help.microservice.util.Cookies.*;
 
 
@@ -154,27 +162,6 @@ public class SignUpController {
         ));
 
         return ResponseEntity.ok("Registered and Logged In!");
-    }
-
-    private String saveImageFile(MultipartFile file) {
-        if (file.isEmpty()) {
-            throw new RuntimeException("Empty file upload!");
-        }
-        try {
-            String uploadsDir = "/uploads/merchants/";
-            File dir = new File(uploadsDir);
-            if (!dir.exists()) dir.mkdirs();
-
-            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
-            Path filePath = Paths.get(uploadsDir + fileName);
-
-            Files.copy(file.getInputStream(), filePath);
-
-            // Return the path or public URL
-            return "/uploads/merchants/" + fileName;
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to save image", e);
-        }
     }
 
 
@@ -774,6 +761,27 @@ public class SignUpController {
         return expiryTimestamp != null && expiryTimestamp.before(new Timestamp(System.currentTimeMillis()));
     }
     
+
+    private String saveImageFile(MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new RuntimeException("Empty file upload!");
+        }
+        try {
+            String uploadsDir = "/uploads/merchants/";
+            File dir = new File(uploadsDir);
+            if (!dir.exists()) dir.mkdirs();
+
+            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            Path filePath = Paths.get(uploadsDir + fileName);
+
+            Files.copy(file.getInputStream(), filePath);
+
+            // Return the path or public URL
+            return "/uploads/merchants/" + fileName;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to save image", e);
+        }
+    }
     
     
 }

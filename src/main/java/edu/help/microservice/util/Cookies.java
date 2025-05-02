@@ -94,40 +94,6 @@ public class Cookies
     }
 
 
-    public static Integer getIdFromCookie(String authCookie) {
-        try {
-            if (authCookie == null || authCookie.isEmpty()) return -1;
-
-            String decoded = new String(Base64.getDecoder().decode(authCookie), StandardCharsets.UTF_8);
-            String[] parts = decoded.split("\\.");
-
-            if (parts.length != 3) return -2;
-
-            String id = parts[0];
-            String expiry = parts[1];
-            String signature = parts[2];
-            String signedData = id + "." + expiry;
-
-            if (System.currentTimeMillis() > Long.parseLong(expiry)) {
-                System.out.println("Cookie expired");
-                return -1;
-            }
-            if (!validateSignature(signedData, signature)) {
-                System.out.println("Invalid signature");
-                return -3;
-            }
-
-            return Integer.parseInt(id);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return -4;
-        }
-    }
-
-
-
-
-
     private static PrivateKey getPrivateKey() throws Exception {
         byte[] keyBytes = Base64.getDecoder().decode(privKey);
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
