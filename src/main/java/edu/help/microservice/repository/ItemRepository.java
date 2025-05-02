@@ -17,4 +17,7 @@ public interface ItemRepository extends JpaRepository<Item, Integer> {
            "d.description, d.pointPrice, d.regularPrice, d.discountPrice) " +
            "FROM Item d WHERE d.merchantId = :merchantId")
     List<Item> findAllItemsByMerchantIdExcludingFields(@Param("merchantId") Integer merchantId);
+
+
+    List<Item> findByMerchantId(Integer merchantId);
 }
