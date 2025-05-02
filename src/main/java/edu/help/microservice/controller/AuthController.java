@@ -84,7 +84,7 @@ public class AuthController {
     private final boolean TESTING = false;
     private static final String SECRET_KEY = "YourSecretKey";
 
-    private final AuthService signUpService;
+    private final AuthService authService;
     private final CustomerService customerService;
     private final MerchantService merchantService;
     private final StripeService stripeService;
@@ -100,19 +100,19 @@ public class AuthController {
             HttpServletResponse response) {
 
         // 1. Check for existing signup
-        Auth existingSignUp = signUpService.findByEmail(req.getEmail());
+        Auth existingSignUp = authService.findByEmail(req.getEmail());
         if (existingSignUp != null) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body("Email already in use");
         }
 
         // 2. Hash password
-        Auth newSignUp = new Auth();
-        newSignUp.setEmail(req.getEmail());
-        newSignUp.setIsMerchant(true);
+        Auth auth = new Auth();
+        auth.setEmail(req.getEmail());
+        auth.setIsMerchant(true);
         try {
             String hashedPassword = hash(req.getPassword());
-            newSignUp.setPasscode(hashedPassword);
+            auth.setPasscode(hashedPassword);
         } catch (NoSuchAlgorithmException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error hashing password");
@@ -143,10 +143,10 @@ public class AuthController {
         merchant.setDiscountSchedule(null);
 
         // 5. Link signup and merchant
-        newSignUp.setMerchant(merchant);
+        auth.setMerchant(merchant);
 
         // 6. Save
-        signUpService.save(newSignUp);
+        authService.save(auth);
 
         // 7. Issue cookie
         String id = String.valueOf(merchant.getMerchantId());
@@ -157,7 +157,7 @@ public class AuthController {
         String cookieValueEncoded = Base64.getEncoder().encodeToString(cookieValueRaw.getBytes(StandardCharsets.UTF_8));
 
         response.addHeader("Set-Cookie", String.format(
-                "auth=%s; Max-Age=86400; Path=/; HttpOnly; SameSite=Lax;",
+                "auth=%s; Max-Age=43200; Path=/; HttpOnly; SameSite=Lax;",
                 cookieValueEncoded
         ));
 
@@ -211,12 +211,12 @@ public class AuthController {
             }
 
             // 2b. Otherwise, attempt credential verification
-            Auth signUp = signUpService.findByEmail(email);
-            if (signUp != null && signUp.getMerchant() != null) {
+            Auth auth = authService.findByEmail(email);
+            if (auth != null && auth.getMerchant() != null) {
                 try {
                     String hashedPassword = hash(password);
-                    if (hashedPassword.equals(signUp.getPasscode())) {
-                        merchantId = signUp.getMerchant().getMerchantId();
+                    if (hashedPassword.equals(auth.getPasscode())) {
+                        merchantId = auth.getMerchant().getMerchantId();
                         loginSuccessful = true;
                     }
                 } catch (Exception e) {
@@ -254,7 +254,7 @@ public class AuthController {
         cookie.setPath("/");
         // Manually override SameSite to Lax for local testing
         response.addHeader("Set-Cookie", String.format(
-                "auth=%s; Max-Age=3600; Path=/; Secure; HttpOnly; SameSite=None",
+                "auth=%s; Max-Age=10; Path=/; Secure; HttpOnly; SameSite=None",
                 cookieValueEncoded
         ));
 
@@ -266,19 +266,19 @@ public class AuthController {
     @PostMapping("/send-verification")
     public ResponseEntity<String> sendVerification(@RequestBody AcceptTOSRequest request) {
         String email = request.getEmail();
-        Auth signUp = signUpService.findByEmail(email);
+        Auth auth = authService.findByEmail(email);
 
 
-        if (signUp != null) {
+        if (auth != null) {
             String verificationCode = generateVerificationCode();
             try {
-                signUp.setVerificationCode(hash(verificationCode));
+                auth.setVerificationCode(hash(verificationCode));
             } catch (NoSuchAlgorithmException e) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body("error generating verification code");
             }
-            signUp.setExpiryTimestamp(generateExpiryTimestamp());
-            signUpService.save(signUp);
+            auth.setExpiryTimestamp(generateExpiryTimestamp());
+            authService.save(auth);
             sendVerificationEmail(email, verificationCode, "Registration");
             return ResponseEntity.ok("verification email sent");
         } else {
@@ -295,17 +295,17 @@ public class AuthController {
         String password = verificationRequest.getPassword();
         String firstName = verificationRequest.getFirstName();
         String lastName = verificationRequest.getLastName();
-        Auth signUp = signUpService.findByEmail(email);
+        Auth auth = authService.findByEmail(email);
 
 
-        if (signUp != null && signUp.getCustomer() == null) {
-            if (isVerificationCodeExpired(signUp.getExpiryTimestamp())) {
+        if (auth != null && auth.getCustomer() == null) {
+            if (isVerificationCodeExpired(auth.getExpiryTimestamp())) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body("registration failed: verification code expired");
             }
             try {
                 String hashedCode = hash(verificationCode);
-                if (signUp.getVerificationCode().equals(hashedCode)) {
+                if (auth.getVerificationCode().equals(hashedCode)) {
                     // Verification successful
                     Customer customer = new Customer();
                     customer.setFirstName(firstName);
@@ -314,19 +314,19 @@ public class AuthController {
 
                     // Hash the password and set passcode
                     String hashedPassword = hash(password);
-                    signUp.setPasscode(hashedPassword);
+                    auth.setPasscode(hashedPassword);
 
 
                     // Clear the verification code and expiry timestamp
-                    signUp.setVerificationCode(null);
-                    signUp.setExpiryTimestamp(null);
+                    auth.setVerificationCode(null);
+                    auth.setExpiryTimestamp(null);
 
 
                     customerService.save(customer); // Save customer
 
 
-                    signUp.setCustomer(customer);
-                    signUpService.save(signUp); // Save sign-up details with linked customer
+                    auth.setCustomer(customer);
+                    authService.save(auth); // Save sign-up details with linked customer
 
 
                     // Return customerID
@@ -348,15 +348,15 @@ public class AuthController {
     @PostMapping("/register-customer")
     public ResponseEntity<String> registerCustomer(@RequestBody AcceptTOSRequest2 request) {
         String email = request.getEmail();
-        Auth existingSignUp = signUpService.findByEmail(email);
+        Auth existingSignUp = authService.findByEmail(email);
 
         if (existingSignUp != null)
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
 
         // Create new sign-up and customer
-        Auth newSignUp = new Auth();
-        newSignUp.setEmail(email);
-        newSignUp.setIsMerchant(false);
+        Auth auth = new Auth();
+        auth.setEmail(email);
+        auth.setIsMerchant(false);
 
         Customer customer = new Customer();
         customer.setFirstName(request.getFirstName());
@@ -365,7 +365,7 @@ public class AuthController {
         // Hash and store the password immediately
         try {
             String hashedPassword = hash(request.getPassword());
-            newSignUp.setPasscode(hashedPassword);
+            auth.setPasscode(hashedPassword);
         } catch (NoSuchAlgorithmException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error hashing password");
@@ -373,7 +373,7 @@ public class AuthController {
 
         // Create Stripe customer and save the customer ID
         try {
-            stripeService.createStripeCustomer(customer, newSignUp);
+            stripeService.createStripeCustomer(customer, auth);
         } catch (StripeException e) {
             System.out.println("Error creating Stripe customer:");
             System.out.println("    Message: " + e.getMessage());
@@ -387,8 +387,8 @@ public class AuthController {
 
         // Save customer and link with sign-up
         customerService.save(customer);
-        newSignUp.setCustomer(customer);
-        signUpService.save(newSignUp);
+        auth.setCustomer(customer);
+        authService.save(auth);
 
         // Return the customer ID as a string
         return ResponseEntity.ok(String.valueOf(customer.getCustomerId()));
@@ -402,16 +402,16 @@ public class AuthController {
         String verificationCode = verificationRequest.getVerificationCode();
         String password = verificationRequest.getPassword();
 
-        Auth signUp = signUpService.findByEmail(email);
+        Auth auth = authService.findByEmail(email);
 
-        if (signUp != null && signUp.getMerchant() == null && signUp.getIsMerchant()) {
-            if (isVerificationCodeExpired(signUp.getExpiryTimestamp())) {
+        if (auth != null && auth.getMerchant() == null && auth.getIsMerchant()) {
+            if (isVerificationCodeExpired(auth.getExpiryTimestamp())) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body("registration failed: verification code expired");
             }
             try {
                 String hashedCode = hash(verificationCode);
-                if (signUp.getVerificationCode().equals(hashedCode)) {
+                if (auth.getVerificationCode().equals(hashedCode)) {
                     // Verification successful
                     Merchant merchant = new Merchant();
                     merchant.setName(verificationRequest.getCompanyName());
@@ -425,16 +425,16 @@ public class AuthController {
                     merchant.setOpen(false);
                     // Hash the password and set passcode
                     String hashedPassword = hash(password);
-                    signUp.setPasscode(hashedPassword);
+                    auth.setPasscode(hashedPassword);
 
                     // Clear the verification code and expiry timestamp
-                    signUp.setVerificationCode(null);
-                    signUp.setExpiryTimestamp(null);
+                    auth.setVerificationCode(null);
+                    auth.setExpiryTimestamp(null);
 
                     merchantService.save(merchant); // Save the Merchant entity
 
-                    signUp.setMerchant(merchant); // Associate the Merchant with SignUp
-                    signUpService.save(signUp); // Save SignUp with the associated Merchant
+                    auth.setMerchant(merchant); // Associate the Merchant with SignUp
+                    authService.save(auth); // Save SignUp with the associated Merchant
 
                     // Return negative Merchant ID to differentiate from customer IDs
                     return ResponseEntity.ok("-" + merchant.getMerchantId().toString());
@@ -456,11 +456,11 @@ public class AuthController {
     @PostMapping("/accept-tos")
     public ResponseEntity<String> acceptTOS(@RequestBody AcceptTOSRequest request) {
         String email = request.getEmail();
-        Auth signUp = signUpService.findByEmail(email);
+        Auth auth = authService.findByEmail(email);
 
 
-        if (signUp != null && signUp.getCustomer() != null) {
-            Customer customer = signUp.getCustomer();
+        if (auth != null && auth.getCustomer() != null) {
+            Customer customer = auth.getCustomer();
             customer.setAcceptedTOS(true);
             customerService.save(customer);
             return ResponseEntity.ok("TOS accepted");
@@ -475,21 +475,19 @@ public class AuthController {
     public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
         String email = loginRequest.getEmail();
         String password = loginRequest.getPassword();
+        Auth auth = authService.findByEmail(email);
 
 
-        Auth signUp = signUpService.findByEmail(email);
-
-
-        if (signUp != null) {
+        if (auth != null) {
             try {
                 String hashedPassword = hash(password);
-                if (signUp.getPasscode() != null && signUp.getPasscode().equals(hashedPassword)) {
-                    if (signUp.getMerchant() != null) {
+                if (auth.getPasscode() != null && auth.getPasscode().equals(hashedPassword)) {
+                    if (auth.getMerchant() != null) {
                         // Merchant login
-                        return ResponseEntity.ok("" + signUp.getMerchant().getMerchantId() * -1);
-                    } else if (signUp.getCustomer() != null) {
+                        return ResponseEntity.ok("" + auth.getMerchant().getMerchantId() * -1);
+                    } else if (auth.getCustomer() != null) {
                         // Customer login
-                        return ResponseEntity.ok(signUp.getCustomer().getCustomerId().toString());
+                        return ResponseEntity.ok(auth.getCustomer().getCustomerId().toString());
                     } else {
                         // No associated customer or merchant
                         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("login failed");
@@ -513,33 +511,33 @@ public class AuthController {
     public ResponseEntity<String> deleteAccount(@RequestBody LoginRequest loginRequest) {
         String email = loginRequest.getEmail();
         String password = loginRequest.getPassword();
-        Auth signUp = signUpService.findByEmail(email);
+        Auth auth = authService.findByEmail(email);
 
 
-        if (signUp != null) {
+        if (auth != null) {
             try {
                 String hashedPassword = hash(password);
 
 
                 // Verify the password
-                if (signUp.getPasscode() != null && signUp.getPasscode().equals(hashedPassword)) {
+                if (auth.getPasscode() != null && auth.getPasscode().equals(hashedPassword)) {
                     // Check if it's a customer account
-                    if (signUp.getCustomer() != null) {
-                        Customer customer = signUp.getCustomer();
+                    if (auth.getCustomer() != null) {
+                        Customer customer = auth.getCustomer();
                         customerService.delete(customer); // Delete the customer entity
-                        signUpService.delete(signUp); // Delete the sign-up record
+                        authService.delete(auth); // Delete the sign-up record
                         return ResponseEntity.ok("customer account deleted");
                     }
                     // Check if it's a merchant account
-                    else if (signUp.getMerchant() != null) {
-                        Merchant merchant = signUp.getMerchant();
+                    else if (auth.getMerchant() != null) {
+                        Merchant merchant = auth.getMerchant();
                         merchantService.delete(merchant); // Delete the merchant entity
-                        signUpService.delete(signUp); // Delete the sign-up record
+                        authService.delete(auth); // Delete the sign-up record
                         return ResponseEntity.ok("merchant account deleted");
                     }
                     // If no customer or merchant is associated
                     else {
-                        signUpService.delete(signUp);
+                        authService.delete(auth);
                         return ResponseEntity.ok("account deleted");
                     }
                 } else {
@@ -595,7 +593,7 @@ public class AuthController {
 
             // Generate hash for the email
             String unsubscribeHash = generateHash(email);
-            String unsubscribeUrl = "https://www.barzzy.site/signup/unsubscribe?email=" + email + "&hash=" // SHOULD BE RENAMED TO MEGRIM LATER
+            String unsubscribeUrl = "https://www.barzzy.site/postgres-production/auth/unsubscribe?email=" + email + "&hash=" // SHOULD BE RENAMED TO MEGRIM LATER
                     + unsubscribeHash;
 
 
@@ -640,20 +638,20 @@ public class AuthController {
     @PostMapping("/reset-password-validate-email")
     public ResponseEntity<String> resetPasswordValidateEmail(@RequestBody AcceptTOSRequest request) {
         String email = request.getEmail();
-        Auth signUp = signUpService.findByEmail(email);
+        Auth auth = authService.findByEmail(email);
 
 
-        if (signUp != null) {
+        if (auth != null) {
             // Generate a new verification code
             String verificationCode = generateVerificationCode();
             try {
-                signUp.setVerificationCode(hash(verificationCode));
+                auth.setVerificationCode(hash(verificationCode));
             } catch (NoSuchAlgorithmException e) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body("error generating verification code");
             }
-            signUp.setExpiryTimestamp(generateExpiryTimestamp());
-            signUpService.save(signUp);
+            auth.setExpiryTimestamp(generateExpiryTimestamp());
+            authService.save(auth);
             // Send the verification code via email
             sendVerificationEmail(email, verificationCode, "Forgot Password");
             return ResponseEntity.ok("verification code sent");
@@ -670,16 +668,16 @@ public class AuthController {
         String verificationCode = request.getCode();
 
 
-        Auth signUp = signUpService.findByEmail(email);
+        Auth auth = authService.findByEmail(email);
 
 
-        if (signUp != null) {
-            if (isVerificationCodeExpired(signUp.getExpiryTimestamp())) {
+        if (auth != null) {
+            if (isVerificationCodeExpired(auth.getExpiryTimestamp())) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("verification code expired");
             }
             try {
                 String hashedCode = hash(verificationCode);
-                if (hashedCode.equals(signUp.getVerificationCode())) {
+                if (hashedCode.equals(auth.getVerificationCode())) {
                     // Verification code is correct
                     return ResponseEntity.ok("verification code valid");
                 } else {
@@ -703,24 +701,24 @@ public class AuthController {
         String newPassword = request.getPassword();
 
 
-        Auth signUp = signUpService.findByEmail(email);
+        Auth auth = authService.findByEmail(email);
 
 
-        if (signUp != null) {
-            if (isVerificationCodeExpired(signUp.getExpiryTimestamp())) {
+        if (auth != null) {
+            if (isVerificationCodeExpired(auth.getExpiryTimestamp())) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("verification code expired");
             }
             try {
                 String hashedCode = hash(verificationCode);
-                if (hashedCode.equals(signUp.getVerificationCode())) {
+                if (hashedCode.equals(auth.getVerificationCode())) {
                     // Verification code is correct
                     // Hash the new password and update the passcode
                     String hashedPassword = hash(newPassword);
-                    signUp.setPasscode(hashedPassword);
+                    auth.setPasscode(hashedPassword);
                     // Clear the verification code and expiry timestamp
-                    signUp.setVerificationCode(null);
-                    signUp.setExpiryTimestamp(null);
-                    signUpService.save(signUp);
+                    auth.setVerificationCode(null);
+                    auth.setExpiryTimestamp(null);
+                    authService.save(auth);
                     return ResponseEntity.ok("password reset successful");
                 } else {
                     // Incorrect verification code

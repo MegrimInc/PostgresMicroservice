@@ -36,13 +36,13 @@ import jakarta.mail.internet.MimeMessage;
 public class OrderController {
 
     private final OrderService orderService;
-    private final AuthService signUpService;
+    private final AuthService authService;
     private final MerchantService merchantService;
 
     @Autowired
     public OrderController(OrderService orderService, AuthService signUpService, MerchantService merchantService) {
         this.orderService = orderService;
-        this.signUpService = signUpService;
+        this.authService = signUpService;
         this.merchantService = merchantService;
     }
 
@@ -147,7 +147,7 @@ public class OrderController {
             System.out.println("Total tip amount calculated: " + totalTipAmount);
 
             // Retrieve merchant email
-            String merchantEmail = signUpService.findEmailByMerchantId(merchantID);
+            String merchantEmail = authService.findEmailByMerchantId(merchantID);
             if (merchantEmail == null || merchantEmail.isEmpty()) {
                 System.err.println("Merchant email not found for merchant ID: " + merchantID);
             }

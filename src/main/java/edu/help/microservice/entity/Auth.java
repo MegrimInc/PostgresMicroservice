@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 @Entity
-@Table(name = "signups")
+@Table(name = "auth")
 @Data
 @NoArgsConstructor
 public class Auth {

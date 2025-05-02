@@ -27,7 +27,7 @@ import java.util.*;
 @RequestMapping("/postgres-test/merchant")
 public class MerchantController {
     private final OrderService orderService;
-    private final AuthService signUpService;
+    private final AuthService authService;
     private final MerchantService merchantService;
     private final ItemService itemService;
    
@@ -36,7 +36,7 @@ public class MerchantController {
     @Autowired
     public MerchantController(OrderService orderService, AuthService signUpService, MerchantService merchantService, ItemService itemService) {
         this.orderService = orderService;
-        this.signUpService = signUpService;
+        this.authService = signUpService;
         this.merchantService = merchantService;
         this.itemService = itemService;
     }
