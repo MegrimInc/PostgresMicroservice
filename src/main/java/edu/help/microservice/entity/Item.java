@@ -1,7 +1,6 @@
 package edu.help.microservice.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import edu.help.microservice.util.IntegerArrayConverter;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -53,4 +52,7 @@ public class Item {
 
     @Column(name = "discount_price")
     private Double discountPrice;
+
+    @Column(name = "tax_percent")
+    private Double taxPercent;
 }

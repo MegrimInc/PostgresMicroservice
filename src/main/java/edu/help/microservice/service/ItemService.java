@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import edu.help.microservice.dto.CreateItemRequestDTO;
-import edu.help.microservice.dto.ItemDTO;
 import edu.help.microservice.dto.UpdateItemRequestDTO;
 import edu.help.microservice.entity.Item;
 import edu.help.microservice.repository.ItemRepository;
@@ -37,6 +36,7 @@ public class ItemService {
                 .pointPrice(req.getPointPrice())
                 .regularPrice(req.getRegularPrice())
                 .discountPrice(req.getDiscountPrice())
+                .taxPercent(req.getTaxPercent())
                 .build());
         return toDto(saved);
     }
@@ -52,6 +52,7 @@ public class ItemService {
         if (req.getPointPrice()   != null) item.setPointPrice(req.getPointPrice());
         if (req.getRegularPrice() != null) item.setRegularPrice(req.getRegularPrice());
         if (req.getDiscountPrice()!= null) item.setDiscountPrice(req.getDiscountPrice());
+        if (req.getTaxPercent()   != null) item.setTaxPercent(req.getTaxPercent());
 
         return toDto(item);   // item is managed, so JPA flushes automatically
     }
@@ -72,6 +73,7 @@ public class ItemService {
                 .pointPrice(i.getPointPrice())
                 .regularPrice(i.getRegularPrice())
                 .discountPrice(i.getDiscountPrice())
+                .taxPercent(i.getTaxPercent())
                 .build();
     }
 }

@@ -11,4 +11,5 @@ public class ItemDTO {
     private Integer pointPrice;
     private Double regularPrice;
     private Double discountPrice;
+    private Double taxPercent;
 }
