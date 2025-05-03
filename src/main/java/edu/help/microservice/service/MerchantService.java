@@ -44,6 +44,18 @@ public class MerchantService {
 
 
     /**
+     * Retrieves the Stripe Account ID for the given Merchant ID.
+     * @param merchantId The ID of the merchant.
+     * @return The account ID string (e.g., "acct_1QJSzEPP544TBp2T"), or null if not set or merchant doesn't exist.
+     */
+    public String getAccountId(Integer merchantId) {
+        return merchantRepository.findById(merchantId)
+                .map(Merchant::getAccountId)
+                .orElse(null);
+    }
+
+
+    /**
      * Finds a Merchant by its ID.
      * @param id The merchant's ID.
      * @return The Merchant if found, otherwise null.

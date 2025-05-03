@@ -92,77 +92,106 @@ public class AuthController {
 
 
 
-    @PostMapping(value = "/register-merchant", consumes = {"multipart/form-data"})
-    public ResponseEntity<String> registerMerchantWithImage(
-            @RequestPart("info") MerchantRegistrationRequest req,
-            @RequestPart("logoImage") MultipartFile logoImage,
-            @RequestPart(value = "storeImage", required = false) MultipartFile storeImage,
-            HttpServletResponse response) {
 
-        // 1. Check for existing signup
-        Auth existingSignUp = authService.findByEmail(req.getEmail());
-        if (existingSignUp != null) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body("Email already in use");
-        }
 
-        // 2. Hash password
+
+    @PostMapping("/register-merchant")
+    public ResponseEntity<String> registerMerchant(@RequestBody AcceptTOSRequest request) {
+        String email = request.getEmail();
+        Auth existingSignUp = authService.findByEmail(email);
+
+        if (existingSignUp != null)
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
+
         Auth auth = new Auth();
-        auth.setEmail(req.getEmail());
+        auth.setEmail(email);
         auth.setIsMerchant(true);
+
+        String verificationCode = generateVerificationCode();
         try {
-            String hashedPassword = hash(req.getPassword());
-            auth.setPasscode(hashedPassword);
+            auth.setVerificationCode(hash(verificationCode));
         } catch (NoSuchAlgorithmException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error hashing password");
+                    .body("error generating verification code");
         }
 
-        // 3. Save images
-        String logoImagePath = null;
-        String storeImagePath = null;
-        if (!TESTING) {
-            logoImagePath = saveImageFile(logoImage);
-            storeImagePath = (storeImage != null) ? saveImageFile(storeImage) : logoImagePath;
-        } 
-
-        // 4. Create Merchant entity
-        Merchant merchant = new Merchant();
-        merchant.setName(req.getName());
-        merchant.setNickname(req.getNickname());
-        merchant.setCity(req.getCity());
-        merchant.setStateOrProvince(req.getStateOrProvince());
-        merchant.setAddress(req.getAddress());
-        merchant.setCountry(req.getCountry());
-        merchant.setZipCode(req.getZipCode());
-        merchant.setOpen(false);
-        merchant.setBonus(0);
-        merchant.setLogoImage(logoImagePath);
-        merchant.setStoreImage(storeImagePath);
-        merchant.setAccountId(null);
-        merchant.setDiscountSchedule(null);
-
-        // 5. Link signup and merchant
-        auth.setMerchant(merchant);
-
-        // 6. Save
+        auth.setExpiryTimestamp(generateExpiryTimestamp());
         authService.save(auth);
 
-        // 7. Issue cookie
-        String id = String.valueOf(merchant.getMerchantId());
-        String expiry = String.valueOf(System.currentTimeMillis() + 3600 * 1000);
-        String payload = id + "." + expiry;
-        String signature = generateSignature(payload);
-        String cookieValueRaw = payload + "." + signature;
-        String cookieValueEncoded = Base64.getEncoder().encodeToString(cookieValueRaw.getBytes(StandardCharsets.UTF_8));
-
-        response.addHeader("Set-Cookie", String.format(
-                "auth=%s; Max-Age=43200; Path=/; HttpOnly; SameSite=Lax;",
-                cookieValueEncoded
-        ));
-
-        return ResponseEntity.ok("Registered and Logged In!");
+        sendVerificationEmail(email, verificationCode, "Registration");
+        return ResponseEntity.ok("verification email sent");
     }
+
+    @PostMapping("/verify-merchant")
+    public ResponseEntity<String> verifyMerchant(@RequestPart("info") MerchantRegistrationRequest req,
+                                                 @RequestPart("logoImage") MultipartFile logoImage,
+                                                 @RequestPart(value = "storeImage", required = false) MultipartFile storeImage,
+                                                 HttpServletResponse response) {
+
+        String email = req.getEmail();
+        Auth auth = authService.findByEmail(email);
+
+        if (auth != null && auth.getMerchant() == null && auth.getIsMerchant()) {
+            if (isVerificationCodeExpired(auth.getExpiryTimestamp())) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("registration failed: verification code expired");
+            }
+            try {
+                String hashedCode = hash(req.getVerificationCode());
+                if (auth.getVerificationCode().equals(hashedCode)) {
+                    Merchant merchant = new Merchant();
+                    merchant.setName(req.getCompanyName());
+                    merchant.setNickname(req.getCompanyNickname());
+                    merchant.setCountry(req.getCountry());
+                    merchant.setStateOrProvince(req.getStateOrProvince());
+                    merchant.setCity(req.getCity());
+                    merchant.setAddress(req.getAddress());
+                    merchant.setZipCode(req.getZipCode());
+                    merchant.setOpen(false);
+                    merchant.setBonus(0);
+
+                    String logoImagePath = saveImageFile(logoImage);
+                    String storeImagePath = (storeImage != null) ? saveImageFile(storeImage) : logoImagePath;
+                    merchant.setLogoImage(logoImagePath);
+                    merchant.setStoreImage(storeImagePath);
+
+                    String hashedPassword = hash(req.getPassword());
+                    auth.setPasscode(hashedPassword);
+                    auth.setVerificationCode(null);
+                    auth.setExpiryTimestamp(null);
+
+                    merchantService.save(merchant);
+                    auth.setMerchant(merchant);
+                    authService.save(auth);
+
+                    String id = String.valueOf(merchant.getMerchantId());
+                    String expiry = String.valueOf(System.currentTimeMillis() + 3600 * 1000);
+                    String payload = id + "." + expiry;
+                    String signature = generateSignature(payload);
+                    String cookieValueRaw = payload + "." + signature;
+                    String cookieValueEncoded = Base64.getEncoder().encodeToString(cookieValueRaw.getBytes(StandardCharsets.UTF_8));
+
+                    response.addHeader("Set-Cookie", String.format(
+                            "auth=%s;  Path=/; HttpOnly; SameSite=Lax;",
+                            cookieValueEncoded
+                    ));
+
+                    return ResponseEntity.ok("-" + merchant.getMerchantId().toString());
+                } else {
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body("registration failed: incorrect verification code");
+                }
+            } catch (NoSuchAlgorithmException e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("error processing verification");
+            }
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("registration failed");
+        }
+    }
+
+    
+    
+
 
 
     
@@ -249,7 +278,7 @@ public class AuthController {
         
         Cookie cookie = new Cookie("auth", cookieValueEncoded);
         cookie.setMaxAge(3600); // 1 hour
-        cookie.setSecure(true); //TODO:Set this to TRUE when in production and FALSE when in testing
+        cookie.setSecure(true); // TODO:Set this to TRUE when in production and FALSE when in testing
         cookie.setHttpOnly(true);
         cookie.setPath("/");
         // Manually override SameSite to Lax for local testing
@@ -395,61 +424,6 @@ public class AuthController {
     }
     
      
-    // ENDPOINT: Verify Merchant Registration
-    @PostMapping("/verify-merchant")
-    public ResponseEntity<String> verifyMerchant(@RequestBody VerificationMerchantRequest verificationRequest) {
-        String email = verificationRequest.getEmail();
-        String verificationCode = verificationRequest.getVerificationCode();
-        String password = verificationRequest.getPassword();
-
-        Auth auth = authService.findByEmail(email);
-
-        if (auth != null && auth.getMerchant() == null && auth.getIsMerchant()) {
-            if (isVerificationCodeExpired(auth.getExpiryTimestamp())) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body("registration failed: verification code expired");
-            }
-            try {
-                String hashedCode = hash(verificationCode);
-                if (auth.getVerificationCode().equals(hashedCode)) {
-                    // Verification successful
-                    Merchant merchant = new Merchant();
-                    merchant.setName(verificationRequest.getCompanyName());
-                    merchant.setNickname(verificationRequest.getCompanyNickname());
-                    merchant.setCountry(verificationRequest.getCountry());
-                    merchant.setStateOrProvince(verificationRequest.getStateOrProvince());
-                    merchant.setCity(verificationRequest.getCity());
-                    merchant.setAddress(verificationRequest.getAddress());
-                    merchant.setLogoImage(""); // Set default or handle accordingly
-                    merchant.setStoreImage(""); // Set default or handle accordingly
-                    merchant.setOpen(false);
-                    // Hash the password and set passcode
-                    String hashedPassword = hash(password);
-                    auth.setPasscode(hashedPassword);
-
-                    // Clear the verification code and expiry timestamp
-                    auth.setVerificationCode(null);
-                    auth.setExpiryTimestamp(null);
-
-                    merchantService.save(merchant); // Save the Merchant entity
-
-                    auth.setMerchant(merchant); // Associate the Merchant with SignUp
-                    authService.save(auth); // Save SignUp with the associated Merchant
-
-                    // Return negative Merchant ID to differentiate from customer IDs
-                    return ResponseEntity.ok("-" + merchant.getMerchantId().toString());
-                } else {
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                            .body("registration failed: incorrect verification code");
-                }
-            } catch (NoSuchAlgorithmException e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("error processing verification");
-            }
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("registration failed");
-        }
-    }
-
   
 
     // ENDPOINT #4: Accept terms of service

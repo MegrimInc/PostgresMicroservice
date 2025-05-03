@@ -1,8 +1,8 @@
 package edu.help.microservice.dto;
 
 public class MerchantRegistrationRequest {
-    private String name;
-    private String nickname;
+    private String companyName;
+    private String companyNickname;
     private String city;
     private String stateOrProvince;
     private String address;
@@ -10,15 +10,14 @@ public class MerchantRegistrationRequest {
     private String zipCode;
     private String email;
     private String password;
-
-    // No file upload here because file will come separately as multipart/form-data
+    private String verificationCode;
 
     // Getters and Setters
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public String getCompanyName() { return companyName; }
+    public void setCompanyName(String companyName) { this.companyName = companyName; }
 
-    public String getNickname() { return nickname; }
-    public void setNickname(String nickname) { this.nickname = nickname; }
+    public String getCompanyNickname() { return companyNickname; }
+    public void setCompanyNickname(String companyNickname) { this.companyNickname = companyNickname; }
 
     public String getCity() { return city; }
     public void setCity(String city) { this.city = city; }
@@ -40,4 +39,7 @@ public class MerchantRegistrationRequest {
 
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
+
+    public String getVerificationCode() { return verificationCode; }
+    public void setVerificationCode(String verificationCode) { this.verificationCode = verificationCode; }
 }

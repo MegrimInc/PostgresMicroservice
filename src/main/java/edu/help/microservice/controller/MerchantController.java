@@ -7,6 +7,7 @@ import edu.help.microservice.dto.CreateItemRequestDTO;
 import edu.help.microservice.dto.ItemCountDTO;
 import edu.help.microservice.dto.ItemDTO;
 import edu.help.microservice.dto.UpdateItemRequestDTO;
+import edu.help.microservice.entity.Auth;
 import edu.help.microservice.entity.Order;
 import edu.help.microservice.service.ItemService;
 import edu.help.microservice.service.MerchantService;
@@ -17,6 +18,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
@@ -44,10 +47,10 @@ public class MerchantController {
     @GetMapping("/generalData")
     public ResponseEntity<?> generalData(@CookieValue(value = "auth", required = false) String authCookie) {
         try {
-            Integer merchantID = Cookies.getIdFromCookie(authCookie);
-            if (merchantID <= -1) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid session. Please log in again.");
-            }
+            ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
+            if (!validation.getStatusCode().is2xxSuccessful()) return validation;
+            Integer merchantID = validation.getBody();
+            assert merchantID != null;
 
             List<Order> orders = orderService.getAllOrdersForMerchant(merchantID);
             orders.sort((o1, o2) -> o2.getTimestamp().compareTo(o1.getTimestamp()));
@@ -82,10 +85,10 @@ public class MerchantController {
                                                      @RequestParam("start") Long start,
                                                      @RequestParam("end") Long end) {
         try {
-            Integer merchantID = Cookies.getIdFromCookie(authCookie);
-            if (merchantID <= -1) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid session. Please log in again.");
-            }
+            ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
+            if (!validation.getStatusCode().is2xxSuccessful()) return validation;
+            Integer merchantID = validation.getBody();
+            assert merchantID != null;
 
             Instant startInstant = Instant.ofEpochMilli(start);
             Instant endInstant = Instant.ofEpochMilli(end);
@@ -108,10 +111,10 @@ public class MerchantController {
                                          @RequestParam("timestamp") Long timestamp,
                                          @RequestParam("index") int index) {
         try {
-            Integer merchantID = Cookies.getIdFromCookie(authCookie);
-            if (merchantID <= -1) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid session. Please log in again.");
-            }
+            ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
+            if (!validation.getStatusCode().is2xxSuccessful()) return validation;
+            Integer merchantID = validation.getBody();
+            assert merchantID != null;
 
             Instant startingInstant = Instant.ofEpochMilli(timestamp);
 
@@ -132,11 +135,12 @@ public class MerchantController {
     public ResponseEntity<?> byDay(@CookieValue(value = "auth", required = false) String authCookie,
                                    @RequestParam("date") String dayStr) { // expects "yyyy-MM-dd"
         try {
-            Integer merchantID = Cookies.getIdFromCookie(authCookie);
-            if (merchantID <= -1) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid session. Please log in again.");
-            }
-
+            ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
+            if (!validation.getStatusCode().is2xxSuccessful()) return validation;
+            Integer merchantID = validation.getBody();
+            assert merchantID != null;
+            
+            
             LocalDate localDate = LocalDate.parse(dayStr);
             ZoneId newYorkZone = ZoneId.of("America/New_York");
             ZonedDateTime startOfDayNY = localDate.atStartOfDay(newYorkZone);
@@ -161,10 +165,12 @@ public class MerchantController {
     @GetMapping("/top5Items")
     public ResponseEntity<?> top5Items(@CookieValue(value = "auth", required = false) String authCookie) {
         try {
-            Integer merchantID = Cookies.getIdFromCookie(authCookie);
-            if (merchantID <= -1) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid session. Please log in again.");
-            }
+            ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
+            if (!validation.getStatusCode().is2xxSuccessful()) return validation;
+            Integer merchantID = validation.getBody();
+            assert merchantID != null;
+            
+            
 
             Map<String, Integer> top5 = orderService.getTop5Items(merchantID);
             String jsonResponse = "{\"data\":" + new ObjectMapper().writeValueAsString(top5) + "}";
@@ -179,10 +185,12 @@ public class MerchantController {
     @GetMapping("/allItemCounts")
     public ResponseEntity<?> getAllItemCounts(@CookieValue(value = "auth", required = false) String authCookie) {
         try {
-            Integer merchantID = Cookies.getIdFromCookie(authCookie);
-            if (merchantID <= -1) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid session. Please log in again.");
-            }
+            ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
+            if (!validation.getStatusCode().is2xxSuccessful()) return validation;
+            Integer merchantID = validation.getBody();
+            assert merchantID != null;
+            
+            
 
             List<ItemCountDTO> responseList = orderService.getAllItemCountsForMerchant(merchantID);
             return ResponseEntity.ok(Map.of("data", responseList));
@@ -194,19 +202,6 @@ public class MerchantController {
     }
 
 
-    //Not a route, just a helper function?
-     /** Replace this with your real auth mechanism; for now we rely on header */
-     private Integer merchantId(@CookieValue(value = "auth", required = false) String authCookie) {
-         if (authCookie == null) {
-             throw new IllegalArgumentException("Missing authentication cookie");
-         }
-
-         try {
-             return Cookies.getIdFromCookie(authCookie);
-         } catch (Exception e) {
-             throw new IllegalArgumentException("Invalid authentication cookie");
-         }
-     }
      
      
      
@@ -214,11 +209,14 @@ public class MerchantController {
     @GetMapping
     public ResponseEntity<?> menu(@CookieValue(value = "auth", required = false) String authCookie) {
         try {
-            Integer merchantId = Cookies.getIdFromCookie(authCookie);
-            if (merchantId <= -1) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid session. Please log in again.");
-            }
-            return ResponseEntity.ok(itemService.getMenu(merchantId));
+            ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
+            if (!validation.getStatusCode().is2xxSuccessful()) return validation;
+            Integer merchantID = validation.getBody();
+            assert merchantID != null;
+            
+            
+            
+            return ResponseEntity.ok(itemService.getMenu(merchantID));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing request");
@@ -229,11 +227,14 @@ public class MerchantController {
     public ResponseEntity<?> create(@CookieValue(value = "auth", required = false) String authCookie,
                                     @RequestBody CreateItemRequestDTO req) {
         try {
-            Integer merchantId = Cookies.getIdFromCookie(authCookie);
-            if (merchantId <= -1) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid session. Please log in again.");
-            }
-            return ResponseEntity.ok(itemService.create(merchantId, req));
+            ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
+            if (!validation.getStatusCode().is2xxSuccessful()) return validation;
+            Integer merchantID = validation.getBody();
+            assert merchantID != null;
+            
+            
+            
+            return ResponseEntity.ok(itemService.create(merchantID, req));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating item");
@@ -245,11 +246,14 @@ public class MerchantController {
                                     @PathVariable Integer itemId,
                                     @RequestBody UpdateItemRequestDTO req) {
         try {
-            Integer merchantId = Cookies.getIdFromCookie(authCookie);
-            if (merchantId <= -1) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid session. Please log in again.");
-            }
-            return ResponseEntity.ok(itemService.update(merchantId, itemId, req));
+            ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
+            if (!validation.getStatusCode().is2xxSuccessful()) return validation;
+            Integer merchantID = validation.getBody();
+            assert merchantID != null;
+            
+            
+            
+            return ResponseEntity.ok(itemService.update(merchantID, itemId, req));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating item");
@@ -260,11 +264,13 @@ public class MerchantController {
     public ResponseEntity<?> delete(@CookieValue(value = "auth", required = false) String authCookie,
                                     @PathVariable Integer itemId) {
         try {
-            Integer merchantId = Cookies.getIdFromCookie(authCookie);
-            if (merchantId <= -1) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            }
-            itemService.delete(merchantId, itemId);
+            ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
+            if (!validation.getStatusCode().is2xxSuccessful()) return validation;
+            Integer merchantID = validation.getBody();
+            assert merchantID != null;
+            
+            
+            itemService.delete(merchantID, itemId);
             return ResponseEntity.noContent().build();
         } catch (Exception e) {
             e.printStackTrace();
@@ -273,5 +279,54 @@ public class MerchantController {
     }
 
 
-    
+
+
+    /**
+     * Extracts and validates the merchant ID from the cookie.
+     * Returns ResponseEntity with proper error if any validation fails:
+     * - 401 Unauthorized: if cookie is missing, expired, invalid, or signature check fails.
+     * - 403 Forbidden: if merchant ID exists but no associated merchant (not onboarded).
+     */
+    private ResponseEntity<Integer> validateAndGetMerchantId(String authCookie) {
+        if (authCookie == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        }
+
+        try {
+            String decoded = new String(Base64.getDecoder().decode(authCookie), StandardCharsets.UTF_8);
+            String[] parts = decoded.split("\\.");
+            if (parts.length != 3) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+
+            String id = parts[0];
+            String expiry = parts[1];
+            String signature = parts[2];
+
+            if (signature == null || signature.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+            }
+
+            if (System.currentTimeMillis() > Long.parseLong(expiry)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+            }
+
+            String payload = id + "." + expiry;
+            if (!Cookies.validateSignature(payload, signature)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+            }
+
+            int merchantId = Integer.parseInt(id);
+            Optional<Auth> auth = authService.findById(merchantId);
+            if (auth.isEmpty() || auth.get().getMerchant() == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+            }
+
+            return ResponseEntity.ok(merchantId);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        }
+    }
+
+
+
+
 }
