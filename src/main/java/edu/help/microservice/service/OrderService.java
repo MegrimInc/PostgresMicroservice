@@ -115,7 +115,9 @@ public class OrderService {
     @Transactional(readOnly = true)
     public List<ItemCountDTO> getAllItemCountsForMerchant(int merchantId) {
         // 1. Fetch all items for the merchant
-        List<Item> items = itemRepository.findAllItemsByMerchantIdExcludingFields(merchantId);
+        List<Item> items = itemRepository.findByMerchantId(merchantId);
+
+
 
         // 2. Fetch all orders for the merchant
         List<Order> orders = orderRepository.findByMerchantId(merchantId);

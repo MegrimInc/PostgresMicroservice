@@ -57,7 +57,7 @@ public class MerchantService {
      * Retrieves all items for a given Merchant ID (excluding certain fields).
      */
     public List<Item> getItemsByMerchantId(Integer merchantId) {
-        return itemRepository.findAllItemsByMerchantIdExcludingFields(merchantId);
+        return itemRepository.findByMerchantId(merchantId);
     }
 
     /**
