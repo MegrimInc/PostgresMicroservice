@@ -254,7 +254,7 @@ public class AuthController {
         cookie.setPath("/");
         // Manually override SameSite to Lax for local testing
         response.addHeader("Set-Cookie", String.format(
-                "auth=%s; Max-Age=10; Path=/; Secure; HttpOnly; SameSite=None",
+                "auth=%s; Path=/; Secure; HttpOnly; SameSite=None",
                 cookieValueEncoded
         ));
 
