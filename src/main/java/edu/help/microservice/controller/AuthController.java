@@ -96,8 +96,8 @@ public class AuthController {
 
 
     @PostMapping("/register-merchant")
-    public ResponseEntity<String> registerMerchant(@RequestBody AcceptTOSRequest request) {
-        String email = request.getEmail();
+    public ResponseEntity<String> registerMerchant(@RequestParam("email") String email) {
+
         Auth existingSignUp = authService.findByEmail(email);
 
         if (existingSignUp != null)
@@ -122,6 +122,8 @@ public class AuthController {
         return ResponseEntity.ok("verification email sent");
     }
 
+    
+    
     @PostMapping("/verify-merchant")
     public ResponseEntity<String> verifyMerchant(@RequestPart("info") MerchantRegistrationRequest req,
                                                  @RequestPart("logoImage") MultipartFile logoImage,
