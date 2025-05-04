@@ -58,6 +58,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import static edu.help.microservice.util.Cookies.*;
+import java.util.UUID;
 
 
 @RequiredArgsConstructor
@@ -734,7 +735,6 @@ public class AuthController {
     private boolean isVerificationCodeExpired(Timestamp expiryTimestamp) {
         return expiryTimestamp != null && expiryTimestamp.before(new Timestamp(System.currentTimeMillis()));
     }
-    
 
     private String saveImageFile(MultipartFile file) {
         if (file.isEmpty()) {
@@ -745,17 +745,21 @@ public class AuthController {
             File dir = new File(uploadsDir);
             if (!dir.exists()) dir.mkdirs();
 
-            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            String originalExtension = "";
+            String originalName = file.getOriginalFilename();
+            if (originalName != null && originalName.contains(".")) {
+                originalExtension = originalName.substring(originalName.lastIndexOf("."));
+            }
+
+            String fileName = UUID.randomUUID().toString() + originalExtension;
             Path filePath = Paths.get(uploadsDir + fileName);
 
             Files.copy(file.getInputStream(), filePath);
 
-            // Return the path or public URL
             return "/uploads/merchants/" + fileName;
         } catch (IOException e) {
             throw new RuntimeException("Failed to save image", e);
         }
     }
-    
     
 }
