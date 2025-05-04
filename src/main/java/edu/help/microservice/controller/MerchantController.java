@@ -301,7 +301,7 @@ public class MerchantController {
             String expiry = parts[1];
             String signature = parts[2];
 
-            if (signature == null || signature.isEmpty()) {
+            if (signature == null || signature.isEmpty()) { // TODO: Unauthorized = login failure redirect to /login
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
             }
 
@@ -316,9 +316,11 @@ public class MerchantController {
 
             int merchantId = Integer.parseInt(id);
             Optional<Auth> auth = authService.findById(merchantId);
-            if (auth.isEmpty() || auth.get().getMerchant() == null) {
+            if (auth.isEmpty() || auth.get().getMerchant() == null) { // TODO check for un-onboarded
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+                // TODO: FORBIDDEN = un-onboarded, redirect to /onboarding
             }
+            
 
             return ResponseEntity.ok(merchantId);
         } catch (Exception e) {
