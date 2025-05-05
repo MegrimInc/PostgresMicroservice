@@ -363,17 +363,26 @@ public class MerchantController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
             }
 
-            int merchantId = Integer.parseInt(id);
-            Optional<Auth> auth = authService.findById(merchantId);
-            if (auth.isEmpty() ||
-                    auth.get().getMerchant() == null ||
-                    auth.get().getMerchant().getAccountId() == null ) { 
-
-
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(merchantId);
-            }
+                int merchantId = Integer.parseInt(id);
+                Optional<Auth> auth = authService.findById(merchantId);
+                if (auth.isEmpty() ||
+                        auth.get().getMerchant() == null ||
+                        auth.get().getMerchant().getAccountId() == null ) { 
+    
+    
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(merchantId);
+                }
+            System.out.println("Stripe verification starting for merchantid " + merchantId);
 
             Account acc = Account.retrieve(auth.get().getMerchant().getAccountId());
+            System.out.println("Stripe verification status: retrieved acc");
+            System.out.println("Stripe verification status: acc.getChargesEnabled" + acc.getChargesEnabled());
+            System.out.println("Stripe verification status: acc.getDetailsSubmitted()" + acc.getDetailsSubmitted());
+            System.out.println("Stripe verification status:acc.getRequirements().getCurrentlyDue() != null" + acc.getRequirements().getCurrentlyDue() != null);
+            System.out.println("Stripe verification status:  !acc.getRequirements().getCurrentlyDue().isEmpty()" + !acc.getRequirements().getCurrentlyDue().isEmpty());
+            System.out.println("Stripe verification status: Completed");
+
+
             return acc.getChargesEnabled() && acc.getDetailsSubmitted()
                     && acc.getRequirements().getCurrentlyDue() != null &&
                     !acc.getRequirements().getCurrentlyDue().isEmpty()
