@@ -37,7 +37,7 @@ public class StripeService {
     private final StripeClient stripeClient;
     private final CustomerRepository customerRepository;
     private final MerchantRepository merchantRepository;
-    private final AuthRepository signUpRepository;
+    private final AuthRepository authRepository;
 
     public void processOrder(double price, double tip, int customerId, int merchantId) throws StripeException, InvalidStripeChargeException {
         Long priceInCents = Math.round(price * 100);
@@ -154,7 +154,7 @@ public class StripeService {
                 System.out.println("No Stripe ID found for customer. Creating a new Stripe customer...");
 
                 // Fetch the associated SignUp record for email
-                Optional<Auth> signUpOpt = signUpRepository.findById(customerId);
+                Optional<Auth> signUpOpt = authRepository.findById(customerId);
                 if (signUpOpt.isEmpty()) {
                     throw new IllegalStateException("No SignUp record found for customerId: " + customerId);
                 }
