@@ -3,12 +3,20 @@ package edu.help.microservice.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+import com.stripe.StripeClient;
+import com.stripe.model.Account;
+import com.stripe.model.AccountLink;
+import com.stripe.param.AccountCreateParams;
+import com.stripe.param.AccountLinkCreateParams;
 import edu.help.microservice.dto.CreateItemRequestDTO;
 import edu.help.microservice.dto.ItemCountDTO;
 import edu.help.microservice.dto.ItemDTO;
 import edu.help.microservice.dto.UpdateItemRequestDTO;
 import edu.help.microservice.entity.Auth;
+import edu.help.microservice.entity.Merchant;
 import edu.help.microservice.entity.Order;
+import edu.help.microservice.repository.AuthRepository;
+import edu.help.microservice.repository.MerchantRepository;
 import edu.help.microservice.service.ItemService;
 import edu.help.microservice.service.MerchantService;
 import edu.help.microservice.service.OrderService;
@@ -33,16 +41,52 @@ public class MerchantController {
     private final AuthService authService;
     private final MerchantService merchantService;
     private final ItemService itemService;
-   
-    
+    private final StripeClient getStripeClient;
+    private final MerchantRepository merchantRepository;
+    private final AuthRepository authRepository;
+
 
     @Autowired
-    public MerchantController(OrderService orderService, AuthService signUpService, MerchantService merchantService, ItemService itemService) {
+    public MerchantController(OrderService orderService, AuthService signUpService, MerchantService merchantService, ItemService itemService, StripeClient getStripeClient, MerchantRepository merchantRepository, AuthRepository authRepository) {
         this.orderService = orderService;
         this.authService = signUpService;
         this.merchantService = merchantService;
         this.itemService = itemService;
+        this.getStripeClient = getStripeClient;
+        this.merchantRepository = merchantRepository;
+        this.authRepository = authRepository;
+        
     }
+
+
+
+    @PostMapping("/onboarding")
+    public ResponseEntity<String> onboarding(@CookieValue(value = "auth", required = false) String authCookie) {
+        ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
+
+        // Already onboarded → skip onboarding
+        if (validation.getStatusCode().equals(HttpStatus.OK)) {
+            return ResponseEntity.ok(null);
+        }
+
+        // Only proceed if the error was due to being unonboarded (403)
+        if (!validation.getStatusCode().equals(HttpStatus.FORBIDDEN)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // invalid or expired cookie
+        }
+
+        // Safe to retrieve ID now
+        Integer merchantID = validation.getBody();
+        if (merchantID == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            return ResponseEntity.status(201).body(createStripeAccountAndGetOnboardingUrl(merchantID));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.PRECONDITION_FAILED).body(null);
+        }
+    }
+
 
     @GetMapping("/generalData")
     public ResponseEntity<?> generalData(@CookieValue(value = "auth", required = false) String authCookie) {
@@ -281,6 +325,11 @@ public class MerchantController {
 
 
 
+
+
+
+
+
     /**
      * Extracts and validates the merchant ID from the cookie.
      * Returns ResponseEntity with proper error if any validation fails:
@@ -316,16 +365,57 @@ public class MerchantController {
 
             int merchantId = Integer.parseInt(id);
             Optional<Auth> auth = authService.findById(merchantId);
-            if (auth.isEmpty() || auth.get().getMerchant() == null) { // TODO check for un-onboarded
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
-                // TODO: FORBIDDEN = un-onboarded, redirect to /onboarding
-            }
-            
+            if (auth.isEmpty() ||
+                    auth.get().getMerchant() == null ||
+                    auth.get().getMerchant().getAccountId() == null ) { 
 
-            return ResponseEntity.ok(merchantId);
+
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(merchantId);
+            }
+
+            Account acc = Account.retrieve(auth.get().getMerchant().getAccountId());
+            return acc.getChargesEnabled() && acc.getDetailsSubmitted()
+                    && acc.getRequirements().getCurrentlyDue() != null &&
+                    !acc.getRequirements().getCurrentlyDue().isEmpty()
+                    ? ResponseEntity.ok(merchantId)
+                    : ResponseEntity.status(HttpStatus.FORBIDDEN).body(merchantId);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
+    }
+
+
+
+    public String createStripeAccountAndGetOnboardingUrl(Integer merchantId) throws Exception {
+        // Step 1: Create the account
+
+        Merchant m = merchantRepository.getMerchantsByMerchantId(merchantId);
+        Optional<Auth> a2 = authRepository.findByMerchant_MerchantId(merchantId);
+        assert a2.isPresent();
+        Auth a = a2.get();
+        
+                
+                
+        AccountCreateParams accountParams = AccountCreateParams.builder()
+                .setType(AccountCreateParams.Type.EXPRESS)
+                .setCountry("US")
+                .setEmail(a.getEmail()) // ideally from your DB
+                .build();
+        Account account = Account.create(accountParams);
+
+        m.setAccountId(account.getId());
+        merchantService.save(m);
+
+        // Step 2: Create the onboarding link
+        AccountLinkCreateParams linkParams = AccountLinkCreateParams.builder()
+                .setAccount(account.getId())
+                .setRefreshUrl("https://barzzy.site/website/onboarding")
+                .setReturnUrl("https://barzzy.site/website/analytics")
+                .setType(AccountLinkCreateParams.Type.ACCOUNT_ONBOARDING)
+                .build();
+        AccountLink accountLink = AccountLink.create(linkParams);
+
+        return accountLink.getUrl(); // This is the URL you return to the frontend
     }
 
 

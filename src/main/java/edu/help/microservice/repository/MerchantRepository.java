@@ -6,4 +6,5 @@ import edu.help.microservice.entity.Merchant;
 @Repository
 public interface MerchantRepository extends JpaRepository<Merchant, Integer> {
 
+    Merchant getMerchantsByMerchantId(Integer merchantId);
 }
