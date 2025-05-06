@@ -26,7 +26,7 @@ public class Auth {
     @Column(name = "auth_id", nullable = true)
     private Integer authId;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "email", nullable = false, unique = true)
     private String email;
 
     @Column(name = "passcode", nullable = true)

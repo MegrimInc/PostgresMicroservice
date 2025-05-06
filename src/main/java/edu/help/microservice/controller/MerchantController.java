@@ -1,8 +1,9 @@
 package edu.help.microservice.controller;
+import jakarta.servlet.http.HttpServletRequest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-
+import com.stripe.Stripe;
 import com.stripe.StripeClient;
 import com.stripe.model.Account;
 import com.stripe.model.AccountLink;
@@ -38,61 +39,53 @@ import java.util.*;
 @RequestMapping("/postgres-test/merchant")
 public class MerchantController {
     private final OrderService orderService;
-    private final AuthService authService;
     private final MerchantService merchantService;
     private final ItemService itemService;
     private final StripeClient getStripeClient;
     private final MerchantRepository merchantRepository;
     private final AuthRepository authRepository;
 
-
     @Autowired
-    public MerchantController(OrderService orderService, AuthService signUpService, MerchantService merchantService, ItemService itemService, StripeClient getStripeClient, MerchantRepository merchantRepository, AuthRepository authRepository) {
+    public MerchantController(OrderService orderService, AuthService signUpService, MerchantService merchantService,
+            ItemService itemService, StripeClient getStripeClient, MerchantRepository merchantRepository,
+            AuthRepository authRepository) {
         this.orderService = orderService;
-        this.authService = signUpService;
         this.merchantService = merchantService;
         this.itemService = itemService;
         this.getStripeClient = getStripeClient;
         this.merchantRepository = merchantRepository;
         this.authRepository = authRepository;
-        
+
     }
 
-
-
     @PostMapping("/onboarding")
-    public ResponseEntity<String> onboarding(@CookieValue(value = "auth", required = false) String authCookie) {
+    public ResponseEntity<String> onboarding(@CookieValue(value = "auth", required = false) String authCookie,
+            HttpServletRequest request) {
         ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
 
-        // Already onboarded → skip onboarding
-        if (validation.getStatusCode().equals(HttpStatus.OK)) {
+        if (validation.getStatusCode().equals(HttpStatus.OK))
             return ResponseEntity.ok(null);
-        }
-
-        // Only proceed if the error was due to being unonboarded (403)
-        if (!validation.getStatusCode().equals(HttpStatus.FORBIDDEN)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // invalid or expired cookie
-        }
-
-        // Safe to retrieve ID now
-        Integer merchantID = validation.getBody();
-        if (merchantID == null) {
+        if (!validation.getStatusCode().equals(HttpStatus.FORBIDDEN))
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+
+        Integer merchantID = validation.getBody();
+        if (merchantID == null)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         try {
             return ResponseEntity.status(201).body(createStripeAccountAndGetOnboardingUrl(merchantID));
         } catch (Exception e) {
+            e.printStackTrace(); // 👈 ADD THIS LINE
             return ResponseEntity.status(HttpStatus.PRECONDITION_FAILED).body(null);
         }
     }
-
 
     @GetMapping("/generalData")
     public ResponseEntity<?> generalData(@CookieValue(value = "auth", required = false) String authCookie) {
         try {
             ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
-            if (!validation.getStatusCode().is2xxSuccessful()) return validation;
+            if (!validation.getStatusCode().is2xxSuccessful())
+                return validation;
             Integer merchantID = validation.getBody();
             assert merchantID != null;
 
@@ -126,11 +119,12 @@ public class MerchantController {
 
     @GetMapping("/contributionByDateRange")
     public ResponseEntity<?> contributionByDateRange(@CookieValue(value = "auth", required = false) String authCookie,
-                                                     @RequestParam("start") Long start,
-                                                     @RequestParam("end") Long end) {
+            @RequestParam("start") Long start,
+            @RequestParam("end") Long end) {
         try {
             ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
-            if (!validation.getStatusCode().is2xxSuccessful()) return validation;
+            if (!validation.getStatusCode().is2xxSuccessful())
+                return validation;
             Integer merchantID = validation.getBody();
             assert merchantID != null;
 
@@ -152,11 +146,12 @@ public class MerchantController {
 
     @GetMapping("/fiftyOrders")
     public ResponseEntity<?> fiftyOrders(@CookieValue(value = "auth", required = false) String authCookie,
-                                         @RequestParam("timestamp") Long timestamp,
-                                         @RequestParam("index") int index) {
+            @RequestParam("timestamp") Long timestamp,
+            @RequestParam("index") int index) {
         try {
             ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
-            if (!validation.getStatusCode().is2xxSuccessful()) return validation;
+            if (!validation.getStatusCode().is2xxSuccessful())
+                return validation;
             Integer merchantID = validation.getBody();
             assert merchantID != null;
 
@@ -177,14 +172,14 @@ public class MerchantController {
 
     @GetMapping("/byDay")
     public ResponseEntity<?> byDay(@CookieValue(value = "auth", required = false) String authCookie,
-                                   @RequestParam("date") String dayStr) { // expects "yyyy-MM-dd"
+            @RequestParam("date") String dayStr) { // expects "yyyy-MM-dd"
         try {
             ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
-            if (!validation.getStatusCode().is2xxSuccessful()) return validation;
+            if (!validation.getStatusCode().is2xxSuccessful())
+                return validation;
             Integer merchantID = validation.getBody();
             assert merchantID != null;
-            
-            
+
             LocalDate localDate = LocalDate.parse(dayStr);
             ZoneId newYorkZone = ZoneId.of("America/New_York");
             ZonedDateTime startOfDayNY = localDate.atStartOfDay(newYorkZone);
@@ -210,11 +205,10 @@ public class MerchantController {
     public ResponseEntity<?> top5Items(@CookieValue(value = "auth", required = false) String authCookie) {
         try {
             ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
-            if (!validation.getStatusCode().is2xxSuccessful()) return validation;
+            if (!validation.getStatusCode().is2xxSuccessful())
+                return validation;
             Integer merchantID = validation.getBody();
             assert merchantID != null;
-            
-            
 
             Map<String, Integer> top5 = orderService.getTop5Items(merchantID);
             String jsonResponse = "{\"data\":" + new ObjectMapper().writeValueAsString(top5) + "}";
@@ -230,11 +224,10 @@ public class MerchantController {
     public ResponseEntity<?> getAllItemCounts(@CookieValue(value = "auth", required = false) String authCookie) {
         try {
             ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
-            if (!validation.getStatusCode().is2xxSuccessful()) return validation;
+            if (!validation.getStatusCode().is2xxSuccessful())
+                return validation;
             Integer merchantID = validation.getBody();
             assert merchantID != null;
-            
-            
 
             List<ItemCountDTO> responseList = orderService.getAllItemCountsForMerchant(merchantID);
             return ResponseEntity.ok(Map.of("data", responseList));
@@ -245,21 +238,16 @@ public class MerchantController {
         }
     }
 
-
-     
-     
-     
     /* ---------------------- ROUTES ---------------------- */
     @GetMapping
     public ResponseEntity<?> menu(@CookieValue(value = "auth", required = false) String authCookie) {
         try {
             ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
-            if (!validation.getStatusCode().is2xxSuccessful()) return validation;
+            if (!validation.getStatusCode().is2xxSuccessful())
+                return validation;
             Integer merchantID = validation.getBody();
             assert merchantID != null;
-            
-            
-            
+
             return ResponseEntity.ok(itemService.getMenu(merchantID));
         } catch (Exception e) {
             e.printStackTrace();
@@ -269,15 +257,14 @@ public class MerchantController {
 
     @PostMapping
     public ResponseEntity<?> create(@CookieValue(value = "auth", required = false) String authCookie,
-                                    @RequestBody CreateItemRequestDTO req) {
+            @RequestBody CreateItemRequestDTO req) {
         try {
             ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
-            if (!validation.getStatusCode().is2xxSuccessful()) return validation;
+            if (!validation.getStatusCode().is2xxSuccessful())
+                return validation;
             Integer merchantID = validation.getBody();
             assert merchantID != null;
-            
-            
-            
+
             return ResponseEntity.ok(itemService.create(merchantID, req));
         } catch (Exception e) {
             e.printStackTrace();
@@ -287,16 +274,15 @@ public class MerchantController {
 
     @PatchMapping("/{itemId}")
     public ResponseEntity<?> update(@CookieValue(value = "auth", required = false) String authCookie,
-                                    @PathVariable Integer itemId,
-                                    @RequestBody UpdateItemRequestDTO req) {
+            @PathVariable Integer itemId,
+            @RequestBody UpdateItemRequestDTO req) {
         try {
             ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
-            if (!validation.getStatusCode().is2xxSuccessful()) return validation;
+            if (!validation.getStatusCode().is2xxSuccessful())
+                return validation;
             Integer merchantID = validation.getBody();
             assert merchantID != null;
-            
-            
-            
+
             return ResponseEntity.ok(itemService.update(merchantID, itemId, req));
         } catch (Exception e) {
             e.printStackTrace();
@@ -306,14 +292,14 @@ public class MerchantController {
 
     @DeleteMapping("/{itemId}")
     public ResponseEntity<?> delete(@CookieValue(value = "auth", required = false) String authCookie,
-                                    @PathVariable Integer itemId) {
+            @PathVariable Integer itemId) {
         try {
             ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
-            if (!validation.getStatusCode().is2xxSuccessful()) return validation;
+            if (!validation.getStatusCode().is2xxSuccessful())
+                return validation;
             Integer merchantID = validation.getBody();
             assert merchantID != null;
-            
-            
+
             itemService.delete(merchantID, itemId);
             return ResponseEntity.noContent().build();
         } catch (Exception e) {
@@ -321,14 +307,6 @@ public class MerchantController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
-
-
-
-
-
-
-
 
     /**
      * Extracts and validates the merchant ID from the cookie.
@@ -344,7 +322,8 @@ public class MerchantController {
         try {
             String decoded = new String(Base64.getDecoder().decode(authCookie), StandardCharsets.UTF_8);
             String[] parts = decoded.split("\\.");
-            if (parts.length != 3) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+            if (parts.length != 3)
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
 
             String id = parts[0];
             String expiry = parts[1];
@@ -363,71 +342,76 @@ public class MerchantController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
             }
 
-                int merchantId = Integer.parseInt(id);
-                Optional<Auth> auth = authService.findById(merchantId);
-                if (auth.isEmpty() ||
-                        auth.get().getMerchant() == null ||
-                        auth.get().getMerchant().getAccountId() == null ) { 
-    
-    
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(merchantId);
-                }
-            System.out.println("Stripe verification starting for merchantid " + merchantId);
+            int merchantId = Integer.parseInt(id);
+            Merchant merchant = merchantService.findMerchantById(merchantId);
+            if (merchant == null || merchant.getAccountId() == null) {
+                System.out.println("[DEBUG] Merchant not onboarded for merchantId: " + merchantId);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(merchantId);
+            }
 
-            Account acc = Account.retrieve(auth.get().getMerchant().getAccountId());
-            System.out.println("Stripe verification status: retrieved acc");
-            System.out.println("Stripe verification status: acc.getChargesEnabled" + acc.getChargesEnabled());
-            System.out.println("Stripe verification status: acc.getDetailsSubmitted()" + acc.getDetailsSubmitted());
-            System.out.println("Stripe verification status:acc.getRequirements().getCurrentlyDue() != null" + acc.getRequirements().getCurrentlyDue() != null);
-            System.out.println("Stripe verification status:  !acc.getRequirements().getCurrentlyDue().isEmpty()" + !acc.getRequirements().getCurrentlyDue().isEmpty());
-            System.out.println("Stripe verification status: Completed");
-
-
-            return acc.getChargesEnabled() && acc.getDetailsSubmitted()
-                    && acc.getRequirements().getCurrentlyDue() != null &&
-                    !acc.getRequirements().getCurrentlyDue().isEmpty()
-                    ? ResponseEntity.ok(merchantId)
-                    : ResponseEntity.status(HttpStatus.FORBIDDEN).body(merchantId);
+            // Merchant exists and has an accountId → consider them onboarded
+            return ResponseEntity.ok(merchantId);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
     }
 
+    public String createStripeAccountAndGetOnboardingUrl(Integer merchantId)
+            throws Exception {
+        System.out.println("[DEBUG] Starting createStripeAccountAndGetOnboardingUrl for merchantId: " + merchantId);
 
-
-    public String createStripeAccountAndGetOnboardingUrl(Integer merchantId) throws Exception {
-        // Step 1: Create the account
-
+        // Step 1: Retrieve merchant and auth
         Merchant m = merchantRepository.getMerchantsByMerchantId(merchantId);
+        System.out.println("[DEBUG] Retrieved merchant: " + m);
+
         Optional<Auth> a2 = authRepository.findByMerchant_MerchantId(merchantId);
-        assert a2.isPresent();
+        if (a2.isEmpty()) {
+            System.err.println("[ERROR] Auth record not found for merchantId: " + merchantId);
+            throw new IllegalStateException("Auth record missing");
+        }
+
         Auth a = a2.get();
-        
-                
-                
+        System.out.println("[DEBUG] Retrieved auth: " + a);
+
+        // Step 2: Create the Stripe account
+        System.out.println("[DEBUG] Creating Stripe account with email: " + a.getEmail());
         AccountCreateParams accountParams = AccountCreateParams.builder()
                 .setType(AccountCreateParams.Type.EXPRESS)
                 .setCountry("US")
-                .setEmail(a.getEmail()) // ideally from your DB
+                .setEmail(a.getEmail())
+                .setCapabilities(
+                        AccountCreateParams.Capabilities.builder()
+                                .setCardPayments(AccountCreateParams.Capabilities.CardPayments.builder()
+                                        .setRequested(true)
+                                        .build())
+                                .setTransfers(AccountCreateParams.Capabilities.Transfers.builder()
+                                        .setRequested(true)
+                                        .build())
+                                .build())
                 .build();
-        Account account = Account.create(accountParams);
 
+        Account account = getStripeClient.accounts().create(accountParams);
+        System.out.println("[DEBUG] Created Stripe account: " + account.getId());
+
+        // Step 3: Save account ID to merchant
         m.setAccountId(account.getId());
         merchantService.save(m);
+        System.out.println("[DEBUG] Saved account ID to merchant: " + account.getId());
 
-        // Step 2: Create the onboarding link
+        // Step 4: Generate onboarding link
+        System.out.println("[DEBUG] Creating onboarding link");
         AccountLinkCreateParams linkParams = AccountLinkCreateParams.builder()
                 .setAccount(account.getId())
                 .setRefreshUrl("https://barzzy.site/website/onboarding")
                 .setReturnUrl("https://barzzy.site/website/analytics")
                 .setType(AccountLinkCreateParams.Type.ACCOUNT_ONBOARDING)
+                .setCollect(AccountLinkCreateParams.Collect.EVENTUALLY_DUE)
                 .build();
-        AccountLink accountLink = AccountLink.create(linkParams);
 
-        return accountLink.getUrl(); // This is the URL you return to the frontend
+        AccountLink accountLink = getStripeClient.accountLinks().create(linkParams);
+        System.out.println("[DEBUG] Generated onboarding link: " + accountLink.getUrl());
+
+        return accountLink.getUrl();
     }
-
-
-
 
 }

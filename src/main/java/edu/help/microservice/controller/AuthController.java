@@ -1,6 +1,5 @@
 package edu.help.microservice.controller;
 
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -29,7 +28,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 
-
+import com.stripe.StripeClient;
 import com.stripe.exception.StripeException;
 
 
@@ -48,14 +47,10 @@ import edu.help.microservice.service.MerchantService;
 import edu.help.microservice.service.CustomerService;
 import edu.help.microservice.service.AuthService;
 import edu.help.microservice.service.StripeService;
-import edu.help.microservice.util.Cookies;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import static edu.help.microservice.util.Cookies.*;
 import java.util.UUID;
@@ -65,8 +60,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/postgres-test/auth")
 public class AuthController {
-    
-    
+
     /*
     In the context of merchants:
     
@@ -81,20 +75,13 @@ public class AuthController {
     
     
      */
-    
+
     private final boolean TESTING = false;
     private static final String SECRET_KEY = "YourSecretKey";
-
     private final AuthService authService;
     private final CustomerService customerService;
     private final MerchantService merchantService;
     private final StripeService stripeService;
-
-
-
-
-
-
 
     @PostMapping("/register-merchant")
     public ResponseEntity<String> registerMerchant(@RequestParam("email") String email) {
@@ -123,13 +110,11 @@ public class AuthController {
         return ResponseEntity.ok("verification email sent");
     }
 
-    
-    
     @PostMapping("/verify-merchant")
     public ResponseEntity<String> verifyMerchant(@RequestPart("info") MerchantRegistrationRequest req,
-                                                 @RequestPart("logoImage") MultipartFile logoImage,
-                                                 @RequestPart(value = "storeImage", required = false) MultipartFile storeImage,
-                                                 HttpServletResponse response) {
+            @RequestPart("logoImage") MultipartFile logoImage,
+            @RequestPart(value = "storeImage", required = false) MultipartFile storeImage,
+            HttpServletResponse response) {
 
         String email = req.getEmail();
         Auth auth = authService.findByEmail(email);
@@ -163,6 +148,24 @@ public class AuthController {
                     auth.setVerificationCode(null);
                     auth.setExpiryTimestamp(null);
 
+                    System.out.println("[DEBUG] Creating Stripe account with email: " + email);
+        
+
+                    try {
+                        String accountId = stripeService.createConnectedAccount(email);
+
+                        System.out.println("[DEBUG] Created Stripe account: " + accountId);
+                
+                        merchant.setAccountId(accountId);
+                    
+                        // link back into Auth, set cookie, etc…
+                    } catch (StripeException e) {
+                        e.printStackTrace();
+                        return ResponseEntity
+                                .status(HttpStatus.PRECONDITION_FAILED)
+                                .body("Stripe error: " + e.getMessage());
+                    }
+                    
                     merchantService.save(merchant);
                     auth.setMerchant(merchant);
                     authService.save(auth);
@@ -172,12 +175,12 @@ public class AuthController {
                     String payload = id + "." + expiry;
                     String signature = generateSignature(payload);
                     String cookieValueRaw = payload + "." + signature;
-                    String cookieValueEncoded = Base64.getEncoder().encodeToString(cookieValueRaw.getBytes(StandardCharsets.UTF_8));
+                    String cookieValueEncoded = Base64.getEncoder()
+                            .encodeToString(cookieValueRaw.getBytes(StandardCharsets.UTF_8));
 
                     response.addHeader("Set-Cookie", String.format(
                             "auth=%s;  Path=/; HttpOnly; SameSite=Lax;",
-                            cookieValueEncoded
-                    ));
+                            cookieValueEncoded));
 
                     return ResponseEntity.ok("-" + merchant.getMerchantId().toString());
                 } else {
@@ -192,13 +195,7 @@ public class AuthController {
         }
     }
 
-    
-    
-
-
-
-    
-   @PostMapping("/login-merchant")
+    @PostMapping("/login-merchant")
     public ResponseEntity<String> loginMerchant(
             @RequestBody LoginRequest loginRequest,
             HttpServletResponse response,
@@ -219,7 +216,8 @@ public class AuthController {
                     String receivedSignature = parts[2];
                     String signedData = id + "." + expiry;
 
-                    if (System.currentTimeMillis() <= Long.parseLong(expiry) && validateSignature(signedData, receivedSignature)) {
+                    if (System.currentTimeMillis() <= Long.parseLong(expiry)
+                            && validateSignature(signedData, receivedSignature)) {
                         merchantId = Integer.parseInt(id);
                         loginSuccessful = true;
                     }
@@ -269,16 +267,12 @@ public class AuthController {
         System.out.println("Generating signature for cookie for bar id " + merchantId);
         String signature = generateSignature(payload);
         System.out.println("Signature generated for cookie for bar id " + merchantId);
-        
+
         System.out.println("Signature verified for cookie for bar id " + Cookies.getIdFromCookie(authCookie));
-
-
 
         String cookieValueRaw = payload + "." + signature;
         String cookieValueEncoded = Base64.getEncoder().encodeToString(cookieValueRaw.getBytes(StandardCharsets.UTF_8));
 
-        
-        
         Cookie cookie = new Cookie("auth", cookieValueEncoded);
         cookie.setMaxAge(3600); // 1 hour
         cookie.setSecure(true); // TODO:Set this to TRUE when in production and FALSE when in testing
@@ -287,19 +281,16 @@ public class AuthController {
         // Manually override SameSite to Lax for local testing
         response.addHeader("Set-Cookie", String.format(
                 "auth=%s; Path=/; Secure; HttpOnly; SameSite=None",
-                cookieValueEncoded
-        ));
+                cookieValueEncoded));
 
         return ResponseEntity.ok("OK");
     }
-    
 
     // ENDPOINT: Resend verification code
     @PostMapping("/send-verification")
     public ResponseEntity<String> sendVerification(@RequestBody AcceptTOSRequest request) {
         String email = request.getEmail();
         Auth auth = authService.findByEmail(email);
-
 
         if (auth != null) {
             String verificationCode = generateVerificationCode();
@@ -318,7 +309,6 @@ public class AuthController {
         }
     }
 
-
     // ENDPOINT: Verification for Registration
     @PostMapping("/verify-customer")
     public ResponseEntity<String> verifyCustomer(@RequestBody VerificationCustomerRequest verificationRequest) {
@@ -328,7 +318,6 @@ public class AuthController {
         String firstName = verificationRequest.getFirstName();
         String lastName = verificationRequest.getLastName();
         Auth auth = authService.findByEmail(email);
-
 
         if (auth != null && auth.getCustomer() == null) {
             if (isVerificationCodeExpired(auth.getExpiryTimestamp())) {
@@ -343,23 +332,18 @@ public class AuthController {
                     customer.setFirstName(firstName);
                     customer.setLastName(lastName);
 
-
                     // Hash the password and set passcode
                     String hashedPassword = hash(password);
                     auth.setPasscode(hashedPassword);
-
 
                     // Clear the verification code and expiry timestamp
                     auth.setVerificationCode(null);
                     auth.setExpiryTimestamp(null);
 
-
                     customerService.save(customer); // Save customer
-
 
                     auth.setCustomer(customer);
                     authService.save(auth); // Save sign-up details with linked customer
-
 
                     // Return customerID
                     return ResponseEntity.ok(customer.getCustomerId().toString());
@@ -374,7 +358,6 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("registration failed");
         }
     }
-
 
     // ENDPOINT: Registration for Customers
     @PostMapping("/register-customer")
@@ -425,16 +408,12 @@ public class AuthController {
         // Return the customer ID as a string
         return ResponseEntity.ok(String.valueOf(customer.getCustomerId()));
     }
-    
-     
-  
 
     // ENDPOINT #4: Accept terms of service
     @PostMapping("/accept-tos")
     public ResponseEntity<String> acceptTOS(@RequestBody AcceptTOSRequest request) {
         String email = request.getEmail();
         Auth auth = authService.findByEmail(email);
-
 
         if (auth != null && auth.getCustomer() != null) {
             Customer customer = auth.getCustomer();
@@ -446,14 +425,12 @@ public class AuthController {
         }
     }
 
-
     // ENDPOINT #5: Login with email and password
     @PostMapping("/login-customer")
     public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
         String email = loginRequest.getEmail();
         String password = loginRequest.getPassword();
         Auth auth = authService.findByEmail(email);
-
 
         if (auth != null) {
             try {
@@ -482,7 +459,6 @@ public class AuthController {
         }
     }
 
-
     // ENDPOINT: Delete Account
     @PostMapping("/delete-customer")
     public ResponseEntity<String> deleteAccount(@RequestBody LoginRequest loginRequest) {
@@ -490,11 +466,9 @@ public class AuthController {
         String password = loginRequest.getPassword();
         Auth auth = authService.findByEmail(email);
 
-
         if (auth != null) {
             try {
                 String hashedPassword = hash(password);
-
 
                 // Verify the password
                 if (auth.getPasscode() != null && auth.getPasscode().equals(hashedPassword)) {
@@ -528,7 +502,6 @@ public class AuthController {
         }
     }
 
-
     // Helper methods
     private String generateVerificationCode() {
         // Generate a 6-digit random verification code
@@ -536,18 +509,14 @@ public class AuthController {
         return String.format("%06d", rand.nextInt(999999));
     }
 
-
     private void sendVerificationEmail(String email, String code, String title) {
         JavaMailSenderImpl test = new JavaMailSenderImpl();
-
 
         test.setHost("email-smtp.us-east-1.amazonaws.com");
         test.setPort(587);
 
-
         test.setUsername("AKIARKMXJUVKGK3ZC6FH");
         test.setPassword("BJ0EwGiCXsXWcZT2QSI5eR+5yFzbimTnquszEXPaEXsd");
-
 
         Properties props = test.getJavaMailProperties();
         props.put("mail.transport.protocol", "smtp");
@@ -555,34 +524,31 @@ public class AuthController {
         props.put("mail.smtp.starttls.enable", "true");
         props.put("mail.debug", "true");
 
-
         try {
             // Create a MimeMessage
             MimeMessage message = test.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
-
 
             // Set the basic email attributes
             helper.setTo(email);
             helper.setFrom("noreply@barzzy.site"); // SHOULD BE RENAMED TO MEGRIM LATER
             helper.setSubject("Barzzy Verification Code - " + title); // SHOULD BE RENAMED TO MEGRIM LATER
 
-
             // Generate hash for the email
             String unsubscribeHash = generateHash(email);
-            String unsubscribeUrl = "https://www.barzzy.site/postgres-production/auth/unsubscribe?email=" + email + "&hash=" // SHOULD BE RENAMED TO MEGRIM LATER
+            String unsubscribeUrl = "https://www.barzzy.site/postgres-production/auth/unsubscribe?email=" + email
+                    + "&hash=" // SHOULD BE RENAMED TO MEGRIM LATER
                     + unsubscribeHash;
 
-
             // HTML content with clickable link
-            String htmlContent = "<p>Your verification code is: <strong>" + code + "</strong>.</p>"
-                    + "<p>If you did not wish to receive this email, click here to <a href='" + unsubscribeUrl
-                    + "'>unsubscribe from all emails</a>.</p>";
-
+            String htmlContent =
+            "<p>Your verification code is: <strong>" + code + "</strong>"
+          + "<span style=\"user-select:none\">.</span></p>"
+          + "<p>If you did not wish to receive this email, click here to "
+          + "<a href='" + unsubscribeUrl + "'>unsubscribe from all emails</a>.</p>";
 
             // Set the email content as HTML
             helper.setText(htmlContent, true); // Set 'true' to indicate HTML content
-
 
             // Send the email
             test.send(message);
@@ -592,7 +558,6 @@ public class AuthController {
             System.err.println(ex.getMessage());
         }
     }
-
 
     @GetMapping("/unsubscribe")
     public ResponseEntity<String> unsubscribe(@RequestParam("email") String email,
@@ -617,7 +582,6 @@ public class AuthController {
         String email = request.getEmail();
         Auth auth = authService.findByEmail(email);
 
-
         if (auth != null) {
             // Generate a new verification code
             String verificationCode = generateVerificationCode();
@@ -637,16 +601,13 @@ public class AuthController {
         }
     }
 
-
     // Endpoint 2: Verify the verification code
     @PostMapping("/reset-password-validate-code")
     public ResponseEntity<String> resetPasswordVerifyCode(@RequestBody VerifyResetCodeRequest request) {
         String email = request.getEmail();
         String verificationCode = request.getCode();
 
-
         Auth auth = authService.findByEmail(email);
-
 
         if (auth != null) {
             if (isVerificationCodeExpired(auth.getExpiryTimestamp())) {
@@ -669,7 +630,6 @@ public class AuthController {
         }
     }
 
-
     // Endpoint 3: Reset the password
     @PostMapping("/reset-password-final")
     public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordConfirmRequest request) {
@@ -677,9 +637,7 @@ public class AuthController {
         String verificationCode = request.getCode();
         String newPassword = request.getPassword();
 
-
         Auth auth = authService.findByEmail(email);
-
 
         if (auth != null) {
             if (isVerificationCodeExpired(auth.getExpiryTimestamp())) {
@@ -709,14 +667,12 @@ public class AuthController {
         }
     }
 
-
     private String generateHash(String email) throws NoSuchAlgorithmException {
         String text = email + SECRET_KEY;
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         byte[] hashBytes = md.digest(text.getBytes());
         return Base64.getEncoder().encodeToString(hashBytes);
     }
-
 
     private String hash(String input) throws NoSuchAlgorithmException {
         String text = input + SECRET_KEY;
@@ -725,12 +681,10 @@ public class AuthController {
         return Base64.getEncoder().encodeToString(hash);
     }
 
-
     private Timestamp generateExpiryTimestamp() {
         long expiryTime = System.currentTimeMillis() + 15 * 60 * 1000; // 15 minutes from now
         return new Timestamp(expiryTime);
     }
-
 
     private boolean isVerificationCodeExpired(Timestamp expiryTimestamp) {
         return expiryTimestamp != null && expiryTimestamp.before(new Timestamp(System.currentTimeMillis()));
@@ -743,7 +697,8 @@ public class AuthController {
         try {
             String uploadsDir = "/uploads/merchants/";
             File dir = new File(uploadsDir);
-            if (!dir.exists()) dir.mkdirs();
+            if (!dir.exists())
+                dir.mkdirs();
 
             String originalExtension = "";
             String originalName = file.getOriginalFilename();
@@ -761,5 +716,5 @@ public class AuthController {
             throw new RuntimeException("Failed to save image", e);
         }
     }
-    
+
 }

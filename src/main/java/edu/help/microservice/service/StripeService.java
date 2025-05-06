@@ -6,11 +6,13 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
+import com.stripe.Stripe;
 import com.stripe.StripeClient;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
 import com.stripe.model.PaymentMethod;
 import com.stripe.model.SetupIntent;
+import com.stripe.param.AccountCreateParams;
 import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.CustomerUpdateParams;
 import com.stripe.param.PaymentIntentCreateParams;
@@ -28,6 +30,9 @@ import edu.help.microservice.repository.MerchantRepository;
 import edu.help.microservice.repository.CustomerRepository;
 import edu.help.microservice.repository.AuthRepository;
 import lombok.RequiredArgsConstructor;
+import com.stripe.model.Account;
+import com.stripe.param.AccountCreateParams;
+import com.stripe.exception.StripeException;
 
 @Service
 @RequiredArgsConstructor
@@ -68,6 +73,34 @@ public class StripeService {
 
         var stripeCustomer = stripeClient.customers().create(params);
         customer.setStripeId(stripeCustomer.getId());
+    }
+
+    /**
+     * Creates a new Stripe Express connected account for the given email.
+     * @param email the email address to onboard
+     * @return the Stripe account ID
+     */
+    public String createConnectedAccount(String email) throws StripeException {
+        System.out.println("[DEBUG] Creating Stripe account with email: " + email);
+        AccountCreateParams accountParams = AccountCreateParams.builder()
+            .setType(AccountCreateParams.Type.EXPRESS)
+            .setCountry("US")
+            .setEmail(email)
+            .setCapabilities(
+                AccountCreateParams.Capabilities.builder()
+                    .setCardPayments(AccountCreateParams.Capabilities.CardPayments.builder()
+                        .setRequested(true)
+                        .build())
+                    .setTransfers(AccountCreateParams.Capabilities.Transfers.builder()
+                        .setRequested(true)
+                        .build())
+                    .build()
+            )
+            .build();
+
+        Account account = stripeClient.accounts().create(accountParams);
+        System.out.println("[DEBUG] Created Stripe account: " + account.getId());
+        return account.getId();
     }
 
     private void chargeCustomer(Merchant merchant, Customer customer, Long priceInCents) throws StripeException, InvalidStripeChargeException {
