@@ -27,8 +27,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.stripe.StripeClient;
 import com.stripe.exception.StripeException;
 
 
@@ -135,7 +133,7 @@ public class AuthController {
                     merchant.setCity(req.getCity());
                     merchant.setAddress(req.getAddress());
                     merchant.setZipCode(req.getZipCode());
-                    merchant.setOpen(false);
+                    merchant.setVerified(false);
                     merchant.setBonus(0);
 
                     String logoImagePath = saveImageFile(logoImage);

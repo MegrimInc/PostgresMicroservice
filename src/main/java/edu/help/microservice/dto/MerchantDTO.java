@@ -19,7 +19,7 @@ public class MerchantDTO {
     private String address;
     private String logoImage;
     private String storeImage;
-    private Boolean open;
+    private Boolean verified;
     private Map<String, String> discountSchedule; // Keep this as a Map
     private Integer bonus;
 }

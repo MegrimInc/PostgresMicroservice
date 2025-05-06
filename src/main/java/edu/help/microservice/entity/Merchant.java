@@ -61,8 +61,8 @@ public class Merchant implements Serializable {
     private String nickname;
 
 
-    @Column(name = "is_open")
-    private Boolean open;
+    @Column(name = "is_verified")
+    private Boolean verified;
 
 
     @Column(name = "account_id", length = 255)

@@ -24,7 +24,7 @@ public class DTOConverter {
         merchantDto.setAddress(merchant.getAddress());
         merchantDto.setLogoImage(merchant.getLogoImage());    
         merchantDto.setStoreImage(merchant.getStoreImage());  
-        merchantDto.setOpen(merchant.getOpen());             
+        merchantDto.setVerified(merchant.getVerified());             
     
         // Handle discountSchedule (JSON to Map)
         try {
