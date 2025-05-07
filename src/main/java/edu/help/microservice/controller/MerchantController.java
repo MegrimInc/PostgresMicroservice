@@ -173,58 +173,7 @@ public class MerchantController {
         }
     }
 
-    @GetMapping("/contributionByDateRange")
-    public ResponseEntity<?> contributionByDateRange(@CookieValue(value = "auth", required = false) String authCookie,
-            @RequestParam("start") Long start,
-            @RequestParam("end") Long end) {
-        try {
-            ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
-            if (!validation.getStatusCode().is2xxSuccessful())
-                return validation;
-            Integer merchantID = validation.getBody();
-            assert merchantID != null;
 
-            Instant startInstant = Instant.ofEpochMilli(start);
-            Instant endInstant = Instant.ofEpochMilli(end);
-
-            List<Order> orders = orderService.getOrdersByDateRange(merchantID, startInstant, endInstant);
-            orders.sort((o1, o2) -> o2.getTimestamp().compareTo(o1.getTimestamp()));
-
-            ObjectMapper mapper = new ObjectMapper();
-            String ordersJson = mapper.writeValueAsString(orders);
-            return ResponseEntity.ok("{\"orders\":" + ordersJson + "}");
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error processing request");
-        }
-    }
-
-    @GetMapping("/fiftyOrders")
-    public ResponseEntity<?> fiftyOrders(@CookieValue(value = "auth", required = false) String authCookie,
-            @RequestParam("timestamp") Long timestamp,
-            @RequestParam("index") int index) {
-        try {
-            ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
-            if (!validation.getStatusCode().is2xxSuccessful())
-                return validation;
-            Integer merchantID = validation.getBody();
-            assert merchantID != null;
-
-            Instant startingInstant = Instant.ofEpochMilli(timestamp);
-
-            List<Order> orders = orderService.getFiftyOrders(merchantID, startingInstant, index);
-            orders.sort((o1, o2) -> o2.getTimestamp().compareTo(o1.getTimestamp()));
-
-            ObjectMapper mapper = new ObjectMapper();
-            String ordersJson = mapper.writeValueAsString(orders);
-            return ResponseEntity.ok("{\"orders\":" + ordersJson + "}");
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error processing request");
-        }
-    }
 
     @GetMapping("/byDay")
     public ResponseEntity<?> byDay(@CookieValue(value = "auth", required = false) String authCookie,
@@ -257,24 +206,6 @@ public class MerchantController {
         }
     }
 
-    @GetMapping("/top5Items")
-    public ResponseEntity<?> top5Items(@CookieValue(value = "auth", required = false) String authCookie) {
-        try {
-            ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
-            if (!validation.getStatusCode().is2xxSuccessful())
-                return validation;
-            Integer merchantID = validation.getBody();
-            assert merchantID != null;
-
-            Map<String, Integer> top5 = orderService.getTop5Items(merchantID);
-            String jsonResponse = "{\"data\":" + new ObjectMapper().writeValueAsString(top5) + "}";
-            return ResponseEntity.ok(jsonResponse);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error processing request");
-        }
-    }
 
     @GetMapping("/allItemCounts")
     public ResponseEntity<?> getAllItemCounts(@CookieValue(value = "auth", required = false) String authCookie) {
