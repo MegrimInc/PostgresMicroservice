@@ -1,7 +1,9 @@
+// src/main/java/edu/help/microservice/dto/UpdateItemRequestDTO.java
 package edu.help.microservice.dto;
 
-import lombok.Data;
+import lombok.*;
 
+// PATCH
 @Data
 public class UpdateItemRequestDTO {
     private String name;
@@ -10,4 +12,5 @@ public class UpdateItemRequestDTO {
     private Double regularPrice;
     private Double discountPrice;
     private Double taxPercent;
+    private Integer[] categoryIds;
 }

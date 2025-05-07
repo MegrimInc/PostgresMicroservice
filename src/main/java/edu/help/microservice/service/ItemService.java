@@ -1,12 +1,13 @@
+// src/main/java/edu/help/microservice/service/ItemService.java
 package edu.help.microservice.service;
 
 import java.util.List;
 
-import edu.help.microservice.dto.ItemDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import edu.help.microservice.dto.CreateItemRequestDTO;
+import edu.help.microservice.dto.ItemDTO;
 import edu.help.microservice.dto.UpdateItemRequestDTO;
 import edu.help.microservice.entity.Item;
 import edu.help.microservice.repository.ItemRepository;
@@ -37,6 +38,7 @@ public class ItemService {
                 .regularPrice(req.getRegularPrice())
                 .discountPrice(req.getDiscountPrice())
                 .taxPercent(req.getTaxPercent())
+                .categoryIds(req.getCategoryIds())
                 .build());
         return toDto(saved);
     }
@@ -53,6 +55,7 @@ public class ItemService {
         if (req.getRegularPrice() != null) item.setRegularPrice(req.getRegularPrice());
         if (req.getDiscountPrice()!= null) item.setDiscountPrice(req.getDiscountPrice());
         if (req.getTaxPercent()   != null) item.setTaxPercent(req.getTaxPercent());
+        if (req.getCategoryIds()  != null) item.setCategoryIds(req.getCategoryIds());
 
         return toDto(item);   // item is managed, so JPA flushes automatically
     }
@@ -74,6 +77,7 @@ public class ItemService {
                 .regularPrice(i.getRegularPrice())
                 .discountPrice(i.getDiscountPrice())
                 .taxPercent(i.getTaxPercent())
+                .categoryIds(i.getCategoryIds())
                 .build();
     }
 }

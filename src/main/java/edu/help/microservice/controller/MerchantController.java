@@ -1,4 +1,6 @@
 package edu.help.microservice.controller;
+import edu.help.microservice.entity.Category;
+import edu.help.microservice.repository.CategoryRepository;
 import jakarta.servlet.http.HttpServletRequest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,18 +46,72 @@ public class MerchantController {
     private final StripeClient getStripeClient;
     private final MerchantRepository merchantRepository;
     private final AuthRepository authRepository;
+    private final CategoryRepository categoryRepository;
 
     @Autowired
     public MerchantController(OrderService orderService, AuthService signUpService, MerchantService merchantService,
             ItemService itemService, StripeClient getStripeClient, MerchantRepository merchantRepository,
-            AuthRepository authRepository) {
+            AuthRepository authRepository, CategoryRepository categoryRepository) {
         this.orderService = orderService;
         this.merchantService = merchantService;
         this.itemService = itemService;
         this.getStripeClient = getStripeClient;
         this.merchantRepository = merchantRepository;
         this.authRepository = authRepository;
+        this.categoryRepository = categoryRepository;
 
+    }
+
+    @GetMapping("/configurations/categories")
+    public ResponseEntity<?> getCategories(@CookieValue(value = "auth", required = false) String authCookie) {
+        try {
+            ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
+            if (!validation.getStatusCode().is2xxSuccessful())
+                return validation;
+
+            Integer merchantId = validation.getBody();
+            assert merchantId != null;
+
+            List<Category> categories = categoryRepository.findAllByMerchantId(merchantId);
+            return ResponseEntity.ok(Map.of("categories", categories));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching categories");
+        }
+    }
+
+
+    @PostMapping("/configurations/categories")
+    public ResponseEntity<?> addCategories(@CookieValue(value = "auth", required = false) String authCookie,
+                                           @RequestBody List<String> categoryNames) {
+        try {
+            ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
+            if (!validation.getStatusCode().is2xxSuccessful())
+                return validation;
+
+            Integer merchantId = validation.getBody();
+            assert merchantId != null;
+
+            if (categoryNames.size() < 3 || categoryNames.size() > 8) {
+                return ResponseEntity.badRequest().body("You must provide between 3 and 8 categories.");
+            }
+
+            List<Category> saved = new ArrayList<>();
+            for (String name : categoryNames) {
+                if (name != null && !name.trim().isEmpty()) {
+                    Category c = Category.builder()
+                            .merchantId(merchantId)
+                            .name(name.trim())
+                            .build();
+                    saved.add(categoryRepository.save(c));
+                }
+            }
+
+            return ResponseEntity.ok(Map.of("categories", saved));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error saving categories");
+        }
     }
 
     @PostMapping("/onboarding")

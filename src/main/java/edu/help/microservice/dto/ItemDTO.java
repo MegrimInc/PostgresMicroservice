@@ -1,3 +1,4 @@
+// src/main/java/edu/help/microservice/dto/ItemDTO.java
 package edu.help.microservice.dto;
 
 import lombok.*;
@@ -12,4 +13,5 @@ public class ItemDTO {
     private Double regularPrice;
     private Double discountPrice;
     private Double taxPercent;
+    private Integer[] categoryIds;
 }

@@ -2,17 +2,8 @@ package edu.help.microservice.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import edu.help.microservice.util.IntegerArrayConverter;
-import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Data
 @NoArgsConstructor
@@ -37,9 +28,9 @@ public class Item {
     @Column(name = "image")
     private String image;
 
-    @Column(name = "categories")
+    @Column(name = "category_ids")
     @Convert(converter = IntegerArrayConverter.class)
-    private Integer[] categories;
+    private Integer[] categoryIds;  // ← this is your list of category IDs
 
     @Column(name = "description")
     private String description;

@@ -1,0 +1,14 @@
+package edu.help.microservice.repository;
+
+import edu.help.microservice.entity.Category;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface CategoryRepository extends JpaRepository<Category, Integer> {
+    List<Category> findByMerchantId(Integer merchantId);
+
+    List<Category> findAllByMerchantId(Integer merchantId);
+
+}
+
