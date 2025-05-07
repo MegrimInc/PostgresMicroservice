@@ -38,7 +38,7 @@ import java.time.ZoneId;
 import java.util.*;
 
 @RestController
-@RequestMapping("/postgres-test/merchant")
+@RequestMapping("/postgres-test-api/merchant")
 public class MerchantController {
     private final OrderService orderService;
     private final MerchantService merchantService;

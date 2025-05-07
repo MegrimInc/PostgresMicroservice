@@ -56,7 +56,7 @@ import java.util.UUID;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/postgres-test/auth")
+@RequestMapping("/postgres-test-api/auth")
 public class AuthController {
 
     /*
