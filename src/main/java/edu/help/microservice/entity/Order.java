@@ -26,7 +26,7 @@ public class Order {
     private int merchantId; // ID of the merchant where the order was placed
 
     @Column(name = "customer_id", nullable = false)
-    private int customerId; // ID of the user who placed the order
+    private int customerId; // ID of the customer who placed the order
 
     @Column(name = "timestamp", nullable = false)
     private Instant timestamp; // Timestamp when the order was completed
@@ -42,7 +42,7 @@ public class Order {
     private double totalRegularPrice; // Total price in dollars
 
     @Column(name = "tip", nullable = false)
-    private double tip; // Tip amount given by the user for the order
+    private double tip; // Tip amount given by the customer for the order
 
     @Column(name = "in_app_payments", nullable = false)
     private boolean inAppPayments; // Indicates if the payment was made in-app

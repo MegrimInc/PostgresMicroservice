@@ -97,8 +97,8 @@ public class MerchantService {
         int totalPointsPrice = 0;
         int totalItemQuantity = 0;
 
-        // Retrieve user's name from CustomerService
-        String userName = customerService.getName(request.getUserId());
+        // Retrieve customer's name from CustomerService
+        String customerName = customerService.getName(request.getCustomerId());
 
         List<ItemOrderResponse> itemOrderResponses = new ArrayList<>();
 
@@ -121,14 +121,14 @@ public class MerchantService {
             // Count total items
             totalItemQuantity += itemOrderRequest.getQuantity();
 
-            // If user pays with points
+            // If customer pays with points
             if ("points".equalsIgnoreCase(itemOrderRequest.getPaymentType())) {
                 // Price in points
                 totalPointsPrice += item.getPointPrice() * itemOrderRequest.getQuantity();
                 continue;
             }
 
-            // If user pays with money, calculate price
+            // If customer pays with money, calculate price
             double price;
             if (request.isDiscount()) {
         
@@ -146,8 +146,8 @@ public class MerchantService {
         // Calculate tip, if any
         double tipAmount = Math.round(request.getTip() * totalMoneyPrice * 100) / 100.0;
 
-        // Check if user has enough points to cover the point-based portion
-        if (!pointService.customerHasRequiredBalance(totalPointsPrice, request.getUserId(), merchantId)) {
+        // Check if customer has enough points to cover the point-based portion
+        if (!pointService.customerHasRequiredBalance(totalPointsPrice, request.getCustomerId(), merchantId)) {
             return OrderResponse.builder()
                     .message("Insufficient points.")
                     .messageType("error")
@@ -155,14 +155,14 @@ public class MerchantService {
                     .totalPrice(totalMoneyPrice)
                     .totalPointPrice(totalPointsPrice)
                     .items(itemOrderResponses)
-                    .name(userName)
+                    .name(customerName)
                     .build();
         }
 
         // If using in-app payments, attempt to process via Stripe
         if (request.isInAppPayments()) {
             try {
-                stripeService.processOrder(totalMoneyPrice, tipAmount, request.getUserId(), merchantId);
+                stripeService.processOrder(totalMoneyPrice, tipAmount, request.getCustomerId(), merchantId);
             } catch (StripeException exception) {
                 // Log Stripe exception
                 System.out.println("Stripe error: " + exception.getMessage());
@@ -174,7 +174,7 @@ public class MerchantService {
                         .totalPrice(totalMoneyPrice)
                         .totalPointPrice(totalPointsPrice)
                         .items(itemOrderResponses)
-                        .name(userName)
+                        .name(customerName)
                         .build();
             } catch (InvalidStripeChargeException exception) {
                 System.out.println(exception.getMessage());
@@ -185,13 +185,13 @@ public class MerchantService {
                         .totalPrice(totalMoneyPrice)
                         .totalPointPrice(totalPointsPrice)
                         .items(itemOrderResponses)
-                        .name(userName)
+                        .name(customerName)
                         .build();
             }
         }
 
         // Deduct the points
-        pointService.chargeCustomer(totalPointsPrice, request.getUserId(), merchantId);
+        pointService.chargeCustomer(totalPointsPrice, request.getCustomerId(), merchantId);
 
         // Return a successful response
         return OrderResponse.builder()
@@ -201,7 +201,7 @@ public class MerchantService {
                 .totalPrice(totalMoneyPrice)
                 .totalPointPrice(totalPointsPrice)
                 .items(itemOrderResponses)
-                .name(userName)
+                .name(customerName)
                 .build();
     }
 }

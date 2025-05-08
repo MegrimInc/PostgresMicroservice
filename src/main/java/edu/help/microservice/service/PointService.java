@@ -39,23 +39,23 @@ public class PointService {
         customerRepository.save(customerOpt.get());
     }
 
-    public Map<Integer, Map<Integer, Integer>> getPointsForCustomerTempForEndpoint(int userId) {
-        Optional<Customer> customerOpt = customerRepository.findById(userId);
+    public Map<Integer, Map<Integer, Integer>> getPointsForCustomerTempForEndpoint(int customerId) {
+        Optional<Customer> customerOpt = customerRepository.findById(customerId);
         return customerOpt.map(Customer::getPoints).orElse(null);
     }
 
-    private Map<Integer, Integer> getPointsForCustomer(int userId) {
-        Optional<Customer> customerOpt = customerRepository.findById(userId);
+    private Map<Integer, Integer> getPointsForCustomer(int customerId) {
+        Optional<Customer> customerOpt = customerRepository.findById(customerId);
         if (customerOpt.isEmpty())
             return null;
 
         Customer customer = customerOpt.get();
-        if (!customer.getPoints().containsKey(userId)) {
-            customer.getPoints().put(userId, new HashMap<>());
+        if (!customer.getPoints().containsKey(customerId)) {
+            customer.getPoints().put(customerId, new HashMap<>());
             customerRepository.save(customer);
         }
 
-        return customer.getPoints().get(userId);
+        return customer.getPoints().get(customerId);
     }
 
     public void rewardPointsForOrder(Order order) {
@@ -80,12 +80,12 @@ public class PointService {
     }
 
     private int getPointsAtMerchant(int customerId, int merchantId) {
-        var userPoints = getPointsForCustomer(customerId);
-        if (userPoints == null)
+        var customerPoints = getPointsForCustomer(customerId);
+        if (customerPoints == null)
             return -1;
 
-        if (!userPoints.containsKey(merchantId))
-            userPoints.put(merchantId, 0);
-        return userPoints.get(merchantId);
+        if (!customerPoints.containsKey(merchantId))
+            customerPoints.put(merchantId, 0);
+        return customerPoints.get(merchantId);
     }
 }

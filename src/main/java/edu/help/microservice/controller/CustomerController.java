@@ -31,15 +31,15 @@ public class CustomerController {
     private final StripeService stripeService;
     private final MerchantService merchantService;
 
-    @GetMapping("/points/{userId}")
-    public ResponseEntity<Map<Integer, Map<Integer, Integer>>> getPointsForUser(@PathVariable int userId) {
-        Map<Integer, Map<Integer, Integer>> points = pointService.getPointsForCustomerTempForEndpoint(userId);
+    @GetMapping("/points/{customerId}")
+    public ResponseEntity<Map<Integer, Map<Integer, Integer>>> getPointsForCustomer(@PathVariable int customerId) {
+        Map<Integer, Map<Integer, Integer>> points = pointService.getPointsForCustomerTempForEndpoint(customerId);
         return ResponseEntity.ok(points);
     }
 
-    @GetMapping("/checkPaymentMethod/{userId}")
-    public ResponseEntity<Boolean> checkPaymentMethod(@PathVariable int userId) {
-        Optional<Customer> customerOpt = customerService.findById(userId);
+    @GetMapping("/checkPaymentMethod/{customerId}")
+    public ResponseEntity<Boolean> checkPaymentMethod(@PathVariable int customerId) {
+        Optional<Customer> customerOpt = customerService.findById(customerId);
         if (customerOpt.isPresent()) {
             Customer customer = customerOpt.get();
             boolean hasPaymentMethod = customer.getPaymentId() != null;
@@ -49,10 +49,10 @@ public class CustomerController {
         }
     }
 
-    @GetMapping("/createSetupIntent/{userId}")
-    public ResponseEntity<Map<String, String>> createSetupIntent(@PathVariable int userId) {
+    @GetMapping("/createSetupIntent/{customerId}")
+    public ResponseEntity<Map<String, String>> createSetupIntent(@PathVariable int customerId) {
         try {
-            Map<String, String> setupIntentData = stripeService.createSetupIntent(userId);
+            Map<String, String> setupIntentData = stripeService.createSetupIntent(customerId);
             return ResponseEntity.ok(setupIntentData);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -60,15 +60,15 @@ public class CustomerController {
         }
     }
 
-    @GetMapping("/getNames/{userId}")
-    public ResponseEntity<CustomerNameResponse> getName(@PathVariable int userId) {
-        return ResponseEntity.ok(customerService.getNameData(userId));
+    @GetMapping("/getNames/{customerId}")
+    public ResponseEntity<CustomerNameResponse> getName(@PathVariable int customerId) {
+        return ResponseEntity.ok(customerService.getNameData(customerId));
     }
 
-    @PostMapping("/updateNames/{userId}")
+    @PostMapping("/updateNames/{customerId}")
     public ResponseEntity<CustomerNameResponse> getName(@RequestBody CustomerNameRequest request,
-                                                        @PathVariable int userId) {
-        return ResponseEntity.ok(customerService.updateNameData(request, userId));
+                                                        @PathVariable int customerId) {
+        return ResponseEntity.ok(customerService.updateNameData(request, customerId));
     }
 
     @PostMapping("/addPaymentIdToDatabase")
@@ -77,9 +77,9 @@ public class CustomerController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/cardDetails/{userId}")
-    public ResponseEntity<Map<String, String>> getCardDetails(@PathVariable int userId) {
-        Optional<Customer> customerOpt = customerService.findById(userId);
+    @GetMapping("/cardDetails/{customerId}")
+    public ResponseEntity<Map<String, String>> getCardDetails(@PathVariable int customerId) {
+        Optional<Customer> customerOpt = customerService.findById(customerId);
         if (customerOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "Customer not found"));

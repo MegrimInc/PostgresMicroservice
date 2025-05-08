@@ -11,7 +11,7 @@ import java.util.List;
 @AllArgsConstructor
 public class OrderDTO {
     private int merchantId;
-    private int userId;
+    private int customerId;
     private String timestamp; // Note it is a string.
     private List<ItemOrder> items;
     private int totalPointPrice;

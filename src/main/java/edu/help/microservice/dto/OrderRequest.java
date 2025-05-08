@@ -13,7 +13,7 @@ import java.util.List;
 @Builder
 public class OrderRequest {
     private int merchantId;
-    private int userId;
+    private int customerId;
     private double tip; // Renamed field
     private List<ItemOrderRequest> items;
     private boolean inAppPayments;
