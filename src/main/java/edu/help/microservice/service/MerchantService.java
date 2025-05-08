@@ -14,10 +14,13 @@ import edu.help.microservice.dto.ItemOrderRequest;
 import edu.help.microservice.dto.ItemOrderResponse;
 import edu.help.microservice.dto.OrderRequest;
 import edu.help.microservice.dto.OrderResponse;
+import edu.help.microservice.dto.InventoryResponse;
 import edu.help.microservice.entity.Merchant;
+import edu.help.microservice.entity.Category;
 import edu.help.microservice.entity.Item;
 import edu.help.microservice.exception.InvalidStripeChargeException;
 import edu.help.microservice.repository.MerchantRepository;
+import edu.help.microservice.repository.CategoryRepository;
 import edu.help.microservice.repository.ItemRepository;
 import edu.help.microservice.util.DTOConverter;
 import lombok.AllArgsConstructor;
@@ -28,6 +31,7 @@ public class MerchantService {
 
     private final MerchantRepository merchantRepository;
     private final ItemRepository itemRepository;
+    private final CategoryRepository categoryRepository;
     private final PointService pointService;
     private final StripeService stripeService;
     private final CustomerService customerService;
@@ -66,10 +70,16 @@ public class MerchantService {
     }
 
     /**
-     * Retrieves all items for a given Merchant ID (excluding certain fields).
+     * Retrieves inventory for a given Merchant ID (excluding certain fields).
      */
-    public List<Item> getItemsByMerchantId(Integer merchantId) {
-        return itemRepository.findByMerchantId(merchantId);
+    public InventoryResponse getInventoryByMerchantId(Integer merchantId) {
+        List<Item> items = itemRepository.findByMerchantId(merchantId);
+        List<Category> categories = categoryRepository.findByMerchantId(merchantId);
+        
+        return InventoryResponse.builder()
+                .items(items)
+                .categories(categories)
+                .build();
     }
 
     /**

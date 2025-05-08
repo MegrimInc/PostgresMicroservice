@@ -62,7 +62,7 @@ public class Merchant implements Serializable {
 
 
     @Column(name = "is_verified")
-    private Boolean verified;
+    private Boolean isVerified;
 
 
     @Column(name = "account_id", length = 255)
@@ -76,7 +76,8 @@ public class Merchant implements Serializable {
     @Column(name = "bonus") // Store as plain text
     private int bonus;
 
-    
+    @Column(name = "is_tip")
+    private Boolean tip;
 }
 
 

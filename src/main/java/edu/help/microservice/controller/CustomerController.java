@@ -7,6 +7,7 @@ import java.util.Optional;
 import com.stripe.exception.StripeException;
 import edu.help.microservice.dto.CustomerNameRequest;
 import edu.help.microservice.dto.CustomerNameResponse;
+import edu.help.microservice.dto.InventoryResponse;
 import edu.help.microservice.dto.MerchantDTO;
 import edu.help.microservice.dto.PaymentIdSetRequest;
 import org.springframework.http.HttpStatus;
@@ -14,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import edu.help.microservice.entity.Customer;
-import edu.help.microservice.entity.Item;
 import edu.help.microservice.entity.Merchant;
 import edu.help.microservice.service.CustomerService;
 import edu.help.microservice.service.MerchantService;
@@ -103,10 +103,10 @@ public class CustomerController {
         return merchantService.findAllMerchants();
     }
 
-    @GetMapping("/getAllItemsByMerchant/{merchantId}")
-    public List<Item> getAllItemsByMerchant(@PathVariable Integer merchantId) {
-        return merchantService.getItemsByMerchantId(merchantId);
-    }
+    @GetMapping("/getInventoryByMerchant/{merchantId}")
+public InventoryResponse getInventoryByMerchant(@PathVariable Integer merchantId) {
+    return merchantService.getInventoryByMerchantId(merchantId);
+}
 
     @GetMapping("/{merchantId}")
     public ResponseEntity<Merchant> getMerchantById(@PathVariable Integer merchantId) {

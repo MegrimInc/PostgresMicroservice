@@ -133,7 +133,7 @@ public class AuthController {
                     merchant.setCity(req.getCity());
                     merchant.setAddress(req.getAddress());
                     merchant.setZipCode(req.getZipCode());
-                    merchant.setVerified(false);
+                    merchant.setIsVerified(false);
                     merchant.setBonus(0);
 
                     String logoImagePath = saveImageFile(logoImage);
