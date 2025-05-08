@@ -76,6 +76,7 @@ public class Merchant implements Serializable {
     @Column(name = "bonus") // Store as plain text
     private int bonus;
 
+    
 }
 
 
