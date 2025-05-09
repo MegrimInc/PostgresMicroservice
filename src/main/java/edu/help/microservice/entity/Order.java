@@ -1,11 +1,11 @@
 package edu.help.microservice.entity;
-
-import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.Type;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.List;
@@ -31,7 +31,7 @@ public class Order {
     @Column(name = "timestamp", nullable = false)
     private Instant timestamp; // Timestamp when the order was completed
 
-    @Type(JsonBinaryType.class)
+    @JdbcTypeCode(SqlTypes.JSON) 
     @Column(name = "items", columnDefinition = "jsonb", nullable = false)
     private List<ItemOrder> items;
 
