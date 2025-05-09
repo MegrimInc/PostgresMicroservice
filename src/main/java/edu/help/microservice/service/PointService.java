@@ -72,6 +72,7 @@ public class PointService {
             return;
         }
 
+        //TODO: YOU HAVE TO REMOVE THIS CHIDE DO NOT FORGET
         double pointsExact = order.getTotalRegularPrice() * 10 * 1.2;
         int rewardPoints = (int) Math.round(pointsExact);
 
