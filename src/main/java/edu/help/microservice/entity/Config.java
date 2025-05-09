@@ -1,13 +1,16 @@
 package edu.help.microservice.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "Config")
+@Table(name = "config")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,6 +21,6 @@ public class Config {
     @Column(name = "key")
     private String key;
 
-    @Column(name = "value", columnDefinition = "jsonb")
+    @Column(name = "value")
     private String value;
 }
