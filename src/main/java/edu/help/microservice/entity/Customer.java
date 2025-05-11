@@ -45,7 +45,7 @@ public class Customer {
 
     @ToString.Exclude 
     @OneToOne(mappedBy = "customer", cascade = CascadeType.ALL)
-    private Auth signUp;
+    private Auth auth;
 
     @Column(name = "stripe_id", nullable = true)
     private String stripeId;
@@ -56,4 +56,7 @@ public class Customer {
 
     @Column(name = "payment_id", nullable = true)
     private String paymentId;
+
+    @Column(name = "tip_percent", nullable = true)
+    private double tipPercent;
 }
