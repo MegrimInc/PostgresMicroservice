@@ -126,7 +126,7 @@ public ResponseEntity<String> setTipPercentage(@PathVariable int customerId, @Re
     }
 
     Customer customer = customerOpt.get();
-    Double tipPercentage = body.get("tipPercentage");
+    Double tipPercentage = body.get("tipPercent");
     if (tipPercentage == null || tipPercentage < 0) {
         return ResponseEntity.badRequest().body("Invalid tip percentage");
     }
