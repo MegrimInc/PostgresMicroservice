@@ -46,4 +46,7 @@ public class Item {
 
     @Column(name = "tax_percent")
     private Double taxPercent;
+
+    @Column(name = "gratuity_percent")
+    private Double gratuityPercent;
 }

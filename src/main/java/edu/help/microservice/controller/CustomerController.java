@@ -117,23 +117,4 @@ public InventoryResponse getInventoryByMerchant(@PathVariable Integer merchantId
         return ResponseEntity.ok(merchant); // Return the merchant if found
     }
 
-
-    @PostMapping("/setTipPercent/{customerId}")
-public ResponseEntity<String> setTipPercentage(@PathVariable int customerId, @RequestBody Map<String, Double> body) {
-    Optional<Customer> customerOpt = customerService.findById(customerId);
-    if (customerOpt.isEmpty()) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Customer not found");
-    }
-
-    Customer customer = customerOpt.get();
-    Double tipPercentage = body.get("tipPercent");
-    if (tipPercentage == null || tipPercentage < 0) {
-        return ResponseEntity.badRequest().body("Invalid tip percentage");
-    }
-
-    customer.setTipPercent(tipPercentage);
-    customerService.save(customer); // ensure your service has a save method
-    return ResponseEntity.ok("Tip percentage updated");
-}
-
 }

@@ -23,8 +23,7 @@ public class DTOConverter {
         merchantDto.setCountry(merchant.getCountry());
         merchantDto.setAddress(merchant.getAddress());
         merchantDto.setLogoImage(merchant.getLogoImage());    
-        merchantDto.setStoreImage(merchant.getStoreImage());  
-        merchantDto.setTip(merchant.getTip());             
+        merchantDto.setStoreImage(merchant.getStoreImage());              
     
         // Handle discountSchedule (JSON to Map)
         try {

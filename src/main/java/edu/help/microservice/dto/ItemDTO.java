@@ -14,4 +14,5 @@ public class ItemDTO {
     private Double discountPrice;
     private Double taxPercent;
     private Integer[] categoryIds;
+     private Double gratuityPercent;
 }

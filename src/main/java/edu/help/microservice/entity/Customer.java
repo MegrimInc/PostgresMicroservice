@@ -56,7 +56,4 @@ public class Customer {
 
     @Column(name = "payment_id", nullable = true)
     private String paymentId;
-
-    @Column(name = "tip_percent", nullable = true)
-    private double tipPercent;
 }

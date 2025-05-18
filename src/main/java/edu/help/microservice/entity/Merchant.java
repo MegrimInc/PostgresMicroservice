@@ -75,9 +75,6 @@ public class Merchant implements Serializable {
 
     @Column(name = "bonus") // Store as plain text
     private int bonus;
-
-    @Column(name = "is_tip")
-    private Boolean tip;
 }
 
 
