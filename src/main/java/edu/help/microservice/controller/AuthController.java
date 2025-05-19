@@ -74,7 +74,6 @@ public class AuthController {
     
      */
 
-    private final boolean TESTING = false;
     private static final String SECRET_KEY = "YourSecretKey";
     private final AuthService authService;
     private final CustomerService customerService;

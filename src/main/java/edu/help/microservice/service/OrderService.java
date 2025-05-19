@@ -25,6 +25,7 @@ import edu.help.microservice.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stripe.exception.StripeException;
 
 @RequiredArgsConstructor
@@ -69,7 +70,7 @@ public class OrderService {
         order.setPointOfSale(orderDTO.isPointOfSale());
         order.setClaimer(null);
         orderRepository.save(order);
-        
+
     }
 
     @Transactional(readOnly = true)
@@ -181,6 +182,9 @@ public class OrderService {
         double totalServiceFee = 0;
         double finalTotal = 0;
 
+        boolean inAppPayments = request.getItems().stream()
+                .anyMatch(item -> !"points".equalsIgnoreCase(item.getPaymentType()));
+
         // Retrieve customer's name from CustomerService
         String customerName = customerService.getName(request.getCustomerId());
 
@@ -210,6 +214,7 @@ public class OrderService {
             }
 
             double price = request.isDiscount() ? item.getDiscountPrice() : item.getRegularPrice();
+            System.out.println("[DEBUG] isDiscount: " + request.isDiscount());
             double itemSubtotal = price * quantity;
 
             totalMoneyPrice += itemSubtotal;
@@ -227,6 +232,10 @@ public class OrderService {
 
         // Compute base before service fee
         double baseAmount = totalMoneyPrice + totalTax + totalGratuity;
+        System.out.println("[DEBUG] totalMoneyPrice: " + totalMoneyPrice);
+        System.out.println("[DEBUG] totalTax: " + totalTax);
+        System.out.println("[DEBUG] totalGratuity: " + totalGratuity);
+        System.out.println("[DEBUG] baseAmount (for service fee): " + baseAmount);
 
         // Fetch and apply service fee from config
         Config feeConfig = configRepository.findByKey("service_fee")
@@ -235,13 +244,20 @@ public class OrderService {
         double percent = Double.parseDouble(parts[0]);
         double flat = Double.parseDouble(parts[1]);
 
+        System.out.println("[DEBUG] Raw service_fee config: " + feeConfig.getValue());
+        System.out.println("[DEBUG] Parsed service fee percent: " + percent);
+        System.out.println("[DEBUG] Parsed service fee flat: " + flat);
+
         totalServiceFee = Math.round((percent * baseAmount + flat) * 100) / 100.0;
+
+        System.out.println("[DEBUG] Calculated totalServiceFee: " + totalServiceFee);
 
         // Add to final total
         finalTotal = baseAmount + totalServiceFee;
 
         // Check if customer has enough points to cover the point-based portion
-        if (!pointService.customerHasRequiredBalance(totalPointsPrice, baseAmount, request.getCustomerId(), merchantId)) {
+        if (!pointService.customerHasRequiredBalance(totalPointsPrice, baseAmount, request.getCustomerId(),
+                merchantId)) {
             return OrderResponse.builder()
                     .message("Insufficient points.")
                     .messageType("error")
@@ -256,7 +272,7 @@ public class OrderService {
         }
 
         // If using in-app payments, attempt to process via Stripe
-        if (request.isInAppPayments()) {
+        if (inAppPayments) {
             try {
                 stripeService.processOrder(finalTotal, request.getCustomerId(), merchantId, totalServiceFee);
             } catch (StripeException exception) {
@@ -294,18 +310,26 @@ public class OrderService {
         // Deduct the points
         pointService.chargeCustomer(totalPointsPrice, baseAmount, request.getCustomerId(), merchantId);
 
-        // Return a successful response
-        return OrderResponse.builder()
+        OrderResponse response = OrderResponse.builder()
                 .message("Order processed successfully")
                 .messageType("success")
-                 .totalGratuity(totalGratuity)
+                .totalGratuity(totalGratuity)
                 .totalServiceFee(totalServiceFee)
                 .totalTax(totalTax)
+                .inAppPayments(inAppPayments)
                 .totalPrice(totalMoneyPrice)
                 .totalPointPrice(totalPointsPrice)
                 .items(itemOrderResponses)
                 .name(customerName)
                 .build();
+
+        try {
+            System.out.println("[DEBUG] Final OrderResponse JSON: " + new ObjectMapper().writeValueAsString(response));
+        } catch (Exception e) {
+            System.err.println("[ERROR] Could not serialize OrderResponse: " + e.getMessage());
+        }
+
+        return response;
     }
 
 }
