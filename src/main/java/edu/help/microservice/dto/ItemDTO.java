@@ -15,4 +15,7 @@ public class ItemDTO {
     private Double taxPercent;
     private Integer[] categoryIds;
      private Double gratuityPercent;
+    private String imageUrl;
+
+
 }

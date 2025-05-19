@@ -13,4 +13,6 @@ public class UpdateItemRequestDTO {
     private Double discountPrice;
     private Double taxPercent;
     private Integer[] categoryIds;
+    private String imageUrl;
+    private Double gratuityPercent;
 }
