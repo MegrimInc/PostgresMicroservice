@@ -105,13 +105,23 @@ public class StripeService {
             throws StripeException, InvalidStripeChargeException {
         long totalChargeCents = priceInCents + serviceFeeInCents;
 
+        boolean merchantLive = Boolean.TRUE.equals(merchant.getIsLiveAccount());
+        boolean customerLive = Boolean.TRUE.equals(customer.getIsLiveAccount());
+        boolean paymentLive = Boolean.TRUE.equals(customer.getIsLivePayment());
         boolean isLiveEnv = isLiveMode();
 
-        boolean envMatches = Boolean.TRUE.equals(merchant.getIsLiveAccount()) == isLiveEnv &&
-                Boolean.TRUE.equals(customer.getIsLiveAccount()) == isLiveEnv &&
-                Boolean.TRUE.equals(customer.getIsLivePayment()) == isLiveEnv;
+        // Debug logs
+        System.out.println("[ENV CHECK] Current Stripe Mode: " + (isLiveEnv ? "LIVE" : "TEST"));
+        System.out.println("[ENV CHECK] Merchant.isLiveAccount: " + merchantLive);
+        System.out.println("[ENV CHECK] Customer.isLiveAccount: " + customerLive);
+        System.out.println("[ENV CHECK] Customer.isLivePayment: " + paymentLive);
+
+        boolean envMatches = merchantLive == isLiveEnv &&
+                customerLive == isLiveEnv &&
+                paymentLive == isLiveEnv;
 
         if (!envMatches) {
+            System.err.println("[ENV MISMATCH] Environment mismatch detected. Blocking payment.");
             throw new InvalidStripeChargeException(
                     "Environment mismatch: merchant, customer, or payment method is not aligned with current Stripe mode (live/test).",
                     customer);
