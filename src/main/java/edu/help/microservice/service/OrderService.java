@@ -248,7 +248,9 @@ public class OrderService {
         System.out.println("[DEBUG] Parsed service fee percent: " + percent);
         System.out.println("[DEBUG] Parsed service fee flat: " + flat);
 
-        totalServiceFee = Math.round((percent * baseAmount + flat) * 100) / 100.0;
+        totalServiceFee = inAppPayments
+                ? Math.round((percent * baseAmount + flat) * 100) / 100.0
+                : 0.0;
 
         System.out.println("[DEBUG] Calculated totalServiceFee: " + totalServiceFee);
 
