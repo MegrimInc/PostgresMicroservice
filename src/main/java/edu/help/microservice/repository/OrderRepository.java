@@ -14,7 +14,7 @@ import java.util.List;
 
 public interface OrderRepository extends JpaRepository<Order, Integer> {
 
-    @Query("SELECT o FROM Order o WHERE o.merchantId = :merchantId AND o.terminal = :terminal AND o.claimer IS NULL AND o.tip > 0")
+    @Query("SELECT o FROM Order o WHERE o.merchantId = :merchantId AND o.terminal = :terminal AND o.claimer IS NULL AND o.totalGratuity > 0")
     List<Order> findUnclaimedTipsByMerchantIdAndTerminal(@Param("merchantId") int merchantId, @Param("terminal") String terminal);
 
     @Modifying

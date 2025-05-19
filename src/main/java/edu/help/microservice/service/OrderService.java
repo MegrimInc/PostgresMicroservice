@@ -60,15 +60,16 @@ public class OrderService {
         order.setItems(orderDTO.getItems());
         order.setTotalPointPrice(orderDTO.getTotalPointPrice());
         order.setTotalRegularPrice(orderDTO.getTotalRegularPrice());
-        order.setTip(orderDTO.getTotalGratuity());
+        order.setTotalGratuity(orderDTO.getTotalGratuity());
+        order.setTotalServiceFee(orderDTO.getTotalServiceFee());
+        order.setTotalTax(orderDTO.getTotalTax());
         order.setInAppPayments(orderDTO.isInAppPayments());
         order.setStatus(orderDTO.getStatus());
         order.setTerminal(orderDTO.getTerminal());
         order.setPointOfSale(orderDTO.isPointOfSale());
         order.setClaimer(null);
         orderRepository.save(order);
-        //TODO: THIS IS WHERE THE OLD REWARD LOGIC WAS 
-        //pointService.rewardPointsForOrder(order);
+        
     }
 
     @Transactional(readOnly = true)

@@ -64,17 +64,16 @@ public class OrderController {
     }
 
     /**
-     * New endpoint to retrieve the total tips claimed by a station.
+     * New endpoint to retrieve the total tips claimed by a terminal.
      * It accepts a JSON payload of the form:
      *     { "terminalId": "A" }
      * and returns a JSON response of the form:
      *     { "tipTotal": 1.23 }
      */
-    @GetMapping("/gettips")
+    @GetMapping("/getTotalGratuity")
     public ResponseEntity<GetTipsResponse> getTips(
-            @RequestParam("terminalId") String terminalId,
+            @RequestParam("terminal") String terminalId,
             @RequestParam("merchantId") String merchantIdStr) {
-        System.out.println("gettips");
 
         // Convert merchantID from String to int
         int merchantID;
@@ -121,12 +120,12 @@ public class OrderController {
     public ResponseEntity<Double> claimTips(@RequestBody TipClaimRequest request) {
         try {
             int merchantID = request.getMerchantId();
-            String stationName = request.getStationName();
-            String stationEmail = request.getStationEmail(); // Optional
-            String station = request.getStation();
+            String claimer = request.getClaimer();
+            String email = request.getEmail(); // Optional
+            String station = request.getTerminal();
 
-            System.out.println("Request received with merchantID: " + merchantID + ", stationName: " + stationName
-                    + ", stationEmail: " + stationEmail + ", station: " + station);
+            System.out.println("Request received with merchantID: " + merchantID + ", claimer: " + claimer
+                    + ", email: " + email + ", station: " + station);
 
             // Fetch unclaimed orders
             List<Order> tipsList = orderService.getUnclaimedTips(merchantID, station);
@@ -140,8 +139,8 @@ public class OrderController {
             }
 
             // Update orders to set tipsClaimed to station's name
-            orderService.claimTipsForOrders(tipsList, stationName);
-            System.out.println("Updated orders with station's name: " + stationName);
+            orderService.claimTipsForOrders(tipsList, claimer);
+            System.out.println("Updated orders with station's name: " + claimer);
 
             // Calculate total tip amount
             double totalTipAmount = calculateTotalTipAmount(tipsList);
@@ -154,15 +153,15 @@ public class OrderController {
             }
 
             // Prepare email content
-            String emailContent = prepareEmailContent(merchantID, stationName, stationEmail, station, tipsList);
+            String emailContent = prepareEmailContent(merchantID, claimer, email, station, tipsList);
 
             // Send emails
-            String subject = "Tip Receipt for " + stationName + " at " + merchantService.findMerchantById(merchantID).getName();
+            String subject = "Tip Receipt for " + claimer + " at " + merchantService.findMerchantById(merchantID).getName();
             if (merchantEmail != null && !merchantEmail.isEmpty()) {
                 sendTipEmail(merchantEmail, subject, emailContent);
             }
-            if (stationEmail != null && !stationEmail.isEmpty()) {
-                sendTipEmail(stationEmail, subject, emailContent);
+            if (email != null && !email.isEmpty()) {
+                sendTipEmail(email, subject, emailContent);
             }
 
             System.out.println("ClaimTips process completed successfully. Total tips: " + totalTipAmount);
@@ -185,12 +184,12 @@ public class OrderController {
     private double calculateTotalTipAmount(List<Order> tipsList) {
         double totalTipAmount = 0.0;
         for (Order order : tipsList) {
-            totalTipAmount += order.getTip();
+            totalTipAmount += order.getTotalGratuity();
         }
         return totalTipAmount;
     }
 
-    private String prepareEmailContent(int merchantID, String stationName, String stationEmail, String station, List<Order> tipsList) throws Exception {
+    private String prepareEmailContent(int merchantID, String claimer, String email, String station, List<Order> tipsList) throws Exception {
         // Get current date and format it
         ZonedDateTime now = ZonedDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy hh:mm a z");
@@ -202,7 +201,7 @@ public class OrderController {
                 .append("<h2 style='text-align:center;'>Merchant Name: ").append(merchantService.findMerchantById(merchantID).getName()).append("</h2>")
                 .append("<p style='text-align:center; font-weight:bold;'>Station Station: <span style='color:blue;'>")
                 .append(station).append("</span> | Station Name: <span style='color:blue;'>")
-                .append(stationName).append("</span></p>")
+                .append(claimer).append("</span></p>")
                 .append("<p style='text-align:center;'>Claimed at: <span style='color:green;'>")
                 .append(formattedDate).append("</span></p>")
                 .append("<h3 style='text-align:center; color:darkgreen;'>Total Tip Amount: <span style='color:green;'>$")
@@ -214,7 +213,7 @@ public class OrderController {
             ZonedDateTime dateTime = timestamp.atZone(ZoneId.systemDefault()); // Convert Instant to ZonedDateTime
             String orderFormattedDate = dateTime.format(formatter);
             emailContent.append("<li><strong>Order ID#</strong> ").append(order.getOrderId())
-                    .append(": $").append(String.format("%.2f", order.getTip()))
+                    .append(": $").append(String.format("%.2f", order.getTotalGratuity()))
                     .append(" | ").append(orderFormattedDate).append("</li>");
         }
         emailContent.append("</ul>");

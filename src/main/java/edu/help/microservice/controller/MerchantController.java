@@ -147,7 +147,7 @@ public class MerchantController {
             orders.sort((o1, o2) -> o2.getTimestamp().compareTo(o1.getTimestamp()));
 
             double revenue = orders.stream().mapToDouble(Order::getTotalRegularPrice).sum();
-            double tips = orders.stream().mapToDouble(Order::getTip).sum();
+            double tips = orders.stream().mapToDouble(Order::getTotalGratuity).sum();
             int items = orders.stream()
                     .flatMap(order -> order.getItems().stream())
                     .mapToInt(itemOrder -> itemOrder.getQuantity())

@@ -35,7 +35,6 @@ import edu.help.microservice.dto.AcceptTOSRequest2;
 import edu.help.microservice.dto.LoginRequest;
 import edu.help.microservice.dto.MerchantRegistrationRequest;
 import edu.help.microservice.dto.ResetPasswordConfirmRequest;
-import edu.help.microservice.dto.VerificationMerchantRequest;       // For "this hour"
 import edu.help.microservice.dto.VerificationCustomerRequest; // If needed for logging
 import edu.help.microservice.dto.VerifyResetCodeRequest;
 import edu.help.microservice.entity.Merchant;

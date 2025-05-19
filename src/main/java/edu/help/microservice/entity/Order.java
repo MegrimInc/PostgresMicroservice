@@ -41,8 +41,8 @@ public class Order {
     @Column(name = "total_regular_price", nullable = false)
     private double totalRegularPrice; // Total price in dollars
 
-    @Column(name = "tip", nullable = false)
-    private double tip; // Tip amount given by the customer for the order
+    @Column(name = "total_gratuity", nullable = false)
+    private double totalGratuity; // Total gratuity for the order
 
     @Column(name = "in_app_payments", nullable = false)
     private boolean inAppPayments; // Indicates if the payment was made in-app
@@ -58,6 +58,12 @@ public class Order {
 
     @Column(name = "point_of_sale", nullable = false)
     private boolean pointOfSale; // Indicates if this is a point of sale purchase or not
+
+    @Column(name = "total_service_fee", nullable = false)
+    private double totalServiceFee; // Total service fee charged for the order
+
+    @Column(name = "total_tax", nullable = false)
+    private double totalTax; // Total tax charged for the order
 
     // Inner class for ItemOrder
     @Data
