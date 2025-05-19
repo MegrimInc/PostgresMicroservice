@@ -43,10 +43,10 @@ public class StripeService {
     private final MerchantRepository merchantRepository;
     private final AuthRepository authRepository;
 
-    public void processOrder(double finalTotal, int customerId, int merchantId, double totalServiceFee) throws StripeException, InvalidStripeChargeException {
+    public void processOrder(double finalTotal, int customerId, int merchantId, double totalServiceFee)
+            throws StripeException, InvalidStripeChargeException {
         Long priceInCents = Math.round(finalTotal * 100);
         Long serviceFeeInCents = Math.round(totalServiceFee * 100);
-      
 
         var customerOptional = customerRepository.findById(customerId);
         if (customerOptional.isEmpty())
@@ -63,7 +63,6 @@ public class StripeService {
 
         chargeCustomer(merchantOptional.get(), customerOptional.get(), priceInCents, serviceFeeInCents);
     }
-
 
     public void createStripeCustomer(Customer customer, Auth signUp) throws StripeException {
         CustomerCreateParams params = CustomerCreateParams.builder()
@@ -83,28 +82,40 @@ public class StripeService {
     public String createConnectedAccount(String email) throws StripeException {
         System.out.println("[DEBUG] Creating Stripe account with email: " + email);
         AccountCreateParams accountParams = AccountCreateParams.builder()
-            .setType(AccountCreateParams.Type.EXPRESS)
-            .setCountry("US")
-            .setEmail(email)
-            .setCapabilities(
-                AccountCreateParams.Capabilities.builder()
-                    .setCardPayments(AccountCreateParams.Capabilities.CardPayments.builder()
-                        .setRequested(true)
-                        .build())
-                    .setTransfers(AccountCreateParams.Capabilities.Transfers.builder()
-                        .setRequested(true)
-                        .build())
-                    .build()
-            )
-            .build();
+                .setType(AccountCreateParams.Type.EXPRESS)
+                .setCountry("US")
+                .setEmail(email)
+                .setCapabilities(
+                        AccountCreateParams.Capabilities.builder()
+                                .setCardPayments(AccountCreateParams.Capabilities.CardPayments.builder()
+                                        .setRequested(true)
+                                        .build())
+                                .setTransfers(AccountCreateParams.Capabilities.Transfers.builder()
+                                        .setRequested(true)
+                                        .build())
+                                .build())
+                .build();
 
         Account account = stripeClient.accounts().create(accountParams);
         System.out.println("[DEBUG] Created Stripe account: " + account.getId());
         return account.getId();
     }
 
-    private void chargeCustomer(Merchant merchant, Customer customer, Long priceInCents, Long serviceFeeInCents) throws StripeException, InvalidStripeChargeException {
+    private void chargeCustomer(Merchant merchant, Customer customer, Long priceInCents, Long serviceFeeInCents)
+            throws StripeException, InvalidStripeChargeException {
         long totalChargeCents = priceInCents + serviceFeeInCents;
+
+        boolean isLiveEnv = isLiveMode();
+
+        boolean envMatches = Boolean.TRUE.equals(merchant.getIsLiveAccount()) == isLiveEnv &&
+                Boolean.TRUE.equals(customer.getIsLiveAccount()) == isLiveEnv &&
+                Boolean.TRUE.equals(customer.getIsLivePayment()) == isLiveEnv;
+
+        if (!envMatches) {
+            throw new InvalidStripeChargeException(
+                    "Environment mismatch: merchant, customer, or payment method is not aligned with current Stripe mode (live/test).",
+                    customer);
+        }
 
         PaymentIntent customerCharge = stripeClient.paymentIntents().create(
                 new PaymentIntentCreateParams.Builder()
@@ -242,7 +253,6 @@ public class StripeService {
         }
     }
 
-
     public Map<String, String> getCardDetails(String paymentMethodId) throws StripeException {
         PaymentMethod paymentMethod = stripeClient.paymentMethods().retrieve(paymentMethodId);
 
@@ -255,11 +265,9 @@ public class StripeService {
         return cardInfo;
     }
 
+    public boolean isLiveMode() {
+        String apiKey = Stripe.apiKey;
+        return apiKey != null && apiKey.startsWith("sk_live_");
+    }
 
-   public boolean isLiveMode() {
-    String apiKey = Stripe.apiKey;
-    return apiKey != null && apiKey.startsWith("sk_live_");
-}
-
-    
 }
