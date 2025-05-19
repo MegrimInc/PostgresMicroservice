@@ -257,7 +257,7 @@ public class OrderService {
         // If using in-app payments, attempt to process via Stripe
         if (request.isInAppPayments()) {
             try {
-                stripeService.processOrder(finalTotal, request.getCustomerId(), merchantId);
+                stripeService.processOrder(finalTotal, request.getCustomerId(), merchantId, totalServiceFee);
             } catch (StripeException exception) {
                 // Log Stripe exception
                 System.out.println("Stripe error: " + exception.getMessage());

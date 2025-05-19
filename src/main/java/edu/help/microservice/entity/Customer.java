@@ -56,4 +56,10 @@ public class Customer {
 
     @Column(name = "payment_id", nullable = true)
     private String paymentId;
+
+    @Column(name = "is_live_account")
+    private Boolean isLiveAccount;
+    
+    @Column(name = "is_live_payment")
+    private Boolean isLivePayment;
 }

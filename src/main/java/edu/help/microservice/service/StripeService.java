@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
+
+import com.stripe.Stripe;
 import com.stripe.StripeClient;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
@@ -41,8 +43,9 @@ public class StripeService {
     private final MerchantRepository merchantRepository;
     private final AuthRepository authRepository;
 
-    public void processOrder(double finalTotal, int customerId, int merchantId) throws StripeException, InvalidStripeChargeException {
+    public void processOrder(double finalTotal, int customerId, int merchantId, double totalServiceFee) throws StripeException, InvalidStripeChargeException {
         Long priceInCents = Math.round(finalTotal * 100);
+        Long serviceFeeInCents = Math.round(totalServiceFee * 100);
       
 
         var customerOptional = customerRepository.findById(customerId);
@@ -58,7 +61,7 @@ public class StripeService {
                 .setType(PaymentMethodListParams.Type.CARD) // Specify the type (e.g., CARD)
                 .build();
 
-        chargeCustomer(merchantOptional.get(), customerOptional.get(), priceInCents);
+        chargeCustomer(merchantOptional.get(), customerOptional.get(), priceInCents, serviceFeeInCents);
     }
 
 
@@ -100,16 +103,15 @@ public class StripeService {
         return account.getId();
     }
 
-    private void chargeCustomer(Merchant merchant, Customer customer, Long priceInCents) throws StripeException, InvalidStripeChargeException {
-        long serviceFeeCents = Math.round(priceInCents * 0.04) + 40;
-        long totalChargeCents = priceInCents + serviceFeeCents;
+    private void chargeCustomer(Merchant merchant, Customer customer, Long priceInCents, Long serviceFeeInCents) throws StripeException, InvalidStripeChargeException {
+        long totalChargeCents = priceInCents + serviceFeeInCents;
 
         PaymentIntent customerCharge = stripeClient.paymentIntents().create(
                 new PaymentIntentCreateParams.Builder()
                         .setAmount(totalChargeCents)
                         .setCurrency(CURRENCY_TYPE)
                         .setCustomer(customer.getStripeId())
-                        .setApplicationFeeAmount(serviceFeeCents)
+                        .setApplicationFeeAmount(serviceFeeInCents)
                         .setAutomaticPaymentMethods(
                                 PaymentIntentCreateParams.AutomaticPaymentMethods
                                         .builder()
@@ -160,6 +162,8 @@ public class StripeService {
 
         // Save the payment method ID in your database
         customer.setPaymentId(paymentMethodId);
+        boolean isLive = isLiveMode();
+        customer.setIsLivePayment(isLive);
         customerRepository.save(customer);
 
         System.out.println("Payment method saved and set as default.");
@@ -240,15 +244,21 @@ public class StripeService {
 
 
     public Map<String, String> getCardDetails(String paymentMethodId) throws StripeException {
-    PaymentMethod paymentMethod = stripeClient.paymentMethods().retrieve(paymentMethodId);
-    
-    Map<String, String> cardInfo = new HashMap<>();
-    cardInfo.put("brand", paymentMethod.getCard().getBrand());
-    cardInfo.put("last4", paymentMethod.getCard().getLast4());
-    cardInfo.put("exp_month", String.valueOf(paymentMethod.getCard().getExpMonth()));
-    cardInfo.put("exp_year", String.valueOf(paymentMethod.getCard().getExpYear()));
-    
-    return cardInfo;
+        PaymentMethod paymentMethod = stripeClient.paymentMethods().retrieve(paymentMethodId);
+
+        Map<String, String> cardInfo = new HashMap<>();
+        cardInfo.put("brand", paymentMethod.getCard().getBrand());
+        cardInfo.put("last4", paymentMethod.getCard().getLast4());
+        cardInfo.put("exp_month", String.valueOf(paymentMethod.getCard().getExpMonth()));
+        cardInfo.put("exp_year", String.valueOf(paymentMethod.getCard().getExpYear()));
+
+        return cardInfo;
+    }
+
+
+   public boolean isLiveMode() {
+    String apiKey = Stripe.apiKey;
+    return apiKey != null && apiKey.startsWith("sk_live_");
 }
 
     

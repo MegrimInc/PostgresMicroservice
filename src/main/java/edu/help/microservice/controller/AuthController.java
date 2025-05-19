@@ -136,6 +136,8 @@ public class AuthController {
                     merchant.setZipCode(req.getZipCode());
                     merchant.setIsVerified(false);
                     merchant.setBonus(0);
+                    boolean isLive = stripeService.isLiveMode();
+                    merchant.setIsLiveAccount(isLive);
 
                     String logoImagePath = saveImageFile(logoImage);
                     String storeImagePath = (storeImage != null) ? saveImageFile(storeImage) : logoImagePath;
@@ -375,6 +377,8 @@ public class AuthController {
         Customer customer = new Customer();
         customer.setFirstName(request.getFirstName());
         customer.setLastName(request.getLastName());
+         boolean isLive = stripeService.isLiveMode();
+        customer.setIsLiveAccount(isLive);
 
         // Hash and store the password immediately
         try {
