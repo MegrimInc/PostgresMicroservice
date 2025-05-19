@@ -57,7 +57,7 @@ public class OrderController {
 @PostMapping("/{merchantId}/processOrder")
     public ResponseEntity<OrderResponse> processOrder(@PathVariable int merchantId, @RequestBody OrderRequest orderRequest) {
         // Delegate processing to the service layer
-        OrderResponse response = merchantService.processOrder(merchantId, orderRequest);
+        OrderResponse response = orderService.processOrder(merchantId, orderRequest);
         // Return the processed order response
         return ResponseEntity.ok(response);
     }

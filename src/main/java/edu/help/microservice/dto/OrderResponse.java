@@ -16,7 +16,9 @@ public class OrderResponse {
     private String name;
     private double totalPrice;
     private int totalPointPrice;
-    private double tip; // Renamed field
+    private double totalGratuity; // Renamed field
+    private double totalServiceFee;
+    private double totalTax;
     private List<ItemOrderResponse> items;
     private String messageType;
 }

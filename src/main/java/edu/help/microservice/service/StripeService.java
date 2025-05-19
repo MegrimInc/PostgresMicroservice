@@ -5,8 +5,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
-
-import com.stripe.Stripe;
 import com.stripe.StripeClient;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
@@ -31,8 +29,7 @@ import edu.help.microservice.repository.CustomerRepository;
 import edu.help.microservice.repository.AuthRepository;
 import lombok.RequiredArgsConstructor;
 import com.stripe.model.Account;
-import com.stripe.param.AccountCreateParams;
-import com.stripe.exception.StripeException;
+
 
 @Service
 @RequiredArgsConstructor
@@ -44,9 +41,9 @@ public class StripeService {
     private final MerchantRepository merchantRepository;
     private final AuthRepository authRepository;
 
-    public void processOrder(double price, double tip, int customerId, int merchantId) throws StripeException, InvalidStripeChargeException {
-        Long priceInCents = Math.round(price * 100);
-        Long tipInCents = Math.round(tip * 100);
+    public void processOrder(double finalTotal, int customerId, int merchantId) throws StripeException, InvalidStripeChargeException {
+        Long priceInCents = Math.round(finalTotal * 100);
+      
 
         var customerOptional = customerRepository.findById(customerId);
         if (customerOptional.isEmpty())
@@ -61,7 +58,7 @@ public class StripeService {
                 .setType(PaymentMethodListParams.Type.CARD) // Specify the type (e.g., CARD)
                 .build();
 
-        chargeCustomer(merchantOptional.get(), customerOptional.get(), priceInCents + tipInCents);
+        chargeCustomer(merchantOptional.get(), customerOptional.get(), priceInCents);
     }
 
 

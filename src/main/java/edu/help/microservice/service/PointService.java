@@ -17,25 +17,32 @@ public class PointService {
 
     private final CustomerRepository customerRepository;
 
-    public boolean customerHasRequiredBalance(int needed, int customerId, int merchantId) {
+    public boolean customerHasRequiredBalance(int needed, double baseAmount, int customerId, int merchantId) {
         int customerPoints = getPointsAtMerchant(customerId, merchantId);
-        return needed <= customerPoints;
+
+        // Earned points (e.g. 10 points per $1)
+        int earnedPoints = (int) Math.floor(baseAmount * 10);
+
+        int availablePoints = customerPoints + earnedPoints;
+
+        return needed <= availablePoints;
     }
 
-    public void chargeCustomer(int points, int customerId, int merchantId) {
+    public void chargeCustomer(int points, double baseAmount, int customerId, int merchantId) {
         Optional<Customer> customerOpt = customerRepository.findById(customerId);
         if (customerOpt.isEmpty())
             return;
-        if (!customerHasRequiredBalance(points, customerId, merchantId))
+        if (!customerHasRequiredBalance(points, baseAmount, customerId, merchantId))
             return;
 
         var pointsMap = getPointsForCustomer(customerId);
         if (pointsMap == null)
             return;
 
-        if (!pointsMap.containsKey(merchantId))
-            pointsMap.put(merchantId, 0);
-        pointsMap.put(merchantId, pointsMap.get(merchantId) - points);
+        pointsMap.putIfAbsent(merchantId, 0);
+        int earnedPoints = (int) Math.floor(baseAmount * 10);
+        int current = pointsMap.get(merchantId);
+        pointsMap.put(merchantId, current - points + earnedPoints);
         customerRepository.save(customerOpt.get());
     }
 
@@ -58,6 +65,9 @@ public class PointService {
         return customer.getPoints().get(customerId);
     }
 
+    /**
+    * REDACTED METHOD - previously rewarded customers based on final Order details
+    */
     public void rewardPointsForOrder(Order order) {
 
         Optional<Customer> customerOpt = customerRepository.findById(order.getCustomerId());
@@ -72,8 +82,7 @@ public class PointService {
             return;
         }
 
-        //TODO: YOU HAVE TO REMOVE THIS CHIDE DO NOT FORGET
-        double pointsExact = order.getTotalRegularPrice() * 10 * 1.2;
+        double pointsExact = order.getTotalRegularPrice() * 10;
         int rewardPoints = (int) Math.round(pointsExact);
 
         pointsMap.put(order.getMerchantId(), pointsMap.get(order.getMerchantId()) + rewardPoints);
