@@ -48,14 +48,12 @@ public class OrderService {
         order.setItems(orderDTO.getItems());
         order.setTotalPointPrice(orderDTO.getTotalPointPrice());
         order.setTotalRegularPrice(orderDTO.getTotalRegularPrice());
-        order.setTip(orderDTO.getTip());
+        order.setTip(orderDTO.getTotalGratuity());
         order.setInAppPayments(orderDTO.isInAppPayments());
         order.setStatus(orderDTO.getStatus());
         order.setTerminal(orderDTO.getTerminal());
         order.setPointOfSale(orderDTO.isPointOfSale());
         order.setClaimer(null);
-
-        // Save the order to the database
         orderRepository.save(order);
         pointService.rewardPointsForOrder(order);
     }

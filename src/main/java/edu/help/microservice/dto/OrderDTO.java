@@ -16,7 +16,9 @@ public class OrderDTO {
     private List<ItemOrder> items;
     private int totalPointPrice;
     private double totalRegularPrice;
-    private double tip;
+    private double totalGratuity;
+    private double totalServiceFee;
+    private double totalTax;
     private boolean inAppPayments;
     private String status;
     private String terminal;
