@@ -33,9 +33,10 @@ import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.time.ZoneId;
 import java.util.*;
+import static edu.help.microservice.config.ApiConfig.BASE_PATH;
 
 @RestController
-@RequestMapping("/postgres-test-api/merchant")
+@RequestMapping(BASE_PATH + "/merchant")
 public class MerchantController {
     private final OrderService orderService;
     private final MerchantService merchantService;

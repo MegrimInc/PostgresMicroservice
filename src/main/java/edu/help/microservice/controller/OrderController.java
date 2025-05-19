@@ -30,9 +30,10 @@ import edu.help.microservice.service.MerchantService;
 import edu.help.microservice.service.OrderService;
 import edu.help.microservice.service.AuthService;
 import jakarta.mail.internet.MimeMessage;
+import static edu.help.microservice.config.ApiConfig.BASE_PATH;
 
 @RestController
-@RequestMapping("/postgres-test-api/order")
+@RequestMapping(BASE_PATH + "/order")
 public class OrderController {
 
     private final OrderService orderService;

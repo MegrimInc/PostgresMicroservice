@@ -5,11 +5,12 @@ import edu.help.microservice.repository.ConfigRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import static edu.help.microservice.config.ApiConfig.BASE_PATH;
 
 import java.util.*;
 
 @RestController
-@RequestMapping("/postgres-test-api/config")
+@RequestMapping(BASE_PATH + "/config")
 public class ConfigController {
 
     private final ConfigRepository configRepository;

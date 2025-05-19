@@ -21,10 +21,11 @@ import edu.help.microservice.service.MerchantService;
 import edu.help.microservice.service.PointService;
 import edu.help.microservice.service.StripeService;
 import lombok.RequiredArgsConstructor;
+import static edu.help.microservice.config.ApiConfig.BASE_PATH;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/postgres-test-api/customer")
+@RequestMapping(BASE_PATH + "/customer")
 public class CustomerController {
     private final PointService pointService;
     private final CustomerService customerService;

@@ -52,11 +52,12 @@ import java.io.File;
 import java.nio.file.Path;
 import static edu.help.microservice.util.Cookies.*;
 import java.util.UUID;
+import static edu.help.microservice.config.ApiConfig.BASE_PATH;
 
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/postgres-test-api/auth")
+@RequestMapping(BASE_PATH + "/auth")
 public class AuthController {
 
     /*
