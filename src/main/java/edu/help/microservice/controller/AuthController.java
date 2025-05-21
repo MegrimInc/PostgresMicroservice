@@ -148,15 +148,14 @@ public class AuthController {
                     auth.setExpiryTimestamp(null);
 
                     System.out.println("[DEBUG] Creating Stripe account with email: " + email);
-        
 
                     try {
                         String accountId = stripeService.createConnectedAccount(email);
 
                         System.out.println("[DEBUG] Created Stripe account: " + accountId);
-                
+
                         merchant.setAccountId(accountId);
-                    
+
                         // link back into Auth, set cookie, etc…
                     } catch (StripeException e) {
                         e.printStackTrace();
@@ -164,22 +163,25 @@ public class AuthController {
                                 .status(HttpStatus.PRECONDITION_FAILED)
                                 .body("Stripe error: " + e.getMessage());
                     }
-                    
+
                     merchantService.save(merchant);
                     auth.setMerchant(merchant);
                     authService.save(auth);
 
                     String id = String.valueOf(merchant.getMerchantId());
-                    String expiry = String.valueOf(System.currentTimeMillis() + 3600 * 1000);
+                    String expiry = String.valueOf(System.currentTimeMillis() + 14400 * 1000);
                     String payload = id + "." + expiry;
                     String signature = generateSignature(payload);
                     String cookieValueRaw = payload + "." + signature;
                     String cookieValueEncoded = Base64.getEncoder()
                             .encodeToString(cookieValueRaw.getBytes(StandardCharsets.UTF_8));
 
-                    response.addHeader("Set-Cookie", String.format(
-                            "auth=%s;  Path=/; HttpOnly; SameSite=Lax;",
-                            cookieValueEncoded));
+                    Cookie cookie = new Cookie("auth", cookieValueEncoded);
+                    cookie.setMaxAge(14400); // 4 hours
+                    cookie.setSecure(true);
+                    cookie.setHttpOnly(true);
+                    cookie.setPath("/");
+                    response.addCookie(cookie);
 
                     return ResponseEntity.ok("-" + merchant.getMerchantId().toString());
                 } else {
@@ -231,12 +233,11 @@ public class AuthController {
 
         // 2. SHORT-CIRCUIT if no credentials provided and cookie was valid
 
-         if (loginSuccessful &&
-        (loginRequest.getEmail() == null || loginRequest.getEmail().isEmpty()) &&
-        (loginRequest.getPassword() == null || loginRequest.getPassword().isEmpty())) {
-        return ResponseEntity.ok("OK");
-    }
-
+        if (loginSuccessful &&
+                (loginRequest.getEmail() == null || loginRequest.getEmail().isEmpty()) &&
+                (loginRequest.getPassword() == null || loginRequest.getPassword().isEmpty())) {
+            return ResponseEntity.ok("OK");
+        }
 
         // 3. Attempt Email/Password Authentication if Cookie Failed
         if (!loginSuccessful) {
@@ -270,7 +271,7 @@ public class AuthController {
 
         // 4. If Authentication Successful → Set a fresh Cookie
         String id = String.valueOf(merchantId);
-        String expiry = String.valueOf(System.currentTimeMillis() + 3600 * 1000); // 1 hour later
+        String expiry = String.valueOf(System.currentTimeMillis() + 14400 * 1000); // 1 hour later
         String payload = id + "." + expiry;
         System.out.println("Generating signature for cookie for bar id " + merchantId);
         String signature = generateSignature(payload);
@@ -282,16 +283,25 @@ public class AuthController {
         String cookieValueEncoded = Base64.getEncoder().encodeToString(cookieValueRaw.getBytes(StandardCharsets.UTF_8));
 
         Cookie cookie = new Cookie("auth", cookieValueEncoded);
-        cookie.setMaxAge(3600); // 1 hour
-        cookie.setSecure(true); // TODO:Set this to TRUE when in production and FALSE when in testing
+        cookie.setMaxAge(14400); // 4 hours
+        cookie.setSecure(true);
         cookie.setHttpOnly(true);
         cookie.setPath("/");
-        // Manually override SameSite to Lax for local testing
-        response.addHeader("Set-Cookie", String.format(
-                "auth=%s; Path=/; Secure; HttpOnly; SameSite=None",
-                cookieValueEncoded));
+        response.addCookie(cookie);
 
         return ResponseEntity.ok("OK");
+    }
+
+    @PostMapping("/logout-merchant")
+    public ResponseEntity<Void> logoutMerchant(HttpServletResponse response) {
+        Cookie cookie = new Cookie("auth", null);
+        cookie.setMaxAge(0); // expire immediately
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+
+        response.addCookie(cookie);
+        return ResponseEntity.ok().build();
     }
 
     // ENDPOINT: Resend verification code
@@ -384,7 +394,7 @@ public class AuthController {
         Customer customer = new Customer();
         customer.setFirstName(request.getFirstName());
         customer.setLastName(request.getLastName());
-         boolean isLive = stripeService.isLiveMode();
+        boolean isLive = stripeService.isLiveMode();
         customer.setIsLiveAccount(isLive);
 
         // Hash and store the password immediately
@@ -551,11 +561,10 @@ public class AuthController {
                     + unsubscribeHash;
 
             // HTML content with clickable link
-            String htmlContent =
-            "<p>Your verification code is: <strong>" + code + "</strong>"
-          + "<span style=\"user-select:none\">.</span></p>"
-          + "<p>If you did not wish to receive this email, click here to "
-          + "<a href='" + unsubscribeUrl + "'>unsubscribe from all emails</a>.</p>";
+            String htmlContent = "<p>Your verification code is: <strong>" + code + "</strong>"
+                    + "<span style=\"user-select:none\">.</span></p>"
+                    + "<p>If you did not wish to receive this email, click here to "
+                    + "<a href='" + unsubscribeUrl + "'>unsubscribe from all emails</a>.</p>";
 
             // Set the email content as HTML
             helper.setText(htmlContent, true); // Set 'true' to indicate HTML content
@@ -726,5 +735,4 @@ public class AuthController {
             throw new RuntimeException("Failed to save image", e);
         }
     }
-
 }
