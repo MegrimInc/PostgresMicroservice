@@ -229,17 +229,26 @@ public class AuthController {
             }
         }
 
-        // 2. Attempt Email/Password Authentication if Cookie Failed
+        // 2. SHORT-CIRCUIT if no credentials provided and cookie was valid
+
+         if (loginSuccessful &&
+        (loginRequest.getEmail() == null || loginRequest.getEmail().isEmpty()) &&
+        (loginRequest.getPassword() == null || loginRequest.getPassword().isEmpty())) {
+        return ResponseEntity.ok("OK");
+    }
+
+
+        // 3. Attempt Email/Password Authentication if Cookie Failed
         if (!loginSuccessful) {
             String email = loginRequest.getEmail();
             String password = loginRequest.getPassword();
 
-            // 2a. If both empty, stay on login page quietly (no error)
+            // 3a. If both empty, stay on login page quietly (no error)
             if ((email == null || email.isEmpty()) && (password == null || password.isEmpty())) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("EMPTY");
             }
 
-            // 2b. Otherwise, attempt credential verification
+            // 3b. Otherwise, attempt credential verification
             Auth auth = authService.findByEmail(email);
             if (auth != null && auth.getMerchant() != null) {
                 try {
@@ -253,13 +262,13 @@ public class AuthController {
                 }
             }
 
-            // 2c. If credential login failed
+            // 3c. If credential login failed
             if (!loginSuccessful) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("INVALID_CREDENTIALS");
             }
         }
 
-        // 3. If Authentication Successful → Set a fresh Cookie
+        // 4. If Authentication Successful → Set a fresh Cookie
         String id = String.valueOf(merchantId);
         String expiry = String.valueOf(System.currentTimeMillis() + 3600 * 1000); // 1 hour later
         String payload = id + "." + expiry;
