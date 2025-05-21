@@ -178,7 +178,7 @@ public class AuthController {
 
                     Cookie cookie = new Cookie("auth", cookieValueEncoded);
                     cookie.setMaxAge(14400); // 4 hours
-                    cookie.setSecure(true);
+                    cookie.setSecure(false);
                     cookie.setHttpOnly(true);
                     cookie.setPath("/");
                     response.addCookie(cookie);
@@ -284,7 +284,7 @@ public class AuthController {
 
         Cookie cookie = new Cookie("auth", cookieValueEncoded);
         cookie.setMaxAge(14400); // 4 hours
-        cookie.setSecure(true);
+        cookie.setSecure(false);
         cookie.setHttpOnly(true);
         cookie.setPath("/");
         response.addCookie(cookie);
@@ -297,7 +297,7 @@ public class AuthController {
         Cookie cookie = new Cookie("auth", null);
         cookie.setMaxAge(0); // expire immediately
         cookie.setHttpOnly(true);
-        cookie.setSecure(true);
+        cookie.setSecure(false);
         cookie.setPath("/");
 
         response.addCookie(cookie);
