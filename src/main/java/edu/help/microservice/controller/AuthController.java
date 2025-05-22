@@ -52,6 +52,7 @@ import java.nio.file.Path;
 import static edu.help.microservice.util.Cookies.*;
 import java.util.UUID;
 import static edu.help.microservice.config.ApiConfig.BASE_PATH;
+import static edu.help.microservice.config.ApiConfig.ENV;
 
 
 @RequiredArgsConstructor
@@ -75,6 +76,7 @@ public class AuthController {
      */
 
     private static final String SECRET_KEY = "YourSecretKey";
+    private static final boolean setSecure = ENV.equals("live");
     private final AuthService authService;
     private final CustomerService customerService;
     private final MerchantService merchantService;
@@ -178,7 +180,7 @@ public class AuthController {
 
                     Cookie cookie = new Cookie("auth", cookieValueEncoded);
                     cookie.setMaxAge(14400); // 4 hours
-                    cookie.setSecure(false);
+                    cookie.setSecure(setSecure);
                     cookie.setHttpOnly(true);
                     cookie.setPath("/");
                     response.addCookie(cookie);
@@ -284,7 +286,7 @@ public class AuthController {
 
         Cookie cookie = new Cookie("auth", cookieValueEncoded);
         cookie.setMaxAge(14400); // 4 hours
-        cookie.setSecure(false);
+        cookie.setSecure(setSecure);
         cookie.setHttpOnly(true);
         cookie.setPath("/");
         response.addCookie(cookie);
@@ -297,7 +299,7 @@ public class AuthController {
         Cookie cookie = new Cookie("auth", null);
         cookie.setMaxAge(0); // expire immediately
         cookie.setHttpOnly(true);
-        cookie.setSecure(false);
+        cookie.setSecure(setSecure);
         cookie.setPath("/");
 
         response.addCookie(cookie);
