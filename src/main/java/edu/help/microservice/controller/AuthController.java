@@ -76,12 +76,32 @@ public class AuthController {
 
     @PostMapping("/register-merchant")
     public ResponseEntity<String> registerMerchant(@RequestParam("email") String email) {
+        Auth existingAuth = authService.findByEmail(email);
 
-        Auth existingSignUp = authService.findByEmail(email);
+        if (existingAuth != null) {
+            boolean isIncomplete = existingAuth.getPasscode() == null && existingAuth.getMerchant() == null;
 
-        if (existingSignUp != null)
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
+            if (!isIncomplete) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
+            }
 
+            // Reset verification if previously started but incomplete
+            String newCode = generateVerificationCode();
+            try {
+                existingAuth.setVerificationCode(hash(newCode));
+            } catch (NoSuchAlgorithmException e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Error generating verification code");
+            }
+
+            existingAuth.setExpiryTimestamp(generateExpiryTimestamp());
+            authService.save(existingAuth);
+            sendVerificationEmail(email, newCode, "Registration");
+
+            return ResponseEntity.ok("verification email re-sent");
+        }
+
+        // Fresh registration
         Auth auth = new Auth();
         auth.setEmail(email);
         auth.setIsMerchant(true);
@@ -90,8 +110,7 @@ public class AuthController {
         try {
             auth.setVerificationCode(hash(verificationCode));
         } catch (NoSuchAlgorithmException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("error generating verification code");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error generating verification code");
         }
 
         auth.setExpiryTimestamp(generateExpiryTimestamp());
@@ -128,7 +147,6 @@ public class AuthController {
                     merchant.setBonus(0);
                     boolean isLive = stripeService.isLiveMode();
                     merchant.setIsLiveAccount(isLive);
-
 
                     String hashedPassword = hash(req.getPassword());
                     auth.setPasscode(hashedPassword);
