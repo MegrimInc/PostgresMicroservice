@@ -61,9 +61,6 @@ public class OrderController {
 @PostMapping("/{merchantId}/processOrder")
     public ResponseEntity<OrderResponse> processOrder(@PathVariable int merchantId, @RequestBody OrderRequest orderRequest) {
         // Delegate processing to the service layer
-
-
-
     boolean valid = false;
 
     String password = orderRequest.getPassword();
