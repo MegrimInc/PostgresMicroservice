@@ -296,7 +296,7 @@ public class OrderController {
 
             // Set the basic email attributes
             helper.setTo(email);
-            helper.setFrom("noreply@barzzy.site"); // SHOULD BE RENAMED TO MEGRIM LATER
+            helper.setFrom("noreply@megrim.com"); // SHOULD BE RENAMED TO MEGRIM LATER
             helper.setSubject(subject);
 
             // Set the email content as HTML
