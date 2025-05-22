@@ -45,11 +45,11 @@ public class Merchant implements Serializable {
     private String country;
 
 
-    @Column(name = "logo_image", nullable = false, length = 255)
+    @Column(name = "logo_image", nullable = true, length = 255)
     private String logoImage;
 
 
-    @Column(name = "store_image", nullable = false, length = 255)
+    @Column(name = "store_image", nullable = true, length = 255)
     private String storeImage;
 
 

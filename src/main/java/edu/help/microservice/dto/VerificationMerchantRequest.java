@@ -11,8 +11,8 @@ public class VerificationMerchantRequest {
     
     private String verificationCode;
     private String email;
-    private String companyName;
-    private String companyNickname;
+    private String storeName;
+    private String storeNickname;
     private String password;
     private String country;
     private String stateOrProvince;

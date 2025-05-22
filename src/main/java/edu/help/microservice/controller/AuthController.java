@@ -117,8 +117,8 @@ public class AuthController {
                 String hashedCode = hash(req.getVerificationCode());
                 if (auth.getVerificationCode().equals(hashedCode)) {
                     Merchant merchant = new Merchant();
-                    merchant.setName(req.getCompanyName());
-                    merchant.setNickname(req.getCompanyNickname());
+                    merchant.setName(req.getStoreName());
+                    merchant.setNickname(req.getStoreNickname());
                     merchant.setCountry(req.getCountry());
                     merchant.setStateOrProvince(req.getStateOrProvince());
                     merchant.setCity(req.getCity());
