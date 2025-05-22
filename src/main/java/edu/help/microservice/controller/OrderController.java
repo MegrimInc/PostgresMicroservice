@@ -162,7 +162,7 @@ public class OrderController {
     }
 
     private String hash(String input) throws NoSuchAlgorithmException {
-        String text = input + SECRET_KEY;
+        String text = input + "YourSecretKey";
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         byte[] hash = md.digest(text.getBytes());
         return Base64.getEncoder().encodeToString(hash);
