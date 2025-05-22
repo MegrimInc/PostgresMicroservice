@@ -569,8 +569,8 @@ public class AuthController {
 
             // Set the basic email attributes
             helper.setTo(email);
-            helper.setFrom("noreply@barzzy.site"); // SHOULD BE RENAMED TO MEGRIM LATER
-            helper.setSubject("Barzzy Verification Code - " + title); // SHOULD BE RENAMED TO MEGRIM LATER
+            helper.setFrom("noreply@megrim.site"); // SHOULD BE RENAMED TO MEGRIM LATER
+            helper.setSubject("Megrim Verification Code - " + title); // SHOULD BE RENAMED TO MEGRIM LATER
 
             // Generate hash for the email
             String unsubscribeHash = generateHash(email);
