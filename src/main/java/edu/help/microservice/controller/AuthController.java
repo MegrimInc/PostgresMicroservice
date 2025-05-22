@@ -1,9 +1,5 @@
 package edu.help.microservice.controller;
-
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
@@ -46,11 +42,7 @@ import edu.help.microservice.service.AuthService;
 import edu.help.microservice.service.StripeService;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.multipart.MultipartFile;
-import java.io.File;
-import java.nio.file.Path;
 import static edu.help.microservice.util.Cookies.*;
-import java.util.UUID;
 import static edu.help.microservice.config.ApiConfig.BASE_PATH;
 import static edu.help.microservice.config.ApiConfig.ENV;
 
@@ -111,8 +103,6 @@ public class AuthController {
 
     @PostMapping("/verify-merchant")
     public ResponseEntity<String> verifyMerchant(@RequestPart("info") MerchantRegistrationRequest req,
-            @RequestPart("logoImage") MultipartFile logoImage,
-            @RequestPart(value = "storeImage", required = false) MultipartFile storeImage,
             HttpServletResponse response) {
 
         String email = req.getEmail();
@@ -127,8 +117,8 @@ public class AuthController {
                 String hashedCode = hash(req.getVerificationCode());
                 if (auth.getVerificationCode().equals(hashedCode)) {
                     Merchant merchant = new Merchant();
-                    merchant.setName(req.getCompanyName());
-                    merchant.setNickname(req.getCompanyNickname());
+                    merchant.setName(req.getStoreName());
+                    merchant.setNickname(req.getStoreNickname());
                     merchant.setCountry(req.getCountry());
                     merchant.setStateOrProvince(req.getStateOrProvince());
                     merchant.setCity(req.getCity());
@@ -139,10 +129,6 @@ public class AuthController {
                     boolean isLive = stripeService.isLiveMode();
                     merchant.setIsLiveAccount(isLive);
 
-                    String logoImagePath = saveImageFile(logoImage);
-                    String storeImagePath = (storeImage != null) ? saveImageFile(storeImage) : logoImagePath;
-                    merchant.setLogoImage(logoImagePath);
-                    merchant.setStoreImage(storeImagePath);
 
                     String hashedPassword = hash(req.getPassword());
                     auth.setPasscode(hashedPassword);
@@ -725,32 +711,5 @@ public class AuthController {
 
     private boolean isVerificationCodeExpired(Timestamp expiryTimestamp) {
         return expiryTimestamp != null && expiryTimestamp.before(new Timestamp(System.currentTimeMillis()));
-    }
-
-    private String saveImageFile(MultipartFile file) {
-        if (file.isEmpty()) {
-            throw new RuntimeException("Empty file upload!");
-        }
-        try {
-            String uploadsDir = "/uploads/merchants/";
-            File dir = new File(uploadsDir);
-            if (!dir.exists())
-                dir.mkdirs();
-
-            String originalExtension = "";
-            String originalName = file.getOriginalFilename();
-            if (originalName != null && originalName.contains(".")) {
-                originalExtension = originalName.substring(originalName.lastIndexOf("."));
-            }
-
-            String fileName = UUID.randomUUID().toString() + originalExtension;
-            Path filePath = Paths.get(uploadsDir + fileName);
-
-            Files.copy(file.getInputStream(), filePath);
-
-            return "/uploads/merchants/" + fileName;
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to save image", e);
-        }
     }
 }
