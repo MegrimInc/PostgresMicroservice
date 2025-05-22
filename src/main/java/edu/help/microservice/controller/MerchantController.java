@@ -1,6 +1,7 @@
 package edu.help.microservice.controller;
 import edu.help.microservice.entity.Category;
 import edu.help.microservice.repository.CategoryRepository;
+import edu.help.microservice.service.*;
 import jakarta.servlet.http.HttpServletRequest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,15 +19,12 @@ import edu.help.microservice.entity.Merchant;
 import edu.help.microservice.entity.Order;
 import edu.help.microservice.repository.AuthRepository;
 import edu.help.microservice.repository.MerchantRepository;
-import edu.help.microservice.service.ItemService;
-import edu.help.microservice.service.MerchantService;
-import edu.help.microservice.service.OrderService;
-import edu.help.microservice.service.AuthService;
 import edu.help.microservice.util.Cookies;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -45,20 +43,48 @@ public class MerchantController {
     private final MerchantRepository merchantRepository;
     private final AuthRepository authRepository;
     private final CategoryRepository categoryRepository;
+    private final S3Service s3Service;
 
     @Autowired
     public MerchantController(OrderService orderService, AuthService signUpService, MerchantService merchantService,
-            ItemService itemService, StripeClient getStripeClient, MerchantRepository merchantRepository,
-            AuthRepository authRepository, CategoryRepository categoryRepository) {
+                              ItemService itemService, StripeClient getStripeClient, MerchantRepository merchantRepository,
+                              AuthRepository authRepository, CategoryRepository categoryRepository, S3Service s3Service) {
         this.orderService = orderService;
         this.merchantService = merchantService;
         this.itemService = itemService;
         this.getStripeClient = getStripeClient;
         this.merchantRepository = merchantRepository;
         this.authRepository = authRepository;
+        this.s3Service = s3Service;
         this.categoryRepository = categoryRepository;
 
     }
+
+    @PostMapping("/upload-image-url")
+    public ResponseEntity<Map<String,String>> getPresignedImageUploadUrl(
+            @CookieValue(value = "auth", required = false) String authCookie,
+            @RequestParam String filename,
+            @RequestParam String contentType
+    ) {
+        // your existing auth check
+        ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
+        if (!validation.getStatusCode().is2xxSuccessful()) {
+            return ResponseEntity.status(validation.getStatusCode()).build();
+        }
+        Integer merchantId = validation.getBody();
+
+        // build the S3 key under this merchant’s folder
+        String key = merchantId + "/" + filename;
+
+        // presign it for 10 minutes, public-read ACL
+        PresignedPutObjectRequest presigned = s3Service.generatePresignedUrl(key, contentType);
+
+        return ResponseEntity.ok(Map.of(
+                "url", presigned.url().toString(),
+                "key", key
+        ));
+    }
+
 
     @GetMapping("/configurations/categories")
     public ResponseEntity<?> getCategories(@CookieValue(value = "auth", required = false) String authCookie) {
