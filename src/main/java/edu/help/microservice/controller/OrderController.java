@@ -1,12 +1,14 @@
 package edu.help.microservice.controller;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
+import edu.help.microservice.entity.Auth;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +33,7 @@ import edu.help.microservice.service.OrderService;
 import edu.help.microservice.service.AuthService;
 import jakarta.mail.internet.MimeMessage;
 import static edu.help.microservice.config.ApiConfig.BASE_PATH;
+import static javax.crypto.Cipher.SECRET_KEY;
 
 @RestController
 @RequestMapping(BASE_PATH + "/order")
@@ -58,6 +61,48 @@ public class OrderController {
 @PostMapping("/{merchantId}/processOrder")
     public ResponseEntity<OrderResponse> processOrder(@PathVariable int merchantId, @RequestBody OrderRequest orderRequest) {
         // Delegate processing to the service layer
+
+
+
+    boolean valid = false;
+
+    String password = orderRequest.getPassword();
+    Optional<Auth> auth = authService.findById(orderRequest.getCustomerId());
+    Auth auth2 = null;
+    if( auth.isPresent() ) auth2 = auth.get();
+    
+    if( auth2 != null) {
+
+        try {   
+            String hashedPassword = hash(password);
+            if (auth2.getPasscode() != null && auth2.getPasscode().equals(hashedPassword)) {
+                if (auth2.getCustomer() != null) {
+                    // Customer login
+                    valid = true;
+                }
+            }
+        } catch (NoSuchAlgorithmException ignored) {
+        }
+    }
+    
+        
+ if (!valid) {
+     return ResponseEntity.ok( OrderResponse.builder()
+             .message("Order processed unsuccessfully")
+             .messageType("error")
+             .totalGratuity(0.00)
+             .totalServiceFee(0.00)
+             .totalTax(0.00)
+             .inAppPayments(false)
+             .totalPrice(0.00)
+             .totalPointPrice(0)
+             .items(new ArrayList<>())
+             .name(( (Integer) orderRequest.getCustomerId()).toString())
+             .build() );
+ }
+ 
+ 
+        
         OrderResponse response = orderService.processOrder(merchantId, orderRequest);
         // Return the processed order response
         return ResponseEntity.ok(response);
@@ -114,6 +159,13 @@ public class OrderController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new GetTipsResponse(-2.0));
         }
+    }
+
+    private String hash(String input) throws NoSuchAlgorithmException {
+        String text = input + SECRET_KEY;
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        byte[] hash = md.digest(text.getBytes());
+        return Base64.getEncoder().encodeToString(hash);
     }
 
     @PostMapping("/claim")
