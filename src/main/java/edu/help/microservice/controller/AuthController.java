@@ -185,6 +185,11 @@ public class AuthController {
                     cookie.setPath("/");
                     response.addCookie(cookie);
 
+                    String cookieHeader = "auth=" + cookieValueEncoded +
+                            "; Max-Age=14400; Path=/; HttpOnly; SameSite=None" +
+                            (setSecure ? "; Secure" : "");
+                    response.setHeader("Set-Cookie", cookieHeader);
+
                     return ResponseEntity.ok("-" + merchant.getMerchantId().toString());
                 } else {
                     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -233,14 +238,6 @@ public class AuthController {
             }
         }
 
-        // 2. SHORT-CIRCUIT if no credentials provided and cookie was valid
-
-        if (loginSuccessful &&
-                (loginRequest.getEmail() == null || loginRequest.getEmail().isEmpty()) &&
-                (loginRequest.getPassword() == null || loginRequest.getPassword().isEmpty())) {
-            return ResponseEntity.ok("OK");
-        }
-
         // 3. Attempt Email/Password Authentication if Cookie Failed
         if (!loginSuccessful) {
             String email = loginRequest.getEmail();
@@ -254,11 +251,16 @@ public class AuthController {
             // 3b. Otherwise, attempt credential verification
             Auth auth = authService.findByEmail(email);
             if (auth != null && auth.getMerchant() != null) {
+                System.out.println("[DEBUG] Found merchant for email: " + email);
+                System.out.println("[DEBUG] Stored hash: " + auth.getPasscode());
                 try {
                     String hashedPassword = hash(password);
                     if (hashedPassword.equals(auth.getPasscode())) {
+                        System.out.println("[DEBUG] Hash match success");
                         merchantId = auth.getMerchant().getMerchantId();
                         loginSuccessful = true;
+                    } else {
+                        System.out.println("[DEBUG] Hash mismatch");
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -290,6 +292,11 @@ public class AuthController {
         cookie.setHttpOnly(true);
         cookie.setPath("/");
         response.addCookie(cookie);
+
+        String cookieHeader = "auth=" + cookieValueEncoded +
+                "; Max-Age=14400; Path=/; HttpOnly; SameSite=None" +
+                (setSecure ? "; Secure" : "");
+        response.setHeader("Set-Cookie", cookieHeader);
 
         return ResponseEntity.ok("OK");
     }
@@ -327,6 +334,15 @@ public class AuthController {
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("email not found");
         }
+    }
+
+    @GetMapping("/check-session")
+    public ResponseEntity<String> checkSession(
+            @CookieValue(value = "auth", required = false) String authCookie) {
+        int merchantId = Cookies.getIdFromCookie(authCookie);
+        if (merchantId == -1)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("INVALID");
+        return ResponseEntity.ok("OK");
     }
 
     // ENDPOINT: Verification for Registration
