@@ -26,6 +26,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
@@ -61,31 +62,31 @@ public class MerchantController {
     }
 
     @PostMapping("/upload-image-url")
-    public ResponseEntity<Map<String,String>> getPresignedImageUploadUrl(
+    public ResponseEntity<Map<String, String>> getPresignedImageUploadUrl(
             @CookieValue(value = "auth", required = false) String authCookie,
-            @RequestParam String filename,
-            @RequestParam String contentType
+            @RequestParam String filename
     ) {
-        // your existing auth check
         ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
         if (!validation.getStatusCode().is2xxSuccessful()) {
             return ResponseEntity.status(validation.getStatusCode()).build();
         }
         Integer merchantId = validation.getBody();
 
-        // build the S3 key under this merchant’s folder
         String key = merchantId + "/" + filename;
 
-        // presign it for 10 minutes, public-read ACL
-        PresignedPutObjectRequest presigned = s3Service.generatePresignedUrl(key, contentType);
+        PresignedPutObjectRequest presigned = s3Service.generatePresignedUrl(key); // no contentType now
+
+        System.out.println("Presigned URL: " + presigned.url());
+        System.out.println("Signed headers: " + presigned.signedHeaders()); // should show only {host=[…]}
 
         return ResponseEntity.ok(Map.of(
                 "url", presigned.url().toString(),
-                "key", key
+                "key", java.net.URLEncoder.encode(key, java.nio.charset.StandardCharsets.UTF_8)
         ));
     }
 
- 
+
+
     @GetMapping("/configurations/categories")
     public ResponseEntity<?> getCategories(@CookieValue(value = "auth", required = false) String authCookie) {
         try {
