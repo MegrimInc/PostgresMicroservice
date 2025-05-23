@@ -426,7 +426,7 @@ public class MerchantController {
     }
 
 
-  @GetMapping("/status")
+  @GetMapping("/stripeStatus")
 public ResponseEntity<Map<String, String>> getStripeVerificationStatus(
         @CookieValue(value = "auth", required = false) String authCookie) {
     ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
