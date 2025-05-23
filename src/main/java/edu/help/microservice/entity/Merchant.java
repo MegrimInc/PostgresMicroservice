@@ -2,7 +2,6 @@ package edu.help.microservice.entity;
 
 
 import java.io.Serializable;
-import java.time.LocalDate;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -61,8 +60,8 @@ public class Merchant implements Serializable {
     private String nickname;
 
 
-    @Column(name = "is_verified")
-    private Boolean isVerified;
+    @Column(name = "verification_status", nullable = false)
+    private String verificationStatus;
 
 
     @Column(name = "account_id", length = 255)
