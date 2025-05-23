@@ -33,7 +33,7 @@ import edu.help.microservice.service.OrderService;
 import edu.help.microservice.service.AuthService;
 import jakarta.mail.internet.MimeMessage;
 import static edu.help.microservice.config.ApiConfig.BASE_PATH;
-import static javax.crypto.Cipher.SECRET_KEY;
+import static edu.help.microservice.config.SecurityConfig.HASH_KEY;
 
 @RestController
 @RequestMapping(BASE_PATH + "/order")
@@ -57,51 +57,66 @@ public class OrderController {
         return ResponseEntity.ok("Order saved successfully");
     }
 
+    @PostMapping("/{merchantId}/processOrder")
+    public ResponseEntity<OrderResponse> processOrder(@PathVariable int merchantId,
+            @RequestBody OrderRequest orderRequest) {
 
-@PostMapping("/{merchantId}/processOrder")
-    public ResponseEntity<OrderResponse> processOrder(@PathVariable int merchantId, @RequestBody OrderRequest orderRequest) {
-        // Delegate processing to the service layer
-    boolean valid = false;
+        System.out.println("[DEBUG] Starting processOrder");
 
-    String password = orderRequest.getPassword();
-    Optional<Auth> auth = authService.findById(orderRequest.getCustomerId());
-    Auth auth2 = null;
-    if( auth.isPresent() ) auth2 = auth.get();
-    
-    if( auth2 != null) {
+        boolean valid = false;
+        String password = orderRequest.getPassword();
+        System.out.println("[DEBUG] Provided password: " + password);
 
-        try {   
-            String hashedPassword = hash(password);
-            if (auth2.getPasscode() != null && auth2.getPasscode().equals(hashedPassword)) {
-                if (auth2.getCustomer() != null) {
-                    // Customer login
-                    valid = true;
-                }
-            }
-        } catch (NoSuchAlgorithmException ignored) {
+        Optional<Auth> auth = authService.findByCustomerId(orderRequest.getCustomerId());
+        Auth auth2 = null;
+        if (auth.isPresent()) {
+            auth2 = auth.get();
+            System.out.println("[DEBUG] Auth record found for customer ID: " + orderRequest.getCustomerId());
+        } else {
+            System.out.println("[DEBUG] No Auth record found for customer ID: " + orderRequest.getCustomerId());
         }
-    }
-    
-        
- if (!valid) {
-     return ResponseEntity.ok( OrderResponse.builder()
-             .message("Order processed unsuccessfully")
-             .messageType("error")
-             .totalGratuity(0.00)
-             .totalServiceFee(0.00)
-             .totalTax(0.00)
-             .inAppPayments(false)
-             .totalPrice(0.00)
-             .totalPointPrice(0)
-             .items(new ArrayList<>())
-             .name(( (Integer) orderRequest.getCustomerId()).toString())
-             .build() );
- }
- 
- 
-        
+
+        if (auth2 != null) {
+            try {
+                String hashedPassword = hash(password);
+                System.out.println("[DEBUG] Hashed password: " + hashedPassword);
+                System.out.println("[DEBUG] Stored passcode: " + auth2.getPasscode());
+
+                if (auth2.getPasscode() != null && auth2.getPasscode().equals(hashedPassword)) {
+                    System.out.println("[DEBUG] Password match");
+                    if (auth2.getCustomer() != null) {
+                        System.out.println("[DEBUG] Customer object is linked");
+                        valid = true;
+                    } else {
+                        System.out.println("[DEBUG] Customer object is null");
+                    }
+                } else {
+                    System.out.println("[DEBUG] Password mismatch");
+                }
+            } catch (NoSuchAlgorithmException e) {
+                System.out.println("[DEBUG] Hashing failed: " + e.getMessage());
+            }
+        }
+
+        if (!valid) {
+            System.out.println("[DEBUG] Order validation failed. Returning error response.");
+            return ResponseEntity.ok(OrderResponse.builder()
+                    .message("Order processed unsuccessfully")
+                    .messageType("error")
+                    .totalGratuity(0.00)
+                    .totalServiceFee(0.00)
+                    .totalTax(0.00)
+                    .inAppPayments(false)
+                    .totalPrice(0.00)
+                    .totalPointPrice(0)
+                    .name("")
+                    .items(new ArrayList<>())
+                    .name(((Integer) orderRequest.getCustomerId()).toString())
+                    .build());
+        }
+
+        System.out.println("[DEBUG] Order validation passed. Processing order...");
         OrderResponse response = orderService.processOrder(merchantId, orderRequest);
-        // Return the processed order response
         return ResponseEntity.ok(response);
     }
 
@@ -139,7 +154,7 @@ public class OrderController {
             // (Assumes that orderService has a method like getClaimedTipsByStation.)
             List<Order> claimedOrders = orderService.getUnclaimedTips(merchantID, terminalId);
             if (claimedOrders == null || claimedOrders.isEmpty()) {
-            System.out.println("gettips NULL / empty");
+                System.out.println("gettips NULL / empty");
                 return ResponseEntity.ok(new GetTipsResponse(0.0));
             }
 
@@ -159,7 +174,7 @@ public class OrderController {
     }
 
     private String hash(String input) throws NoSuchAlgorithmException {
-        String text = input + "YourSecretKey";
+        String text = input + HASH_KEY;
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         byte[] hash = md.digest(text.getBytes());
         return Base64.getEncoder().encodeToString(hash);
@@ -205,7 +220,8 @@ public class OrderController {
             String emailContent = prepareEmailContent(merchantID, claimer, email, station, tipsList);
 
             // Send emails
-            String subject = "Tip Receipt for " + claimer + " at " + merchantService.findMerchantById(merchantID).getName();
+            String subject = "Tip Receipt for " + claimer + " at "
+                    + merchantService.findMerchantById(merchantID).getName();
             if (merchantEmail != null && !merchantEmail.isEmpty()) {
                 sendTipEmail(merchantEmail, subject, emailContent);
             }
@@ -226,8 +242,6 @@ public class OrderController {
         }
     }
 
-
-    
     // Helper methods...
 
     private double calculateTotalTipAmount(List<Order> tipsList) {
@@ -238,7 +252,8 @@ public class OrderController {
         return totalTipAmount;
     }
 
-    private String prepareEmailContent(int merchantID, String claimer, String email, String station, List<Order> tipsList) throws Exception {
+    private String prepareEmailContent(int merchantID, String claimer, String email, String station,
+            List<Order> tipsList) throws Exception {
         // Get current date and format it
         ZonedDateTime now = ZonedDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy hh:mm a z");
@@ -247,7 +262,8 @@ public class OrderController {
         // Build email content
         StringBuilder emailContent = new StringBuilder();
         emailContent.append("<h1 style='text-align:center;'>Tip Report</h1>")
-                .append("<h2 style='text-align:center;'>Merchant Name: ").append(merchantService.findMerchantById(merchantID).getName()).append("</h2>")
+                .append("<h2 style='text-align:center;'>Merchant Name: ")
+                .append(merchantService.findMerchantById(merchantID).getName()).append("</h2>")
                 .append("<p style='text-align:center; font-weight:bold;'>Station Station: <span style='color:blue;'>")
                 .append(station).append("</span> | Station Name: <span style='color:blue;'>")
                 .append(claimer).append("</span></p>")
@@ -269,7 +285,6 @@ public class OrderController {
 
         return emailContent.toString();
     }
-
 
     // Use your existing sendTipEmail method
     private void sendTipEmail(String email, String subject, String content) {

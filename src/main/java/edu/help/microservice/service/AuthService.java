@@ -24,8 +24,7 @@ public class AuthService {
         return authRepository.findByEmail(email);
     }
 
-    public String findEmailByMerchantId(int merchantId)
-    {
+    public String findEmailByMerchantId(int merchantId) {
         Optional<Auth> entity = authRepository.findByMerchant_MerchantId(merchantId);
         return entity.get().getEmail();
     }
@@ -79,7 +78,17 @@ public class AuthService {
     }
 
     public void delete(Auth signUp) {
-       authRepository.delete(signUp);
+        authRepository.delete(signUp);
     }
-    
+
+    /**
+    * Retrieves an Auth entity associated with the given customer ID.
+    *
+    * @param customerId the ID of the customer linked to the Auth record
+    * @return an Optional containing the Auth entity if found, or empty if not
+    */
+    public Optional<Auth> findByCustomerId(Integer customerId) {
+        return authRepository.findByCustomer_CustomerId(customerId);
+    }
+
 }

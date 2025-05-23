@@ -45,6 +45,8 @@ import lombok.RequiredArgsConstructor;
 import static edu.help.microservice.util.Cookies.*;
 import static edu.help.microservice.config.ApiConfig.BASE_PATH;
 import static edu.help.microservice.config.ApiConfig.ENV;
+import static edu.help.microservice.config.SecurityConfig.HASH_KEY;
+
 
 
 @RequiredArgsConstructor
@@ -67,7 +69,6 @@ public class AuthController {
     
      */
 
-    private static final String SECRET_KEY = "YourSecretKey";
     private static final boolean setSecure = ENV.equals("live");
     private final AuthService authService;
     private final CustomerService customerService;
@@ -709,14 +710,14 @@ public class AuthController {
     }
 
     private String generateHash(String email) throws NoSuchAlgorithmException {
-        String text = email + SECRET_KEY;
+        String text = email + HASH_KEY;
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         byte[] hashBytes = md.digest(text.getBytes());
         return Base64.getEncoder().encodeToString(hashBytes);
     }
 
     private String hash(String input) throws NoSuchAlgorithmException {
-        String text = input + SECRET_KEY;
+        String text = input + HASH_KEY;
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         byte[] hash = md.digest(text.getBytes());
         return Base64.getEncoder().encodeToString(hash);

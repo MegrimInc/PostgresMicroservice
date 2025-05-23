@@ -17,6 +17,19 @@ public interface AuthRepository extends JpaRepository<Auth, Integer> {
      */
     Auth findByEmail(String email);
 
-    // Corrected method
+    /**
+     * Finds an Auth entity by the associated merchant's ID.
+     *
+     * @param merchantId the merchant ID linked to the Auth entity
+     * @return an Optional containing the Auth entity, if found
+     */
     Optional<Auth> findByMerchant_MerchantId(Integer merchantId);
+
+    /**
+     * Finds an Auth entity by the associated customer's ID.
+     *
+     * @param customerId the customer ID linked to the Auth entity
+     * @return an Optional containing the Auth entity, if found
+     */
+    Optional<Auth> findByCustomer_CustomerId(Integer customerId);
 }
