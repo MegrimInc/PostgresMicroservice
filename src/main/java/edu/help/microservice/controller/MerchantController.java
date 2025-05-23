@@ -47,8 +47,8 @@ public class MerchantController {
 
     @Autowired
     public MerchantController(OrderService orderService, AuthService signUpService, MerchantService merchantService,
-                              ItemService itemService, StripeClient getStripeClient, MerchantRepository merchantRepository,
-                              AuthRepository authRepository, CategoryRepository categoryRepository, S3Service s3Service) {
+            ItemService itemService, StripeClient getStripeClient, MerchantRepository merchantRepository,
+            AuthRepository authRepository, CategoryRepository categoryRepository, S3Service s3Service) {
         this.orderService = orderService;
         this.merchantService = merchantService;
         this.itemService = itemService;
@@ -61,11 +61,10 @@ public class MerchantController {
     }
 
     @PostMapping("/upload-image-url")
-    public ResponseEntity<Map<String,String>> getPresignedImageUploadUrl(
+    public ResponseEntity<Map<String, String>> getPresignedImageUploadUrl(
             @CookieValue(value = "auth", required = false) String authCookie,
             @RequestParam String filename,
-            @RequestParam String contentType
-    ) {
+            @RequestParam String contentType) {
         // your existing auth check
         ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
         if (!validation.getStatusCode().is2xxSuccessful()) {
@@ -81,11 +80,9 @@ public class MerchantController {
 
         return ResponseEntity.ok(Map.of(
                 "url", presigned.url().toString(),
-                "key", key
-        ));
+                "key", key));
     }
 
- 
     @GetMapping("/configurations/categories")
     public ResponseEntity<?> getCategories(@CookieValue(value = "auth", required = false) String authCookie) {
         try {
@@ -104,10 +101,9 @@ public class MerchantController {
         }
     }
 
-
     @PostMapping("/configurations/categories")
     public ResponseEntity<?> addCategories(@CookieValue(value = "auth", required = false) String authCookie,
-                                           @RequestBody List<String> categoryNames) {
+            @RequestBody List<String> categoryNames) {
         try {
             ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
             if (!validation.getStatusCode().is2xxSuccessful())
@@ -143,8 +139,6 @@ public class MerchantController {
             HttpServletRequest request) {
         ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
 
-        if (validation.getStatusCode().equals(HttpStatus.OK))
-            return ResponseEntity.ok(null);
         if (!validation.getStatusCode().equals(HttpStatus.FORBIDDEN))
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
@@ -197,8 +191,6 @@ public class MerchantController {
         }
     }
 
-
-
     @GetMapping("/byDay")
     public ResponseEntity<?> byDay(@CookieValue(value = "auth", required = false) String authCookie,
             @RequestParam("date") String dayStr) { // expects "yyyy-MM-dd"
@@ -229,7 +221,6 @@ public class MerchantController {
                     .body("Error processing request");
         }
     }
-
 
     @GetMapping("/allItemCounts")
     public ResponseEntity<?> getAllItemCounts(@CookieValue(value = "auth", required = false) String authCookie) {
@@ -321,9 +312,8 @@ public class MerchantController {
 
     /**
      * Extracts and validates the merchant ID from the cookie.
-     * Returns ResponseEntity with proper error if any validation fails:
+     * Returns ResponseEntity with proper error if validation fails:
      * - 401 Unauthorized: if cookie is missing, expired, invalid, or signature check fails.
-     * - 403 Forbidden: if merchant ID exists but no associated merchant (not onboarded).
      */
     private ResponseEntity<Integer> validateAndGetMerchantId(String authCookie) {
         if (authCookie == null) {
@@ -340,7 +330,7 @@ public class MerchantController {
             String expiry = parts[1];
             String signature = parts[2];
 
-            if (signature == null || signature.isEmpty()) { 
+            if (signature == null || signature.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
             }
 
@@ -355,9 +345,8 @@ public class MerchantController {
 
             int merchantId = Integer.parseInt(id);
             Merchant merchant = merchantService.findMerchantById(merchantId);
-            if (merchant == null || merchant.getAccountId() == null) {
-                System.out.println("[DEBUG] Merchant not onboarded for merchantId: " + merchantId);
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(merchantId);
+            if (merchant == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
             }
 
             // Merchant exists and has an accountId → consider them onboarded
@@ -424,5 +413,20 @@ public class MerchantController {
 
         return accountLink.getUrl();
     }
+
+
+  @GetMapping("/status")
+public ResponseEntity<Map<String, String>> getStripeVerificationStatus(
+        @CookieValue(value = "auth", required = false) String authCookie) {
+    ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
+    if (!validation.getStatusCode().is2xxSuccessful())
+        return ResponseEntity.status(validation.getStatusCode()).build();
+
+    Integer merchantId = validation.getBody();
+    Merchant merchant = merchantService.findMerchantById(merchantId);
+
+    String status = merchant.getVerificationStatus(); // e.g., VERIFIED, PENDING, etc.
+    return ResponseEntity.ok(Map.of("verification_status", status));
+}
 
 }
