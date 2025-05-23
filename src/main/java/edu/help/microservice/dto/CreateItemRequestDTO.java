@@ -13,6 +13,6 @@ public class CreateItemRequestDTO {
     private Double discountPrice;
     private Double taxPercent;
     private Integer[] categoryIds;
-    private String imageUrl;
+    private String image;
     private Double gratuityPercent;
 }
