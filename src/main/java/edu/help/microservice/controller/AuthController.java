@@ -144,7 +144,7 @@ public class AuthController {
                     merchant.setCity(req.getCity());
                     merchant.setAddress(req.getAddress());
                     merchant.setZipCode(req.getZipCode());
-                    merchant.setVerificationStatus("NOT_VERIFIED");
+                    merchant.setStripeVerificationStatus("unverified");
                     merchant.setBonus(0);
                     boolean isLive = stripeService.isLiveMode();
                     merchant.setIsLiveAccount(isLive);
@@ -341,7 +341,7 @@ public class AuthController {
         }
     }
 
-    @GetMapping("/check-session")
+    @GetMapping("/checkSession")
     public ResponseEntity<String> checkSession(
             @CookieValue(value = "auth", required = false) String authCookie) {
         int merchantId = Cookies.getIdFromCookie(authCookie);
