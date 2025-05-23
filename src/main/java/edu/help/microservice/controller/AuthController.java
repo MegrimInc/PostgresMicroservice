@@ -341,7 +341,7 @@ public class AuthController {
         }
     }
 
-    @GetMapping("/check-session")
+    @GetMapping("/checkSession")
     public ResponseEntity<String> checkSession(
             @CookieValue(value = "auth", required = false) String authCookie) {
         int merchantId = Cookies.getIdFromCookie(authCookie);

@@ -139,21 +139,47 @@ public class MerchantController {
     }
 
     @PostMapping("/onboarding")
-    public ResponseEntity<String> onboarding(@CookieValue(value = "auth", required = false) String authCookie,
+    public ResponseEntity<String> onboarding(
+            @CookieValue(value = "auth", required = false) String authCookie,
             HttpServletRequest request) {
+
         ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
 
-        if (!validation.getStatusCode().equals(HttpStatus.FORBIDDEN))
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (!validation.getStatusCode().is2xxSuccessful()) {
+            return ResponseEntity.status(validation.getStatusCode()).build();
+        }
 
         Integer merchantID = validation.getBody();
-        if (merchantID == null)
+        if (merchantID == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
 
         try {
-            return ResponseEntity.status(200).body(createStripeAccountAndGetOnboardingUrl(merchantID));
+            // Step 1: Retrieve merchant and auth
+            Merchant m = merchantRepository.getMerchantsByMerchantId(merchantID);
+            System.out.println("[DEBUG] Retrieved merchant: " + m);
+
+            if (m.getAccountId() == null || m.getAccountId().isEmpty()) {
+                System.err.println("[ERROR] No Stripe accountId found for merchantId: " + merchantID);
+                return ResponseEntity.status(HttpStatus.PRECONDITION_FAILED).body("No Stripe accountId on record");
+            }
+
+            // Step 2: Generate onboarding link
+            System.out.println("[DEBUG] Creating onboarding link for existing account: " + m.getAccountId());
+            AccountLinkCreateParams linkParams = AccountLinkCreateParams.builder()
+                    .setAccount(m.getAccountId())
+                    .setRefreshUrl("https://megrim.com/onboarding")
+                    .setReturnUrl("https://megrim.com/inventory")
+                    .setType(AccountLinkCreateParams.Type.ACCOUNT_ONBOARDING)
+                    .setCollect(AccountLinkCreateParams.Collect.EVENTUALLY_DUE)
+                    .build();
+
+            AccountLink accountLink = getStripeClient.accountLinks().create(linkParams);
+            System.out.println("[DEBUG] Generated onboarding link: " + accountLink.getUrl());
+
+            return ResponseEntity.ok(accountLink.getUrl());
         } catch (Exception e) {
-            e.printStackTrace(); // 👈 ADD THIS LINE
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.PRECONDITION_FAILED).body(null);
         }
     }
@@ -363,64 +389,6 @@ public class MerchantController {
         }
     }
 
-    public String createStripeAccountAndGetOnboardingUrl(Integer merchantId)
-            throws Exception {
-        System.out.println("[DEBUG] Starting createStripeAccountAndGetOnboardingUrl for merchantId: " + merchantId);
-
-        // Step 1: Retrieve merchant and auth
-        Merchant m = merchantRepository.getMerchantsByMerchantId(merchantId);
-        System.out.println("[DEBUG] Retrieved merchant: " + m);
-
-        Optional<Auth> a2 = authRepository.findByMerchant_MerchantId(merchantId);
-        if (a2.isEmpty()) {
-            System.err.println("[ERROR] Auth record not found for merchantId: " + merchantId);
-            throw new IllegalStateException("Auth record missing");
-        }
-
-        Auth a = a2.get();
-        System.out.println("[DEBUG] Retrieved auth: " + a);
-
-        // Step 2: Create the Stripe account
-        System.out.println("[DEBUG] Creating Stripe account with email: " + a.getEmail());
-        AccountCreateParams accountParams = AccountCreateParams.builder()
-                .setType(AccountCreateParams.Type.EXPRESS)
-                .setCountry("US")
-                .setEmail(a.getEmail())
-                .setCapabilities(
-                        AccountCreateParams.Capabilities.builder()
-                                .setCardPayments(AccountCreateParams.Capabilities.CardPayments.builder()
-                                        .setRequested(true)
-                                        .build())
-                                .setTransfers(AccountCreateParams.Capabilities.Transfers.builder()
-                                        .setRequested(true)
-                                        .build())
-                                .build())
-                .build();
-
-        Account account = getStripeClient.accounts().create(accountParams);
-        System.out.println("[DEBUG] Created Stripe account: " + account.getId());
-
-        // Step 3: Save account ID to merchant
-        m.setAccountId(account.getId());
-        merchantService.save(m);
-        System.out.println("[DEBUG] Saved account ID to merchant: " + account.getId());
-
-        // Step 4: Generate onboarding link
-        System.out.println("[DEBUG] Creating onboarding link");
-        AccountLinkCreateParams linkParams = AccountLinkCreateParams.builder()
-                .setAccount(account.getId())
-                .setRefreshUrl("https://megrim.com/onboarding")
-                .setReturnUrl("https://megrim.com/inventory")
-                .setType(AccountLinkCreateParams.Type.ACCOUNT_ONBOARDING)
-                .setCollect(AccountLinkCreateParams.Collect.EVENTUALLY_DUE)
-                .build();
-
-        AccountLink accountLink = getStripeClient.accountLinks().create(linkParams);
-        System.out.println("[DEBUG] Generated onboarding link: " + accountLink.getUrl());
-
-        return accountLink.getUrl();
-    }
-
     @GetMapping("/stripeStatus")
     public ResponseEntity<Map<String, String>> getStripeVerificationStatus(
             @CookieValue(value = "auth", required = false) String authCookie) {
@@ -450,10 +418,10 @@ public class MerchantController {
                 status = requirements.getDisabledReason();
             }
 
-            merchant.setStripeVerificationStatus(status.toUpperCase());
+            merchant.setStripeVerificationStatus(status);
             merchantService.save(merchant);
 
-            return ResponseEntity.ok(Map.of("stripe_verification_status", status.toUpperCase()));
+            return ResponseEntity.ok(Map.of("stripe_verification_status", status));
 
         } catch (Exception e) {
             e.printStackTrace();
