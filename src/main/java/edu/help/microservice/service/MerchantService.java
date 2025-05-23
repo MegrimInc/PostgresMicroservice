@@ -30,14 +30,13 @@ public class MerchantService {
      * and have a verified Stripe account.
      * 
      * Filters:
-     * - Only includes merchants where isOpen = true
+     * - Only includes merchants where isOpen = true (Will include when we have more merchants)
      * - Only includes merchants with stripeVerificationStatus = "verified"
      * 
      * @return List of eligible MerchantDTOs
      */
     public List<MerchantDTO> findAllMerchants() {
         List<Merchant> merchants = merchantRepository.findAll().stream()
-                .filter(m -> Boolean.TRUE.equals(m.getIsOpen()))
                 .filter(m -> "verified".equalsIgnoreCase(m.getStripeVerificationStatus()))
                 .collect(Collectors.toList());
 

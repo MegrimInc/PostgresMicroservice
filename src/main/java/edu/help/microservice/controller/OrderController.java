@@ -126,9 +126,9 @@ public class OrderController {
     /**
      * New endpoint to retrieve the total tips claimed by a terminal.
      * It accepts a JSON payload of the form:
-     *     { "terminalId": "A" }
+     * { "terminalId": "A" }
      * and returns a JSON response of the form:
-     *     { "tipTotal": 1.23 }
+     * { "tipTotal": 1.23 }
      */
     @GetMapping("/getTotalGratuity")
     public ResponseEntity<GetTipsResponse> getTips(
@@ -149,7 +149,8 @@ public class OrderController {
         // Validate that the stationID is a single uppercase letter A-Z.
         if (terminalId == null || !terminalId.matches("^[A-Z]$")) {
             System.err.println("Invalid stationID provided: " + terminalId);
-            // Here we return a 400 Bad Request. Alternatively, you could return a specific error tipTotal (e.g., -2.0).
+            // Here we return a 400 Bad Request. Alternatively, you could return a specific
+            // error tipTotal (e.g., -2.0).
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new GetTipsResponse(-1.0));
         }
         try {
@@ -161,7 +162,8 @@ public class OrderController {
                 return ResponseEntity.ok(new GetTipsResponse(0.0));
             }
 
-            // Filter out orders that did not use in-app payments (same logic as in claimTips).
+            // Filter out orders that did not use in-app payments (same logic as in
+            // claimTips).
             claimedOrders.removeIf(order -> !order.isInAppPayments());
 
             // Calculate the total tip amount.
@@ -326,14 +328,22 @@ public class OrderController {
         }
     }
 
-   @PostMapping("/isMerchantOpen")
-    public ResponseEntity<String> setMerchantOpenStatus(@RequestParam int merchantId, @RequestParam boolean isOpen) {
+    @PostMapping("/isMerchantOpen")
+    public ResponseEntity<String> setOrGetMerchantOpenStatus(
+            @RequestParam int merchantId,
+            @RequestParam(required = false) Boolean isOpen) {
+
         Merchant merchant = merchantService.findMerchantById(merchantId);
         if (merchant == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Merchant not found");
         }
-        merchant.setIsOpen(isOpen);
-        merchantService.save(merchant);
-        return ResponseEntity.ok("Merchant open status updated to: " + isOpen);
+
+        if (isOpen != null) {
+            merchant.setIsOpen(isOpen);
+            merchantService.save(merchant);
+            return ResponseEntity.ok("Merchant open status updated to: " + isOpen);
+        } else {
+            return ResponseEntity.ok("Current merchant open status is: " + merchant.getIsOpen());
+        }
     }
 }
