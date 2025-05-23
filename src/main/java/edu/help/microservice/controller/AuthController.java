@@ -350,55 +350,6 @@ public class AuthController {
         return ResponseEntity.ok("OK");
     }
 
-    // ENDPOINT: Verification for Registration
-    @PostMapping("/verify-customer")
-    public ResponseEntity<String> verifyCustomer(@RequestBody VerificationCustomerRequest verificationRequest) {
-        String email = verificationRequest.getEmail();
-        String verificationCode = verificationRequest.getVerificationCode();
-        String password = verificationRequest.getPassword();
-        String firstName = verificationRequest.getFirstName();
-        String lastName = verificationRequest.getLastName();
-        Auth auth = authService.findByEmail(email);
-
-        if (auth != null && auth.getCustomer() == null) {
-            if (isVerificationCodeExpired(auth.getExpiryTimestamp())) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body("registration failed: verification code expired");
-            }
-            try {
-                String hashedCode = hash(verificationCode);
-                if (auth.getVerificationCode().equals(hashedCode)) {
-                    // Verification successful
-                    Customer customer = new Customer();
-                    customer.setFirstName(firstName);
-                    customer.setLastName(lastName);
-
-                    // Hash the password and set passcode
-                    String hashedPassword = hash(password);
-                    auth.setPasscode(hashedPassword);
-
-                    // Clear the verification code and expiry timestamp
-                    auth.setVerificationCode(null);
-                    auth.setExpiryTimestamp(null);
-
-                    customerService.save(customer); // Save customer
-
-                    auth.setCustomer(customer);
-                    authService.save(auth); // Save sign-up details with linked customer
-
-                    // Return customerID
-                    return ResponseEntity.ok(customer.getCustomerId().toString());
-                } else {
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                            .body("registration failed: incorrect verification code");
-                }
-            } catch (NoSuchAlgorithmException e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("error processing verification");
-            }
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("registration failed");
-        }
-    }
 
     // ENDPOINT: Registration for Customers
     @PostMapping("/register-customer")
@@ -419,6 +370,7 @@ public class AuthController {
         customer.setLastName(request.getLastName());
         boolean isLive = stripeService.isLiveMode();
         customer.setIsLiveAccount(isLive);
+        customer.setIsLivePayment(false);
 
         // Hash and store the password immediately
         try {

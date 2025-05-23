@@ -31,13 +31,16 @@ import edu.help.microservice.repository.CustomerRepository;
 import edu.help.microservice.repository.AuthRepository;
 import lombok.RequiredArgsConstructor;
 import com.stripe.model.Account;
+import org.springframework.beans.factory.annotation.Value;
+
 
 
 @Service
 @RequiredArgsConstructor
 public class StripeService {
     private static final String CURRENCY_TYPE = "usd";
-
+    @Value("${stripe.api.key}")
+    private String stripeApiKey;
     private final StripeClient stripeClient;
     private final CustomerRepository customerRepository;
     private final MerchantRepository merchantRepository;
@@ -276,8 +279,7 @@ public class StripeService {
     }
 
     public boolean isLiveMode() {
-        String apiKey = Stripe.apiKey;
-        return apiKey != null && apiKey.startsWith("sk_live_");
-    }
+    return stripeApiKey != null && stripeApiKey.startsWith("sk_live_");
+}
 
 }
