@@ -1,4 +1,5 @@
 package edu.help.microservice.controller;
+
 import edu.help.microservice.entity.Category;
 import edu.help.microservice.repository.CategoryRepository;
 import edu.help.microservice.service.*;
@@ -25,6 +26,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
+import com.stripe.param.AccountRetrieveParams;
+import com.stripe.model.Account.Requirements;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -62,10 +65,9 @@ public class MerchantController {
     }
 
     @PostMapping("/upload-image-url")
-    public ResponseEntity<Map<String,String>> getPresignedImageUploadUrl(
+    public ResponseEntity<Map<String, String>> getPresignedImageUploadUrl(
             @CookieValue(value = "auth", required = false) String authCookie,
-            @RequestParam String filename
-    ) {
+            @RequestParam String filename) {
         ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
         if (!validation.getStatusCode().is2xxSuccessful()) {
             return ResponseEntity.status(validation.getStatusCode()).build();
@@ -82,11 +84,9 @@ public class MerchantController {
 
         return ResponseEntity.ok(Map.of(
                 "url", presigned.url().toString(),
-                "key", java.net.URLEncoder.encode(key, java.nio.charset.StandardCharsets.UTF_8)
-        ));
+                "key", java.net.URLEncoder.encode(key, java.nio.charset.StandardCharsets.UTF_8)));
     }
 
- 
     @GetMapping("/configurations/categories")
     public ResponseEntity<?> getCategories(@CookieValue(value = "auth", required = false) String authCookie) {
         try {
@@ -104,7 +104,6 @@ public class MerchantController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching categories");
         }
     }
-
 
     @PostMapping("/configurations/categories")
     public ResponseEntity<?> addCategories(@CookieValue(value = "auth", required = false) String authCookie,
@@ -198,8 +197,6 @@ public class MerchantController {
         }
     }
 
-
-
     @GetMapping("/byDay")
     public ResponseEntity<?> byDay(@CookieValue(value = "auth", required = false) String authCookie,
             @RequestParam("date") String dayStr) { // expects "yyyy-MM-dd"
@@ -230,7 +227,6 @@ public class MerchantController {
                     .body("Error processing request");
         }
     }
-
 
     @GetMapping("/allItemCounts")
     public ResponseEntity<?> getAllItemCounts(@CookieValue(value = "auth", required = false) String authCookie) {
@@ -323,8 +319,10 @@ public class MerchantController {
     /**
      * Extracts and validates the merchant ID from the cookie.
      * Returns ResponseEntity with proper error if any validation fails:
-     * - 401 Unauthorized: if cookie is missing, expired, invalid, or signature check fails.
-     * - 403 Forbidden: if merchant ID exists but no associated merchant (not onboarded).
+     * - 401 Unauthorized: if cookie is missing, expired, invalid, or signature
+     * check fails.
+     * - 403 Forbidden: if merchant ID exists but no associated merchant (not
+     * onboarded).
      */
     private ResponseEntity<Integer> validateAndGetMerchantId(String authCookie) {
         if (authCookie == null) {
@@ -425,19 +423,44 @@ public class MerchantController {
         return accountLink.getUrl();
     }
 
+    @GetMapping("/stripeStatus")
+    public ResponseEntity<Map<String, String>> getStripeVerificationStatus(
+            @CookieValue(value = "auth", required = false) String authCookie) {
+        try {
+            ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
+            if (!validation.getStatusCode().is2xxSuccessful())
+                return ResponseEntity.status(validation.getStatusCode()).build();
 
-  @GetMapping("/stripeStatus")
-public ResponseEntity<Map<String, String>> getStripeVerificationStatus(
-        @CookieValue(value = "auth", required = false) String authCookie) {
-    ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
-    if (!validation.getStatusCode().is2xxSuccessful())
-        return ResponseEntity.status(validation.getStatusCode()).build();
+            Integer merchantId = validation.getBody();
+            Merchant merchant = merchantService.findMerchantById(merchantId);
 
-    Integer merchantId = validation.getBody();
-    Merchant merchant = merchantService.findMerchantById(merchantId);
+            if (merchant.getAccountId() == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "No Stripe account ID found"));
+            }
 
-    String status = merchant.getStripeVerificationStatus(); // e.g., VERIFIED, PENDING, etc.
-    return ResponseEntity.ok(Map.of("verification_status", status));
-}
+            // Use AccountRetrieveParams to expand "requirements"
+            Account account = getStripeClient.accounts().retrieve(
+                    merchant.getAccountId(),
+                    AccountRetrieveParams.builder()
+                            .addExpand("requirements")
+                            .build());
 
+            Requirements requirements = account.getRequirements();
+            String status = "verified";
+
+            if (requirements != null && requirements.getDisabledReason() != null) {
+                status = requirements.getDisabledReason();
+            }
+
+            merchant.setStripeVerificationStatus(status.toUpperCase());
+            merchantService.save(merchant);
+
+            return ResponseEntity.ok(Map.of("stripe_verification_status", status.toUpperCase()));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Stripe verification status check failed"));
+        }
+    }
 }
