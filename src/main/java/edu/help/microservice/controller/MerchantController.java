@@ -153,7 +153,7 @@ public class MerchantController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         try {
-            return ResponseEntity.status(201).body(createStripeAccountAndGetOnboardingUrl(merchantID));
+            return ResponseEntity.status(200).body(createStripeAccountAndGetOnboardingUrl(merchantID));
         } catch (Exception e) {
             e.printStackTrace(); // 👈 ADD THIS LINE
             return ResponseEntity.status(HttpStatus.PRECONDITION_FAILED).body(null);
