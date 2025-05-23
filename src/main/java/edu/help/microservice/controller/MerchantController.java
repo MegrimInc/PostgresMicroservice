@@ -340,7 +340,7 @@ public class MerchantController {
             String expiry = parts[1];
             String signature = parts[2];
 
-            if (signature == null || signature.isEmpty()) { // TODO: Unauthorized = login failure redirect to /login
+            if (signature == null || signature.isEmpty()) { 
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
             }
 
@@ -413,8 +413,8 @@ public class MerchantController {
         System.out.println("[DEBUG] Creating onboarding link");
         AccountLinkCreateParams linkParams = AccountLinkCreateParams.builder()
                 .setAccount(account.getId())
-                .setRefreshUrl("https://barzzy.site/website/onboarding")
-                .setReturnUrl("https://barzzy.site/website/analytics")
+                .setRefreshUrl("https://megrim.com/onboarding")
+                .setReturnUrl("https://megrim.com/inventory")
                 .setType(AccountLinkCreateParams.Type.ACCOUNT_ONBOARDING)
                 .setCollect(AccountLinkCreateParams.Collect.EVENTUALLY_DUE)
                 .build();
