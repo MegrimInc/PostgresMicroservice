@@ -148,7 +148,7 @@ public class AuthController {
                     merchant.setBonus(0);
                     boolean isLive = stripeService.isLiveMode();
                     merchant.setIsLiveAccount(isLive);
-
+                    merchant.setIsOpen(false);
                     String hashedPassword = hash(req.getPassword());
                     auth.setPasscode(hashedPassword);
                     auth.setVerificationCode(null);

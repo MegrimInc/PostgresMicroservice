@@ -67,6 +67,8 @@ public class Merchant implements Serializable {
     @Column(name = "account_id", length = 255)
     private String accountId;
 
+    @Column(name = "is_open", nullable = false)
+    private Boolean isOpen;
 
     @Column(name = "discount_schedule", length = 5000) // Store as plain text
     private String discountSchedule;

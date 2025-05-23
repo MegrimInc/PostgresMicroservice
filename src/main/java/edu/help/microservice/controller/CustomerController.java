@@ -57,7 +57,7 @@ public class CustomerController {
             return ResponseEntity.ok(setupIntentData);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                 .body(Map.of("error", "Failed to create SetupIntent: " + e.getMessage()));
+                    .body(Map.of("error", "Failed to create SetupIntent: " + e.getMessage()));
         }
     }
 
@@ -68,12 +68,13 @@ public class CustomerController {
 
     @PostMapping("/updateNames/{customerId}")
     public ResponseEntity<CustomerNameResponse> getName(@RequestBody CustomerNameRequest request,
-                                                        @PathVariable int customerId) {
+            @PathVariable int customerId) {
         return ResponseEntity.ok(customerService.updateNameData(request, customerId));
     }
 
     @PostMapping("/addPaymentIdToDatabase")
-    public ResponseEntity<Void> addPaymentIdToDatabase(@RequestBody PaymentIdSetRequest request) throws StripeException {
+    public ResponseEntity<Void> addPaymentIdToDatabase(@RequestBody PaymentIdSetRequest request)
+            throws StripeException {
         stripeService.savePaymentId(request);
         return ResponseEntity.ok().build();
     }
@@ -99,15 +100,25 @@ public class CustomerController {
         }
     }
 
-     @GetMapping("/seeAllMerchants")
+    @GetMapping("/seeAllMerchants")
     public List<MerchantDTO> seeAllMerchants() {
         return merchantService.findAllMerchants();
     }
 
+    @GetMapping("/isMerchantOpen/{merchantId}")
+    public ResponseEntity<Boolean> isMerchantOpen(@PathVariable int merchantId) {
+        Merchant merchant = merchantService.findMerchantById(merchantId);
+        if (merchant == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(false);
+        }
+        Boolean isOpen = merchant.getIsOpen();
+        return ResponseEntity.ok(isOpen != null && isOpen);
+    }
+
     @GetMapping("/getInventoryByMerchant/{merchantId}")
-public InventoryResponse getInventoryByMerchant(@PathVariable Integer merchantId) {
-    return merchantService.getInventoryByMerchantId(merchantId);
-}
+    public InventoryResponse getInventoryByMerchant(@PathVariable Integer merchantId) {
+        return merchantService.getInventoryByMerchantId(merchantId);
+    }
 
     @GetMapping("/{merchantId}")
     public ResponseEntity<Merchant> getMerchantById(@PathVariable Integer merchantId) {

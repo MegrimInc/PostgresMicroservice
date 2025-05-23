@@ -9,11 +9,14 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import edu.help.microservice.entity.Auth;
+import edu.help.microservice.entity.Merchant;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -321,5 +324,16 @@ public class OrderController {
             System.err.println("Error sending email to " + email);
             ex.printStackTrace();
         }
+    }
+
+   @PostMapping("/isMerchantOpen")
+    public ResponseEntity<String> setMerchantOpenStatus(@RequestParam int merchantId, @RequestParam boolean isOpen) {
+        Merchant merchant = merchantService.findMerchantById(merchantId);
+        if (merchant == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Merchant not found");
+        }
+        merchant.setIsOpen(isOpen);
+        merchantService.save(merchant);
+        return ResponseEntity.ok("Merchant open status updated to: " + isOpen);
     }
 }
