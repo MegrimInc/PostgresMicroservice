@@ -144,7 +144,7 @@ public class AuthController {
                     merchant.setCity(req.getCity());
                     merchant.setAddress(req.getAddress());
                     merchant.setZipCode(req.getZipCode());
-                    merchant.setVerificationStatus("NOT_VERIFIED");
+                    merchant.setStripeVerificationStatus("NOT_VERIFIED");
                     merchant.setBonus(0);
                     boolean isLive = stripeService.isLiveMode();
                     merchant.setIsLiveAccount(isLive);

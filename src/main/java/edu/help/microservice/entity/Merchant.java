@@ -60,8 +60,8 @@ public class Merchant implements Serializable {
     private String nickname;
 
 
-    @Column(name = "verification_status", nullable = false)
-    private String verificationStatus;
+    @Column(name = "stripe_verification_status", nullable = false)
+    private String stripeVerificationStatus;
 
 
     @Column(name = "account_id", length = 255)

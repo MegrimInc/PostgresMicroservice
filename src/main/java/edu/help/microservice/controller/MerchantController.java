@@ -436,7 +436,7 @@ public ResponseEntity<Map<String, String>> getStripeVerificationStatus(
     Integer merchantId = validation.getBody();
     Merchant merchant = merchantService.findMerchantById(merchantId);
 
-    String status = merchant.getVerificationStatus(); // e.g., VERIFIED, PENDING, etc.
+    String status = merchant.getStripeVerificationStatus(); // e.g., VERIFIED, PENDING, etc.
     return ResponseEntity.ok(Map.of("verification_status", status));
 }
 
