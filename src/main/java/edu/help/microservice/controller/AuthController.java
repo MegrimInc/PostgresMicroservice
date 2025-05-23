@@ -574,12 +574,12 @@ public class AuthController {
 
             // Set the basic email attributes
             helper.setTo(email);
-            helper.setFrom("noreply@megrim.site"); // SHOULD BE RENAMED TO MEGRIM LATER
+            helper.setFrom("noreply@megrim.com"); // SHOULD BE RENAMED TO MEGRIM LATER
             helper.setSubject("Megrim Verification Code - " + title); // SHOULD BE RENAMED TO MEGRIM LATER
 
             // Generate hash for the email
             String unsubscribeHash = generateHash(email);
-            String unsubscribeUrl = "https://www.barzzy.site/postgres-production/auth/unsubscribe?email=" + email
+            String unsubscribeUrl = BASE_PATH + "/auth/unsubscribe?email=" + email
                     + "&hash=" // SHOULD BE RENAMED TO MEGRIM LATER
                     + unsubscribeHash;
 
