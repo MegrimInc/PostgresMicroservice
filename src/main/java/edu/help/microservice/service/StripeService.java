@@ -48,7 +48,7 @@ public class StripeService {
 
     public void processOrder(double finalTotal, int customerId, int merchantId, double totalServiceFee)
             throws StripeException, InvalidStripeChargeException {
-        Long priceInCents = Math.round(finalTotal * 100);
+        Long finalPriceInCents = Math.round(finalTotal * 100);
         Long serviceFeeInCents = Math.round(totalServiceFee * 100);
 
         var customerOptional = customerRepository.findById(customerId);
@@ -64,7 +64,7 @@ public class StripeService {
                 .setType(PaymentMethodListParams.Type.CARD) // Specify the type (e.g., CARD)
                 .build();
 
-        chargeCustomer(merchantOptional.get(), customerOptional.get(), priceInCents, serviceFeeInCents);
+        chargeCustomer(merchantOptional.get(), customerOptional.get(), finalPriceInCents, serviceFeeInCents);
     }
 
     public void createStripeCustomer(Customer customer, Auth signUp) throws StripeException {
@@ -104,9 +104,8 @@ public class StripeService {
         return account.getId();
     }
 
-    private void chargeCustomer(Merchant merchant, Customer customer, Long priceInCents, Long serviceFeeInCents)
+    private void chargeCustomer(Merchant merchant, Customer customer, Long finalPriceInCents, Long serviceFeeInCents)
             throws StripeException, InvalidStripeChargeException {
-        long totalChargeCents = priceInCents + serviceFeeInCents;
 
         boolean merchantLive = Boolean.TRUE.equals(merchant.getIsLiveAccount());
         boolean customerLive = Boolean.TRUE.equals(customer.getIsLiveAccount());
@@ -132,7 +131,7 @@ public class StripeService {
 
         PaymentIntent customerCharge = stripeClient.paymentIntents().create(
                 new PaymentIntentCreateParams.Builder()
-                        .setAmount(totalChargeCents)
+                        .setAmount(finalPriceInCents)
                         .setCurrency(CURRENCY_TYPE)
                         .setCustomer(customer.getStripeId())
                         .setApplicationFeeAmount(serviceFeeInCents)
