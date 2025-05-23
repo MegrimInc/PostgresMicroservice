@@ -143,8 +143,6 @@ public class MerchantController {
             HttpServletRequest request) {
         ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
 
-        if (validation.getStatusCode().equals(HttpStatus.OK))
-            return ResponseEntity.ok(null);
         if (!validation.getStatusCode().equals(HttpStatus.FORBIDDEN))
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
