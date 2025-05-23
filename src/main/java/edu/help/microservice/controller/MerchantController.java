@@ -85,7 +85,7 @@ public class MerchantController {
         ));
     }
 
-
+ 
     @GetMapping("/configurations/categories")
     public ResponseEntity<?> getCategories(@CookieValue(value = "auth", required = false) String authCookie) {
         try {
