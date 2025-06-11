@@ -60,6 +60,60 @@ public class MerchantController {
 
     }
 
+
+    @GetMapping("/configurations/discount")
+    public ResponseEntity<?> getDiscountSchedule(
+            @CookieValue(value = "auth", required = false) String authCookie) {
+        ResponseEntity<Integer> check = validateAndGetMerchantId(authCookie);
+        if (!check.getStatusCode().is2xxSuccessful()) return check;
+
+        Merchant m = merchantService.findMerchantById(check.getBody());
+        String json = m.getDiscountSchedule();            // may be null
+        return ResponseEntity.ok(Map.of("discountSchedule",
+                json == null || json.isBlank() ? "{}" : json));
+    }
+
+    @PostMapping("/configurations/discount")
+    public ResponseEntity<?> saveDiscountSchedule(
+            @CookieValue(value = "auth", required = false) String authCookie,
+            @RequestBody Map<String, String> req) {        // keys = day names, value = null or "hh:mm - hh:mm | …"
+        ResponseEntity<Integer> check = validateAndGetMerchantId(authCookie);
+        if (!check.getStatusCode().is2xxSuccessful()) return check;
+
+        try {
+            Merchant m = merchantService.findMerchantById(check.getBody());
+
+            // very light sanity: all 7 day keys allowed, value may be null or ≤ 120 chars
+            for (String k : req.keySet()) {
+                if (!List.of("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday").contains(k))
+                    return ResponseEntity.badRequest().body("Invalid day key: " + k);
+                String v = req.get(k);
+                if (v != null && v.length() > 120)
+                    return ResponseEntity.badRequest().body("Value too long for " + k);
+            }
+
+            m.setDiscountSchedule(new ObjectMapper().writeValueAsString(req));
+            merchantService.save(m);
+            return ResponseEntity.ok(Map.of("discountSchedule", m.getDiscountSchedule()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to save schedule");
+        }
+    }
+
+    /* ───────── CATEGORY DELETE ───────── */
+
+    @DeleteMapping("/configurations/categories/{id}")
+    public ResponseEntity<?> deleteCategory(
+            @CookieValue(value = "auth", required = false) String authCookie,
+            @PathVariable Integer id) {
+        ResponseEntity<Integer> check = validateAndGetMerchantId(authCookie);
+        if (!check.getStatusCode().is2xxSuccessful()) return check;
+
+        categoryRepository.deleteByIdAndMerchantId(id, check.getBody());
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/upload-image-url")
     public ResponseEntity<Map<String, String>> getPresignedImageUploadUrl(
             @CookieValue(value = "auth", required = false) String authCookie,

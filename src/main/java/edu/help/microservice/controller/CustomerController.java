@@ -10,6 +10,8 @@ import edu.help.microservice.dto.CustomerNameResponse;
 import edu.help.microservice.dto.InventoryResponse;
 import edu.help.microservice.dto.MerchantDTO;
 import edu.help.microservice.dto.PaymentIdSetRequest;
+import edu.help.microservice.entity.Message;
+import edu.help.microservice.repository.MessageRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,6 +33,21 @@ public class CustomerController {
     private final CustomerService customerService;
     private final StripeService stripeService;
     private final MerchantService merchantService;
+    private final MessageRepository messageRepository;
+
+
+    @PostMapping("/sendMessage")
+    public ResponseEntity<Message> sendMessage(@RequestBody Message message) {
+        return ResponseEntity.ok(messageRepository.save(message));
+    }
+
+    @GetMapping("/conversation")
+    public ResponseEntity<List<Message>> getConversation(
+            @RequestParam Integer customerId,
+            @RequestParam Integer merchantId) {
+        List<Message> messages = messageRepository.findByCustomerIdAndMerchantIdOrderByCreatedAt(customerId, merchantId);
+        return ResponseEntity.ok(messages);
+    }
 
     @GetMapping("/points/{customerId}")
     public ResponseEntity<Map<Integer, Map<Integer, Integer>>> getPointsForCustomer(@PathVariable int customerId) {
