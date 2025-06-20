@@ -1,6 +1,9 @@
 package edu.help.microservice.dto;
 
+import java.util.List;
 import java.util.Map;
+
+import edu.help.microservice.entity.Employee;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,4 +25,5 @@ public class MerchantDTO {
     private Boolean tip;
     private Map<String, String> discountSchedule; // Keep this as a Map
     private Integer bonus;
+    private List<Employee> employees;
 }

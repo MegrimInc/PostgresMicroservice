@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import edu.help.microservice.entity.Employee;
+import edu.help.microservice.repository.EmployeeRepository;
 import org.springframework.stereotype.Service;
 
 import edu.help.microservice.dto.MerchantDTO;
@@ -24,6 +26,7 @@ public class MerchantService {
     private final MerchantRepository merchantRepository;
     private final ItemRepository itemRepository;
     private final CategoryRepository categoryRepository;
+    private final EmployeeRepository employeeRepository;
 
     /**
      * Returns a list of MerchantDTOs for merchants that are currently open
@@ -41,9 +44,13 @@ public class MerchantService {
                 .collect(Collectors.toList());
 
         return merchants.stream()
-                .map(DTOConverter::convertToMerchantDTO)
+                .map(merchant -> {
+                    List<Employee> employees = employeeRepository.findByMerchantId(merchant.getMerchantId());
+                    return DTOConverter.convertToMerchantDTO(merchant, employees);
+                })
                 .collect(Collectors.toList());
     }
+
 
     /**
      * Retrieves the Stripe Account ID for the given Merchant ID.

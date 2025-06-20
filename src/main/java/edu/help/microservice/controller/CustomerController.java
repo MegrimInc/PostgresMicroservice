@@ -11,6 +11,7 @@ import edu.help.microservice.dto.InventoryResponse;
 import edu.help.microservice.dto.MerchantDTO;
 import edu.help.microservice.dto.PaymentIdSetRequest;
 import edu.help.microservice.entity.Message;
+import edu.help.microservice.repository.EmployeeRepository;
 import edu.help.microservice.repository.MessageRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +35,7 @@ public class CustomerController {
     private final StripeService stripeService;
     private final MerchantService merchantService;
     private final MessageRepository messageRepository;
+    private final EmployeeRepository employeeRepository;
 
 
     @PostMapping("/sendMessage")
