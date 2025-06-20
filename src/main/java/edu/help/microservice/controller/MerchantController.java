@@ -1,7 +1,9 @@
 package edu.help.microservice.controller;
 
 import edu.help.microservice.entity.Category;
+import edu.help.microservice.entity.Employee;
 import edu.help.microservice.repository.CategoryRepository;
+import edu.help.microservice.repository.EmployeeRepository;
 import edu.help.microservice.service.*;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -44,11 +46,12 @@ public class MerchantController {
     private final AuthRepository authRepository;
     private final CategoryRepository categoryRepository;
     private final S3Service s3Service;
+    private final EmployeeRepository employeeRepository;
 
     @Autowired
     public MerchantController(OrderService orderService, AuthService signUpService, MerchantService merchantService,
             ItemService itemService, StripeClient getStripeClient, MerchantRepository merchantRepository,
-            AuthRepository authRepository, CategoryRepository categoryRepository, S3Service s3Service) {
+            AuthRepository authRepository, CategoryRepository categoryRepository, S3Service s3Service, EmployeeRepository employeeRepository) {
         this.orderService = orderService;
         this.merchantService = merchantService;
         this.itemService = itemService;
@@ -57,7 +60,25 @@ public class MerchantController {
         this.authRepository = authRepository;
         this.s3Service = s3Service;
         this.categoryRepository = categoryRepository;
+        this.employeeRepository = employeeRepository;
 
+    }
+
+
+    @PostMapping("/{merchantId}/employee")
+    public ResponseEntity<Employee> createEmployee(
+            @PathVariable Long merchantId,
+            @RequestBody Employee employee
+    ) {
+        employee.setMerchantId(merchantId);
+        Employee saved = employeeRepository.save(employee);
+        return new ResponseEntity<>(saved, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/{merchantId}/employees")
+    public ResponseEntity<List<Employee>> getEmployeesByMerchantId(@PathVariable Long merchantId) {
+        List<Employee> employees = employeeRepository.findByMerchantId(merchantId);
+        return ResponseEntity.ok(employees);
     }
 
 
