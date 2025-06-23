@@ -6,7 +6,6 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
-import com.stripe.Stripe;
 import com.stripe.StripeClient;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
