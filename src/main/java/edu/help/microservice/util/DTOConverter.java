@@ -40,7 +40,7 @@ public class DTOConverter {
         }
 
         merchantDto.setBonus(merchant.getBonus());
-        merchantDto.setEmployees(employees); // ✅ set the employee list
+        merchantDto.setEmployees(employees);
         return merchantDto;
     }
 

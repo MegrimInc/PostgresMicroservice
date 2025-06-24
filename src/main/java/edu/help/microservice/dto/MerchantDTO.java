@@ -22,7 +22,6 @@ public class MerchantDTO {
     private String address;
     private String logoImage;
     private String storeImage;
-    private Boolean tip;
     private Map<String, String> discountSchedule; // Keep this as a Map
     private Integer bonus;
     private List<Employee> employees;
