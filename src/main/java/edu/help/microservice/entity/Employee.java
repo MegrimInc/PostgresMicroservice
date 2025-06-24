@@ -16,7 +16,7 @@ public class Employee {
     private Long employeeId;
 
     @Column(nullable = false)
-    private Long merchantId;
+    private Integer merchantId;
 
     @Column(nullable = false)
     private String fullName;

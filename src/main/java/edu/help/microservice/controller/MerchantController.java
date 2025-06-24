@@ -67,7 +67,7 @@ public class MerchantController {
 
     @PostMapping("/{merchantId}/employee")
     public ResponseEntity<Employee> createEmployee(
-            @PathVariable Long merchantId,
+            @PathVariable Integer merchantId,
             @RequestBody Employee employee
     ) {
         employee.setMerchantId(merchantId);
@@ -76,7 +76,7 @@ public class MerchantController {
     }
 
     @GetMapping("/{merchantId}/employees")
-    public ResponseEntity<List<Employee>> getEmployeesByMerchantId(@PathVariable Long merchantId) {
+    public ResponseEntity<List<Employee>> getEmployeesByMerchantId(@PathVariable Integer merchantId) {
         List<Employee> employees = employeeRepository.findByMerchantId(merchantId);
         return ResponseEntity.ok(employees);
     }
