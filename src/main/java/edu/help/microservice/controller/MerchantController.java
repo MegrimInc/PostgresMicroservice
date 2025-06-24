@@ -65,15 +65,14 @@ public class MerchantController {
     }
 
 
-    @PostMapping("/{merchantId}/employee")
+    @PostMapping("/employee")
     public ResponseEntity<Employee> createEmployee(
-            @PathVariable Integer merchantId,
             @RequestBody Employee employee
     ) {
-        employee.setMerchantId(merchantId);
         Employee saved = employeeRepository.save(employee);
         return new ResponseEntity<>(saved, HttpStatus.CREATED);
     }
+
 
     @GetMapping("/{merchantId}/employees")
     public ResponseEntity<List<Employee>> getEmployeesByMerchantId(@PathVariable Integer merchantId) {
