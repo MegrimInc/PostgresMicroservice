@@ -12,6 +12,8 @@ import edu.help.microservice.dto.MerchantDTO;
 import edu.help.microservice.dto.PaymentIdSetRequest;
 import edu.help.microservice.entity.Message;
 import edu.help.microservice.repository.MessageRepository;
+import edu.help.microservice.repository.OrderRepository;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +25,7 @@ import edu.help.microservice.service.MerchantService;
 import edu.help.microservice.service.PointService;
 import edu.help.microservice.service.StripeService;
 import lombok.RequiredArgsConstructor;
+import edu.help.microservice.entity.Order;
 
 
 @RequiredArgsConstructor
@@ -34,6 +37,7 @@ public class CustomerController {
     private final StripeService stripeService;
     private final MerchantService merchantService;
     private final MessageRepository messageRepository;
+    private final OrderRepository orderRepository;
 
 
     @PostMapping("/sendMessage")
