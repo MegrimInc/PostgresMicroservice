@@ -14,6 +14,7 @@ import edu.help.microservice.entity.Message;
 import edu.help.microservice.repository.MessageRepository;
 import edu.help.microservice.repository.OrderRepository;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +27,7 @@ import edu.help.microservice.service.PointService;
 import edu.help.microservice.service.StripeService;
 import lombok.RequiredArgsConstructor;
 import edu.help.microservice.entity.Order;
+import org.springframework.data.domain.Pageable;
 
 
 @RequiredArgsConstructor
@@ -151,9 +153,10 @@ public class CustomerController {
     }
 
 
-    @GetMapping("/orders/{customerId}")
+   @GetMapping("/orders/{customerId}")
 public ResponseEntity<List<Order>> getOrdersByCustomerId(@PathVariable int customerId) {
-    List<Order> orders = orderRepository.findByCustomerIdOrderByTimestampDesc(customerId);
+    Pageable limit = PageRequest.of(0, 100);
+    List<Order> orders = orderRepository.findByCustomerIdOrderByTimestampDesc(customerId, limit).getContent();
     return ResponseEntity.ok(orders);
 }
 
