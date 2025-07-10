@@ -50,14 +50,11 @@ public class Order {
     @Column(name = "status", nullable = false)
     private String status; // Final status of the order ('claimed', 'delivered', 'canceled')
 
-    @Column(name = "terminal", length = 1)
-    private String terminal; // Station station identifier (A-Z)
-
-    @Column(name = "claimer")
-    private String claimer; // "NULL" (as a string) if not claimed, or the station's name
+    @Column(name = "employee_id")
+    private int employeeId; // Station station identifier (A-Z)
 
     @Column(name = "point_of_sale", nullable = false)
-    private boolean pointOfSale; // Indicates if this is a point of sale purchase or not
+    private String pointOfSale; // Indicates what point of sale the purchase was made from 
 
     @Column(name = "total_service_fee", nullable = false)
     private double totalServiceFee; // Total service fee charged for the order

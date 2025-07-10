@@ -4,7 +4,6 @@ package edu.help.microservice.repository;
 import edu.help.microservice.entity.Order;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -14,12 +13,6 @@ import java.util.List;
 
 public interface OrderRepository extends JpaRepository<Order, Integer> {
 
-    @Query("SELECT o FROM Order o WHERE o.merchantId = :merchantId AND o.terminal = :terminal AND o.claimer IS NULL AND o.totalGratuity > 0")
-    List<Order> findUnclaimedTipsByMerchantIdAndTerminal(@Param("merchantId") int merchantId, @Param("terminal") String terminal);
-
-    @Modifying
-    @Query("UPDATE Order o SET o.claimer = :claimer WHERE o.orderId IN :orderIds")
-    void updateClaimer(@Param("claimer") String claimer, @Param("orderIds") List<Integer> orderIds);
 
     @Query("SELECT o FROM Order o WHERE o.merchantId = :merchantId")
     List<Order> findByMerchantId(@Param("merchantId") int merchantId);
@@ -49,5 +42,8 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
             "GROUP BY d->>'itemName' " +
             "ORDER BY totalQuantity DESC", nativeQuery = true)
     List<Object[]> findAllItemCountsByMerchantId(@Param("merchantId") int merchantId);
+
+
+    List<Order> findByCustomerIdOrderByTimestampDesc(int customerId);
 
 }

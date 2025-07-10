@@ -1,7 +1,6 @@
 package edu.help.microservice.controller;
 
 import edu.help.microservice.entity.Category;
-import edu.help.microservice.entity.Employee;
 import edu.help.microservice.repository.CategoryRepository;
 import edu.help.microservice.repository.EmployeeRepository;
 import edu.help.microservice.service.*;
@@ -33,20 +32,19 @@ import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.time.ZoneId;
 import java.util.*;
-import static edu.help.microservice.config.ApiConfig.BASE_PATH;
+
 
 @RestController
-@RequestMapping(BASE_PATH + "/merchant")
+@RequestMapping("/merchant")
 public class MerchantController {
     private final OrderService orderService;
     private final MerchantService merchantService;
     private final ItemService itemService;
     private final StripeClient getStripeClient;
     private final MerchantRepository merchantRepository;
-    private final AuthRepository authRepository;
     private final CategoryRepository categoryRepository;
     private final S3Service s3Service;
-    private final EmployeeRepository employeeRepository;
+    
 
     @Autowired
     public MerchantController(OrderService orderService, AuthService signUpService, MerchantService merchantService,
@@ -57,29 +55,9 @@ public class MerchantController {
         this.itemService = itemService;
         this.getStripeClient = getStripeClient;
         this.merchantRepository = merchantRepository;
-        this.authRepository = authRepository;
         this.s3Service = s3Service;
         this.categoryRepository = categoryRepository;
-        this.employeeRepository = employeeRepository;
-
     }
-
-
-    @PostMapping("/employee")
-    public ResponseEntity<Employee> createEmployee(
-            @RequestBody Employee employee
-    ) {
-        Employee saved = employeeRepository.save(employee);
-        return new ResponseEntity<>(saved, HttpStatus.CREATED);
-    }
-
-
-    @GetMapping("/{merchantId}/employees")
-    public ResponseEntity<List<Employee>> getEmployeesByMerchantId(@PathVariable Integer merchantId) {
-        List<Employee> employees = employeeRepository.findByMerchantId(merchantId);
-        return ResponseEntity.ok(employees);
-    }
-
 
     @GetMapping("/configurations/discount")
     public ResponseEntity<?> getDiscountSchedule(

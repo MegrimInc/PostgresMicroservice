@@ -66,22 +66,10 @@ public class OrderService {
         order.setTotalTax(orderDTO.getTotalTax());
         order.setInAppPayments(orderDTO.isInAppPayments());
         order.setStatus(orderDTO.getStatus());
-        order.setTerminal(orderDTO.getTerminal());
-        order.setPointOfSale(orderDTO.isPointOfSale());
-        order.setClaimer(null);
+        order.setEmployeeId(orderDTO.getEmployeeId());
+        order.setPointOfSale(orderDTO.getPointOfSale());
         orderRepository.save(order);
 
-    }
-
-    @Transactional(readOnly = true)
-    public List<Order> getUnclaimedTips(int merchantId, String station) {
-        return orderRepository.findUnclaimedTipsByMerchantIdAndTerminal(merchantId, station);
-    }
-
-    @Transactional
-    public void claimTipsForOrders(List<Order> orders, String claimer) {
-        List<Integer> orderIds = orders.stream().map(Order::getOrderId).toList();
-        orderRepository.updateClaimer(claimer, orderIds);
     }
 
     /**

@@ -31,7 +31,6 @@ import edu.help.microservice.dto.AcceptTOSRequest2;
 import edu.help.microservice.dto.LoginRequest;
 import edu.help.microservice.dto.MerchantRegistrationRequest;
 import edu.help.microservice.dto.ResetPasswordConfirmRequest;
-import edu.help.microservice.dto.VerificationCustomerRequest; // If needed for logging
 import edu.help.microservice.dto.VerifyResetCodeRequest;
 import edu.help.microservice.entity.Merchant;
 import edu.help.microservice.entity.Customer;
@@ -51,7 +50,7 @@ import static edu.help.microservice.config.SecurityConfig.HASH_KEY;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping(BASE_PATH + "/auth")
+@RequestMapping("/auth")
 public class AuthController {
 
     /*

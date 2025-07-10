@@ -19,15 +19,9 @@ public class Employee {
     private Integer merchantId;
 
     @Column(nullable = false)
-    private String firstName;
-
-    @Column(nullable = false)
-    private String lastName;
+    private String name;
 
     private String imageUrl;
 
     private String email;
-
-    @Column(nullable = false, length = 4)
-    private String pinCode;
 }

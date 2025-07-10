@@ -9,6 +9,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import edu.help.microservice.entity.Auth;
+import edu.help.microservice.entity.Employee;
 import edu.help.microservice.entity.Merchant;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +17,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,33 +24,39 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import edu.help.microservice.dto.GetTipsResponse;
+import edu.help.microservice.dto.InventoryResponse;
+import edu.help.microservice.dto.MerchantDTO;
 import edu.help.microservice.dto.OrderDTO;
 import edu.help.microservice.dto.OrderRequest;
 import edu.help.microservice.dto.OrderResponse;
-import edu.help.microservice.dto.TipClaimRequest;
 import edu.help.microservice.entity.Order;
+import edu.help.microservice.repository.EmployeeRepository;
 import edu.help.microservice.service.MerchantService;
 import edu.help.microservice.service.OrderService;
+import edu.help.microservice.service.S3Service;
+import edu.help.microservice.util.DTOConverter;
 import edu.help.microservice.service.AuthService;
 import jakarta.mail.internet.MimeMessage;
-import static edu.help.microservice.config.ApiConfig.BASE_PATH;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import static edu.help.microservice.config.SecurityConfig.HASH_KEY;
 
 @RestController
-@RequestMapping(BASE_PATH + "/order")
-public class OrderController {
-
+@RequestMapping("/employee")
+public class EmployeeController {
     private final OrderService orderService;
     private final AuthService authService;
     private final MerchantService merchantService;
+    private final S3Service s3Service;
+    private final EmployeeRepository employeeRepository;
 
     @Autowired
-    public OrderController(OrderService orderService, AuthService signUpService, MerchantService merchantService) {
+    public EmployeeController(OrderService orderService, AuthService signUpService, MerchantService merchantService,
+            S3Service s3Service, EmployeeRepository employeeRepository) {
         this.orderService = orderService;
         this.authService = signUpService;
         this.merchantService = merchantService;
+        this.s3Service = s3Service;
+        this.employeeRepository = employeeRepository;
     }
 
     // Endpoint to save an order
@@ -123,128 +129,11 @@ public class OrderController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * New endpoint to retrieve the total tips claimed by a terminal.
-     * It accepts a JSON payload of the form:
-     * { "terminalId": "A" }
-     * and returns a JSON response of the form:
-     * { "tipTotal": 1.23 }
-     */
-    @GetMapping("/getTotalGratuity")
-    public ResponseEntity<GetTipsResponse> getTips(
-            @RequestParam("terminal") String terminalId,
-            @RequestParam("merchantId") String merchantIdStr) {
-
-        // Convert merchantID from String to int
-        int merchantID;
-        try {
-            merchantID = Integer.parseInt(merchantIdStr);
-        } catch (NumberFormatException e) {
-            System.err.println("Invalid merchantID provided: " + merchantIdStr);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new GetTipsResponse(-1.0));
-        }
-
-        System.out.println("gettips for " + terminalId + " " + merchantID);
-        // Validate that the stationID is a single uppercase letter A-Z.
-        if (terminalId == null || !terminalId.matches("^[A-Z]$")) {
-            System.err.println("Invalid stationID provided: " + terminalId);
-            // Here we return a 400 Bad Request. Alternatively, you could return a specific
-            // error tipTotal (e.g., -2.0).
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new GetTipsResponse(-1.0));
-        }
-        try {
-            // Retrieve orders that have been claimed by this station.
-            // (Assumes that orderService has a method like getClaimedTipsByStation.)
-            List<Order> claimedOrders = orderService.getUnclaimedTips(merchantID, terminalId);
-            if (claimedOrders == null || claimedOrders.isEmpty()) {
-                System.out.println("gettips NULL / empty");
-                return ResponseEntity.ok(new GetTipsResponse(0.0));
-            }
-
-            // Filter out orders that did not use in-app payments (same logic as in
-            // claimTips).
-            claimedOrders.removeIf(order -> !order.isInAppPayments());
-
-            // Calculate the total tip amount.
-            double totalTipAmount = calculateTotalTipAmount(claimedOrders);
-            System.out.println("Total tip amount for station " + terminalId + ": " + totalTipAmount);
-
-            return ResponseEntity.ok(new GetTipsResponse(totalTipAmount));
-        } catch (Exception e) {
-            System.err.println("Error in getTips: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new GetTipsResponse(-2.0));
-        }
-    }
-
     private String hash(String input) throws NoSuchAlgorithmException {
         String text = input + HASH_KEY;
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         byte[] hash = md.digest(text.getBytes());
         return Base64.getEncoder().encodeToString(hash);
-    }
-
-    @PostMapping("/claim")
-    public ResponseEntity<Double> claimTips(@RequestBody TipClaimRequest request) {
-        try {
-            int merchantID = request.getMerchantId();
-            String claimer = request.getClaimer();
-            String email = request.getEmail(); // Optional
-            String station = request.getTerminal();
-
-            System.out.println("Request received with merchantID: " + merchantID + ", claimer: " + claimer
-                    + ", email: " + email + ", station: " + station);
-
-            // Fetch unclaimed orders
-            List<Order> tipsList = orderService.getUnclaimedTips(merchantID, station);
-
-            // Filter out orders where inAppPayments is false
-            tipsList.removeIf(order -> !order.isInAppPayments());
-
-            if (tipsList.isEmpty()) {
-                // Return -1 if no unclaimed tips are found
-                return ResponseEntity.ok(-1.0);
-            }
-
-            // Update orders to set tipsClaimed to station's name
-            orderService.claimTipsForOrders(tipsList, claimer);
-            System.out.println("Updated orders with station's name: " + claimer);
-
-            // Calculate total tip amount
-            double totalTipAmount = calculateTotalTipAmount(tipsList);
-            System.out.println("Total tip amount calculated: " + totalTipAmount);
-
-            // Retrieve merchant email
-            String merchantEmail = authService.findEmailByMerchantId(merchantID);
-            if (merchantEmail == null || merchantEmail.isEmpty()) {
-                System.err.println("Merchant email not found for merchant ID: " + merchantID);
-            }
-
-            // Prepare email content
-            String emailContent = prepareEmailContent(merchantID, claimer, email, station, tipsList);
-
-            // Send emails
-            String subject = "Tip Receipt for " + claimer + " at "
-                    + merchantService.findMerchantById(merchantID).getName();
-            if (merchantEmail != null && !merchantEmail.isEmpty()) {
-                sendTipEmail(merchantEmail, subject, emailContent);
-            }
-            if (email != null && !email.isEmpty()) {
-                sendTipEmail(email, subject, emailContent);
-            }
-
-            System.out.println("ClaimTips process completed successfully. Total tips: " + totalTipAmount);
-
-            // Return total tip amount to the frontend
-            return ResponseEntity.ok(totalTipAmount);
-
-        } catch (Exception e) {
-            System.err.println("Error occurred in claimTips process: " + e.getMessage());
-            e.printStackTrace();
-            // Return -2 if an error occurs
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(-2.0);
-        }
     }
 
     // Helper methods...
@@ -346,4 +235,59 @@ public class OrderController {
             return ResponseEntity.ok("Current merchant open status is: " + merchant.getIsOpen());
         }
     }
+
+    @GetMapping("/{merchantId}")
+    public ResponseEntity<MerchantDTO> getMerchantById(@PathVariable Integer merchantId) {
+        // 1) fetch the raw Merchant
+        Merchant merchant = merchantService.findMerchantById(merchantId);
+        if (merchant == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // 2) fetch its employees list
+        List<Employee> employees = employeeRepository.findByMerchantId(merchantId);
+
+        // 3) convert to DTO (includes JSON→Map parsing of discountSchedule)
+        MerchantDTO dto = DTOConverter.convertToMerchantDTO(merchant, employees);
+
+        // 4) return the DTO
+        return ResponseEntity.ok(dto);
+    }
+
+    @PostMapping("/upload-image-url")
+    public ResponseEntity<Map<String, String>> getPresignedImageUploadUrl(
+            @RequestParam Integer merchantId,
+            @RequestParam String filename) {
+
+        // build the S3 key under this merchant’s folder
+        String key = merchantId + "/" + filename;
+
+        PresignedPutObjectRequest presigned = s3Service.generatePresignedUrl(key); // no contentType now
+
+        System.out.println("Presigned URL: " + presigned.url());
+        System.out.println("Signed headers: " + presigned.signedHeaders()); // should show only {host=[…]}
+
+        return ResponseEntity.ok(Map.of(
+                "url", presigned.url().toString(),
+                "key", java.net.URLEncoder.encode(key, java.nio.charset.StandardCharsets.UTF_8)));
+    }
+
+    @PostMapping("/createEmployee")
+    public ResponseEntity<Employee> createEmployee(
+            @RequestBody Employee employee) {
+        Employee saved = employeeRepository.save(employee);
+        return new ResponseEntity<>(saved, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/getInventoryByMerchant/{merchantId}")
+    public InventoryResponse getInventoryByMerchant(@PathVariable Integer merchantId) {
+        return merchantService.getInventoryByMerchantId(merchantId);
+    }
+
+    @GetMapping("/{merchantId}/employees")
+    public ResponseEntity<List<Employee>> getEmployeesByMerchantId(@PathVariable Integer merchantId) {
+        List<Employee> employees = employeeRepository.findByMerchantId(merchantId);
+        return ResponseEntity.ok(employees);
+    }
+
 }

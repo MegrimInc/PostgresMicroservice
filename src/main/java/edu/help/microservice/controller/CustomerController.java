@@ -11,7 +11,6 @@ import edu.help.microservice.dto.InventoryResponse;
 import edu.help.microservice.dto.MerchantDTO;
 import edu.help.microservice.dto.PaymentIdSetRequest;
 import edu.help.microservice.entity.Message;
-import edu.help.microservice.repository.EmployeeRepository;
 import edu.help.microservice.repository.MessageRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,18 +23,17 @@ import edu.help.microservice.service.MerchantService;
 import edu.help.microservice.service.PointService;
 import edu.help.microservice.service.StripeService;
 import lombok.RequiredArgsConstructor;
-import static edu.help.microservice.config.ApiConfig.BASE_PATH;
+
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping(BASE_PATH + "/customer")
+@RequestMapping("/customer")
 public class CustomerController {
     private final PointService pointService;
     private final CustomerService customerService;
     private final StripeService stripeService;
     private final MerchantService merchantService;
     private final MessageRepository messageRepository;
-    private final EmployeeRepository employeeRepository;
 
 
     @PostMapping("/sendMessage")
@@ -134,11 +132,6 @@ public class CustomerController {
         return ResponseEntity.ok(isOpen != null && isOpen);
     }
 
-    @GetMapping("/getInventoryByMerchant/{merchantId}")
-    public InventoryResponse getInventoryByMerchant(@PathVariable Integer merchantId) {
-        return merchantService.getInventoryByMerchantId(merchantId);
-    }
-
     @GetMapping("/{merchantId}")
     public ResponseEntity<Merchant> getMerchantById(@PathVariable Integer merchantId) {
         Merchant merchant = merchantService.findMerchantById(merchantId); // Fetch the merchant by ID
@@ -147,5 +140,17 @@ public class CustomerController {
         }
         return ResponseEntity.ok(merchant); // Return the merchant if found
     }
+
+    @GetMapping("/getInventoryByMerchant/{merchantId}")
+    public InventoryResponse getInventoryByMerchant(@PathVariable Integer merchantId) {
+        return merchantService.getInventoryByMerchantId(merchantId);
+    }
+
+
+    @GetMapping("/orders/{customerId}")
+public ResponseEntity<List<Order>> getOrdersByCustomerId(@PathVariable int customerId) {
+    List<Order> orders = orderRepository.findByCustomerIdOrderByTimestampDesc(customerId);
+    return ResponseEntity.ok(orders);
+}
 
 }
