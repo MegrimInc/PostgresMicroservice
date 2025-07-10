@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "employee")
+@Table(name = "employees")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
