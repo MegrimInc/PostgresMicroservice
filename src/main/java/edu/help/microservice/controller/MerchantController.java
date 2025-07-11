@@ -59,6 +59,27 @@ public class MerchantController {
         this.categoryRepository = categoryRepository;
     }
 
+
+    @PatchMapping("/configurations/store-image")
+    public ResponseEntity<?> updateStoreImage(
+            @CookieValue(value = "auth", required = false) String authCookie,
+            @RequestBody Map<String, String> body) {
+
+        ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
+        if (!validation.getStatusCode().is2xxSuccessful()) {
+            return ResponseEntity.status(validation.getStatusCode()).build();
+        }
+
+        Integer merchantId = validation.getBody();
+        String storeImageUrl = body.get("storeImage");
+        if (storeImageUrl == null || storeImageUrl.isBlank()) {
+            return ResponseEntity.badRequest().body("Missing image URL");
+        }
+
+        merchantRepository.updateStoreImageById(merchantId, storeImageUrl);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/configurations/discount")
     public ResponseEntity<?> getDiscountSchedule(
             @CookieValue(value = "auth", required = false) String authCookie) {

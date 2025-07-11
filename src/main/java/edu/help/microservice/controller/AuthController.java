@@ -68,7 +68,7 @@ public class AuthController {
     
      */
 
-    private static final boolean setSecure = ENV.equals("live");
+    private static final boolean setSecure = ENV.equals("test");
     private final AuthService authService;
     private final CustomerService customerService;
     private final MerchantService merchantService;
