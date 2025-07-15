@@ -218,25 +218,6 @@ public class EmployeeController {
         }
     }
 
-    @PostMapping("/isMerchantOpen")
-    public ResponseEntity<String> setOrGetMerchantOpenStatus(
-            @RequestParam int merchantId,
-            @RequestParam(required = false) Boolean isOpen) {
-
-        Merchant merchant = merchantService.findMerchantById(merchantId);
-        if (merchant == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Merchant not found");
-        }
-
-        if (isOpen != null) {
-            merchant.setIsOpen(isOpen);
-            merchantService.save(merchant);
-            return ResponseEntity.ok("Merchant open status updated to: " + isOpen);
-        } else {
-            return ResponseEntity.ok("Current merchant open status is: " + merchant.getIsOpen());
-        }
-    }
-
     @GetMapping("/{merchantId}")
     public ResponseEntity<MerchantDTO> getMerchantById(@PathVariable Integer merchantId) {
         // 1) fetch the raw Merchant

@@ -8,6 +8,7 @@ import com.stripe.exception.StripeException;
 import edu.help.microservice.dto.CustomerNameRequest;
 import edu.help.microservice.dto.CustomerNameResponse;
 import edu.help.microservice.dto.InventoryResponse;
+import edu.help.microservice.dto.LeaderboardRankResponse;
 import edu.help.microservice.dto.MerchantDTO;
 import edu.help.microservice.dto.PaymentIdSetRequest;
 import edu.help.microservice.entity.Message;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import edu.help.microservice.entity.Customer;
 import edu.help.microservice.entity.Merchant;
 import edu.help.microservice.service.CustomerService;
+import edu.help.microservice.service.LeaderboardService;
 import edu.help.microservice.service.MerchantService;
 import edu.help.microservice.service.PointService;
 import edu.help.microservice.service.StripeService;
@@ -40,7 +42,7 @@ public class CustomerController {
     private final MerchantService merchantService;
     private final MessageRepository messageRepository;
     private final OrderRepository orderRepository;
-
+    private final LeaderboardService leaderboardService;
 
     @PostMapping("/sendMessage")
     public ResponseEntity<Message> sendMessage(@RequestBody Message message) {
@@ -51,7 +53,8 @@ public class CustomerController {
     public ResponseEntity<List<Message>> getConversation(
             @RequestParam Integer customerId,
             @RequestParam Integer merchantId) {
-        List<Message> messages = messageRepository.findByCustomerIdAndMerchantIdOrderByCreatedAt(customerId, merchantId);
+        List<Message> messages = messageRepository.findByCustomerIdAndMerchantIdOrderByCreatedAt(customerId,
+                merchantId);
         return ResponseEntity.ok(messages);
     }
 
@@ -128,16 +131,6 @@ public class CustomerController {
         return merchantService.findAllMerchants();
     }
 
-    @GetMapping("/isMerchantOpen/{merchantId}")
-    public ResponseEntity<Boolean> isMerchantOpen(@PathVariable int merchantId) {
-        Merchant merchant = merchantService.findMerchantById(merchantId);
-        if (merchant == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(false);
-        }
-        Boolean isOpen = merchant.getIsOpen();
-        return ResponseEntity.ok(isOpen != null && isOpen);
-    }
-
     @GetMapping("/{merchantId}")
     public ResponseEntity<Merchant> getMerchantById(@PathVariable Integer merchantId) {
         Merchant merchant = merchantService.findMerchantById(merchantId); // Fetch the merchant by ID
@@ -152,12 +145,18 @@ public class CustomerController {
         return merchantService.getInventoryByMerchantId(merchantId);
     }
 
+    @GetMapping("/orders/{customerId}")
+    public ResponseEntity<List<Order>> getOrdersByCustomerId(@PathVariable int customerId) {
+        Pageable limit = PageRequest.of(0, 100);
+        List<Order> orders = orderRepository.findByCustomerIdOrderByTimestampDesc(customerId, limit).getContent();
+        return ResponseEntity.ok(orders);
+    }
 
-   @GetMapping("/orders/{customerId}")
-public ResponseEntity<List<Order>> getOrdersByCustomerId(@PathVariable int customerId) {
-    Pageable limit = PageRequest.of(0, 100);
-    List<Order> orders = orderRepository.findByCustomerIdOrderByTimestampDesc(customerId, limit).getContent();
-    return ResponseEntity.ok(orders);
-}
-
+    @GetMapping("/getRank")
+    public ResponseEntity<LeaderboardRankResponse> getRank(
+            @RequestParam int merchantId,
+            @RequestParam int customerId) {
+        LeaderboardRankResponse response = leaderboardService.getRank(merchantId, customerId);
+        return ResponseEntity.ok(response);
+    }
 }

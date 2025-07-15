@@ -38,6 +38,7 @@ public class OrderService {
     private final StripeService stripeService;
     private final CustomerService customerService;
     private final ConfigRepository configRepository;
+    private final LeaderboardService leaderboardService;
 
     public void saveOrder(OrderDTO orderDTO) {
         Order order = new Order();
@@ -317,6 +318,10 @@ public class OrderService {
             System.out.println("[DEBUG] Final OrderResponse JSON: " + new ObjectMapper().writeValueAsString(response));
         } catch (Exception e) {
             System.err.println("[ERROR] Could not serialize OrderResponse: " + e.getMessage());
+        }
+
+        if (baseAmount > 0.0) {
+            leaderboardService.addToLeaderboard(merchantId, request.getCustomerId(), baseAmount);
         }
 
         return response;
