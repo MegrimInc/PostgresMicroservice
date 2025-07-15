@@ -185,8 +185,8 @@ public class MerchantController {
             Integer merchantId = validation.getBody();
             assert merchantId != null;
 
-            if (categoryNames.size() < 3 || categoryNames.size() > 8) {
-                return ResponseEntity.badRequest().body("You must provide between 3 and 8 categories.");
+            if (categoryNames.size() < 3 || categoryNames.size() > 10) {
+                return ResponseEntity.badRequest().body("You must provide between 3 and 10 categories.");
             }
 
             List<Category> saved = new ArrayList<>();
