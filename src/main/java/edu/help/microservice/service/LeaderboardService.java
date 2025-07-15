@@ -40,7 +40,8 @@ public class LeaderboardService {
         if (theirEntryOpt.isPresent()) {
             Leaderboard entry = theirEntryOpt.get();
 
-            String rivalFullName = findCustomerById(entry.getRivalId()).getFirstName();
+            Customer rivalCustomer = findCustomerById(entry.getRivalId());
+            String rivalFullName = formatFullName(rivalCustomer.getFirstName(), rivalCustomer.getLastName());
 
             return LeaderboardRankResponse.builder()
                     .rank(entry.getRank())
