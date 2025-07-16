@@ -149,7 +149,7 @@ public class LeaderboardService {
                     difference = entry.getTotal() - allEntries.get(1).getTotal();
                     rivalId = allEntries.get(1).getCustomerId();
                 } else {
-                    difference = -entry.getTotal();
+                    difference = entry.getTotal();
                     rivalId = lowestIdCustomer != null ? lowestIdCustomer.getCustomerId() : entry.getCustomerId();
                 }
             } else {
