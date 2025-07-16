@@ -66,7 +66,7 @@ public class LeaderboardService {
 
             return LeaderboardRankResponse.builder()
                     .rank(rank)
-                    .difference(0.01)
+                    .difference(0)
                     .rivalFullName(rivalFullName)
                     .customerFullName(customerFullName)
                     .build();
