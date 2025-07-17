@@ -3,6 +3,8 @@ package edu.help.microservice.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "employees")
 @Data
@@ -24,4 +26,8 @@ public class Employee {
     private String imageUrl;
 
     private String email;
+
+    @Column(name = "shift_timestamp")
+    private LocalDateTime shiftTimestamp;
+
 }

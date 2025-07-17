@@ -29,6 +29,7 @@ import com.stripe.param.AccountRetrieveParams;
 import com.stripe.model.Account.Requirements;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.ZoneId;
 import java.util.*;
@@ -44,6 +45,7 @@ public class MerchantController {
     private final MerchantRepository merchantRepository;
     private final CategoryRepository categoryRepository;
     private final S3Service s3Service;
+    private final EmployeeRepository employeeRepository;
     
 
     @Autowired
@@ -57,8 +59,23 @@ public class MerchantController {
         this.merchantRepository = merchantRepository;
         this.s3Service = s3Service;
         this.categoryRepository = categoryRepository;
+        this.employeeRepository = employeeRepository;
     }
 
+
+
+    @PatchMapping("/employees/reset-shift")
+    public ResponseEntity<?> resetAllEmployeeShifts(
+            @CookieValue(value = "auth", required = false) String authCookie) {
+
+        ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
+        if (!validation.getStatusCode().is2xxSuccessful()) {
+            return ResponseEntity.status(validation.getStatusCode()).build();
+        }
+
+        employeeRepository.resetShiftForAll(validation.getBody(), LocalDateTime.now());
+        return ResponseEntity.ok().build();
+    }
 
     @PatchMapping("/configurations/store-image")
     public ResponseEntity<?> updateStoreImage(

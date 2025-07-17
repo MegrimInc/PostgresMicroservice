@@ -24,6 +24,9 @@ public class Merchant implements Serializable {
     private Integer merchantId;
 
 
+    @Column(name = "shift_timestamp")
+    private java.time.LocalDateTime shiftTimestamp;
+
     @Column(name = "city", nullable = false, length = 255)
     private String city;
 
