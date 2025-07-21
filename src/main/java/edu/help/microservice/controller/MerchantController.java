@@ -5,6 +5,7 @@ import edu.help.microservice.repository.CategoryRepository;
 import edu.help.microservice.repository.EmployeeRepository;
 import edu.help.microservice.service.*;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -17,10 +18,8 @@ import edu.help.microservice.dto.ItemCountDTO;
 import edu.help.microservice.dto.UpdateItemRequestDTO;
 import edu.help.microservice.entity.Merchant;
 import edu.help.microservice.entity.Order;
-import edu.help.microservice.repository.AuthRepository;
 import edu.help.microservice.repository.MerchantRepository;
 import edu.help.microservice.util.Cookies;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -34,7 +33,7 @@ import java.time.ZonedDateTime;
 import java.time.ZoneId;
 import java.util.*;
 
-
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/merchant")
 public class MerchantController {
@@ -47,23 +46,7 @@ public class MerchantController {
     private final S3Service s3Service;
     private final EmployeeRepository employeeRepository;
     
-
-    @Autowired
-    public MerchantController(OrderService orderService, AuthService signUpService, MerchantService merchantService,
-            ItemService itemService, StripeClient getStripeClient, MerchantRepository merchantRepository,
-            AuthRepository authRepository, CategoryRepository categoryRepository, S3Service s3Service, EmployeeRepository employeeRepository) {
-        this.orderService = orderService;
-        this.merchantService = merchantService;
-        this.itemService = itemService;
-        this.getStripeClient = getStripeClient;
-        this.merchantRepository = merchantRepository;
-        this.s3Service = s3Service;
-        this.categoryRepository = categoryRepository;
-        this.employeeRepository = employeeRepository;
-    }
-
-
-
+    
     @PatchMapping("/employees/reset-shift")
     public ResponseEntity<?> resetAllEmployeeShifts(
             @CookieValue(value = "auth", required = false) String authCookie) {
@@ -93,7 +76,7 @@ public class MerchantController {
             return ResponseEntity.badRequest().body("Missing image URL");
         }
 
-        merchantRepository.updateStoreImageById(merchantId, storeImageUrl);
+        merchantRepository.updateImageById(merchantId, storeImageUrl);
         return ResponseEntity.ok().build();
     }
 

@@ -24,8 +24,7 @@ public class DTOConverter {
         merchantDto.setStateOrProvince(merchant.getStateOrProvince());
         merchantDto.setCountry(merchant.getCountry());
         merchantDto.setAddress(merchant.getAddress());
-        merchantDto.setLogoImage(merchant.getLogoImage());
-        merchantDto.setStoreImage(merchant.getStoreImage());
+        merchantDto.setImage(merchant.getImage());
 
         try {
             if (merchant.getDiscountSchedule() != null && !merchant.getDiscountSchedule().isEmpty()) {

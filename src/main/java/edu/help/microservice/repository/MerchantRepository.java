@@ -28,10 +28,10 @@ public interface MerchantRepository extends JpaRepository<Merchant, Integer> {
 
     @Modifying
     @Transactional
-    @Query("UPDATE Merchant m SET m.storeImage = :url WHERE m.merchantId = :id")
-    void updateStoreImageById(@Param("id") Integer id, @Param("url") String url);
+    @Query("UPDATE Merchant m SET m.image = :url WHERE m.merchantId = :id")
+    void updateImageById(@Param("id") Integer id, @Param("url") String url);
 
-    @Query("SELECT m.storeImage FROM Merchant m WHERE m.merchantId = :id")
-    String findStoreImageById(@Param("id") Integer id);
+    @Query("SELECT m.image FROM Merchant m WHERE m.merchantId = :id")
+    String findImageById(@Param("id") Integer id);
 
 }

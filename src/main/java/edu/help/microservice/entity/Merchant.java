@@ -23,10 +23,7 @@ public class Merchant implements Serializable {
     @Column(name = "merchant_id", nullable = false)
     private Integer merchantId;
 
-
-    @Column(name = "shift_timestamp")
-    private java.time.LocalDateTime shiftTimestamp;
-
+    
     @Column(name = "city", nullable = false, length = 255)
     private String city;
 
@@ -47,12 +44,8 @@ public class Merchant implements Serializable {
     private String country;
 
 
-    @Column(name = "logo_image", nullable = true, length = 255)
-    private String logoImage;
-
-
-    @Column(name = "store_image", nullable = true, length = 255)
-    private String storeImage;
+    @Column(name = "image", nullable = true, length = 255)
+    private String image;
 
 
     @Column(name = "name", nullable = false, length = 255)
@@ -70,12 +63,14 @@ public class Merchant implements Serializable {
     @Column(name = "account_id", length = 255)
     private String accountId;
 
+
     @Column(name = "discount_schedule", length = 5000) // Store as plain text
     private String discountSchedule;
 
 
     @Column(name = "bonus") // Store as plain text
     private int bonus;
+
 
      @Column(name = "is_live_account")
     private Boolean isLiveAccount;

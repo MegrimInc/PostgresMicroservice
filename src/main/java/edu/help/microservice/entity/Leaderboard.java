@@ -13,23 +13,24 @@ public class Leaderboard {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "leaderboard_id", nullable = false)
     private Integer leaderboardId;
 
-    @Column(nullable = false)
+   @Column(name = "merchant_id", nullable = false)
     private Integer merchantId;
 
-    @Column(nullable = false)
+   @Column(name = "customer_id", nullable = false)
     private Integer customerId;
 
-    @Column(nullable = false)
+    @Column(name = "total", nullable = false)
     private Double total;
 
-    @Column(nullable = false)
+    @Column(name = "rank", nullable = false)
     private Integer rank;
 
-   @Column(nullable = false)
+   @Column(name = "rival_id", nullable = false)
    private Integer rivalId;
     
-   @Column(nullable = false)
+   @Column(name = "difference", nullable = false)
     private Double difference;
 }

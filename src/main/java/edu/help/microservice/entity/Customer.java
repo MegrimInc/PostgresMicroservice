@@ -34,9 +34,6 @@ public class Customer {
     @Column(name = "customer_id", nullable = false)
     private Integer customerId;
 
-    @Column(name = "accepted_tos", nullable = false)
-    private Boolean acceptedTOS = false;
-
     @Column(name = "first_name", nullable = false)
     private String firstName;
 

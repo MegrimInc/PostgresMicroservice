@@ -20,8 +20,7 @@ public class MerchantDTO {
     private String stateOrProvince;
     private String country; 
     private String address;
-    private String logoImage;
-    private String storeImage;
+    private String image;
     private Map<String, String> discountSchedule; // Keep this as a Map
     private Integer bonus;
     private List<Employee> employees;

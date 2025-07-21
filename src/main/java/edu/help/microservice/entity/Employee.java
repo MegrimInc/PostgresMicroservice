@@ -15,16 +15,19 @@ public class Employee {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "employee_id", nullable = false)
     private Integer employeeId;
 
-    @Column(nullable = false)
+    @Column(name = "merchant_id", nullable = false)
     private Integer merchantId;
 
-    @Column(nullable = false)
+   @Column(name = "name", nullable = false)
     private String name;
 
-    private String imageUrl;
+    @Column(name = "image", nullable = false)
+    private String image;
 
+    @Column(name = "email", nullable = false)
     private String email;
 
     @Column(name = "shift_timestamp")

@@ -3,6 +3,7 @@ package edu.help.microservice.controller;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -11,13 +12,9 @@ import java.util.*;
 import edu.help.microservice.entity.Auth;
 import edu.help.microservice.entity.Employee;
 import edu.help.microservice.entity.Merchant;
-import org.springframework.data.domain.Page;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mail.javamail.JavaMailSenderImpl;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import edu.help.microservice.dto.EmployeeShiftSummary;
 import edu.help.microservice.dto.InventoryResponse;
 import edu.help.microservice.dto.MerchantDTO;
 import edu.help.microservice.dto.OrderDTO;
@@ -37,10 +36,12 @@ import edu.help.microservice.service.OrderService;
 import edu.help.microservice.service.S3Service;
 import edu.help.microservice.util.DTOConverter;
 import edu.help.microservice.service.AuthService;
-import jakarta.mail.internet.MimeMessage;
+import edu.help.microservice.service.EmployeeService;
+import lombok.RequiredArgsConstructor;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import static edu.help.microservice.config.SecurityConfig.HASH_KEY;
 
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/employee")
 public class EmployeeController {
@@ -49,16 +50,18 @@ public class EmployeeController {
     private final MerchantService merchantService;
     private final S3Service s3Service;
     private final EmployeeRepository employeeRepository;
+    private final EmployeeService employeeService;
 
-    @Autowired
-    public EmployeeController(OrderService orderService, AuthService signUpService, MerchantService merchantService,
-            S3Service s3Service, EmployeeRepository employeeRepository) {
-        this.orderService = orderService;
-        this.authService = signUpService;
-        this.merchantService = merchantService;
-        this.s3Service = s3Service;
-        this.employeeRepository = employeeRepository;
-    }
+    // @Autowired
+    // public EmployeeController(OrderService orderService, AuthService
+    // signUpService, MerchantService merchantService,
+    // S3Service s3Service, EmployeeRepository employeeRepository) {
+    // this.orderService = orderService;
+    // this.authService = signUpService;
+    // this.merchantService = merchantService;
+    // this.s3Service = s3Service;
+    // this.employeeRepository = employeeRepository;
+    // }
 
     // Endpoint to save an order
     @PostMapping("/save")
@@ -181,43 +184,6 @@ public class EmployeeController {
         return emailContent.toString();
     }
 
-    // Use your existing sendTipEmail method
-    private void sendTipEmail(String email, String subject, String content) {
-        JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
-        mailSender.setHost("email-smtp.us-east-1.amazonaws.com");
-        mailSender.setPort(587);
-
-        mailSender.setUsername("YOUR_SMTP_USERNAME");
-        mailSender.setPassword("YOUR_SMTP_PASSWORD");
-
-        Properties props = mailSender.getJavaMailProperties();
-        props.put("mail.transport.protocol", "smtp");
-        props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.starttls.enable", "true");
-        props.put("mail.debug", "true");
-
-        try {
-            // Create a MimeMessage
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true);
-
-            // Set the basic email attributes
-            helper.setTo(email);
-            helper.setFrom("noreply@megrim.com"); // SHOULD BE RENAMED TO MEGRIM LATER
-            helper.setSubject(subject);
-
-            // Set the email content as HTML
-            helper.setText(content, true);
-
-            // Send the email
-            mailSender.send(message);
-            System.out.println("Email successfully sent to " + email);
-        } catch (Exception ex) {
-            System.err.println("Error sending email to " + email);
-            ex.printStackTrace();
-        }
-    }
-
     @GetMapping("/{merchantId}")
     public ResponseEntity<MerchantDTO> getMerchantById(@PathVariable Integer merchantId) {
         // 1) fetch the raw Merchant
@@ -255,8 +221,8 @@ public class EmployeeController {
     }
 
     @PostMapping("/createEmployee")
-    public ResponseEntity<Employee> createEmployee(
-            @RequestBody Employee employee) {
+    public ResponseEntity<Employee> createEmployee(@RequestBody Employee employee) {
+        employee.setShiftTimestamp(LocalDateTime.now()); // set current time
         Employee saved = employeeRepository.save(employee);
         return new ResponseEntity<>(saved, HttpStatus.CREATED);
     }
@@ -272,4 +238,9 @@ public class EmployeeController {
         return ResponseEntity.ok(employees);
     }
 
+    @GetMapping("/{merchantId}/employee-shift-summaries")
+    public ResponseEntity<List<EmployeeShiftSummary>> getAllEmployeeShiftSummary(@PathVariable int merchantId) {
+        List<EmployeeShiftSummary> summaries = employeeService.getAllEmployeeShiftSummaries(merchantId);
+        return ResponseEntity.ok(summaries);
+    }
 }

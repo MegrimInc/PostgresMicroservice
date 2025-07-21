@@ -14,6 +14,12 @@ import java.util.List;
 
 public interface OrderRepository extends JpaRepository<Order, Integer> {
 
+    @Query("SELECT o FROM Order o WHERE o.merchantId = :merchantId AND o.employeeId = :employeeId AND o.timestamp > :since")
+    List<Order> findByMerchantIdAndEmployeeIdAfterShift(
+        @Param("merchantId") int merchantId,
+        @Param("employeeId") int employeeId,
+        @Param("since") Instant since
+       );
 
     @Query("SELECT o FROM Order o WHERE o.merchantId = :merchantId")
     List<Order> findByMerchantId(@Param("merchantId") int merchantId);

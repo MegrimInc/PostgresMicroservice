@@ -146,14 +146,14 @@ public class LeaderboardService {
             if (i == 0) {
                 // First place
                 if (allEntries.size() > 1) {
-                    difference = entry.getTotal() - allEntries.get(1).getTotal();
+                    difference = Math.round((entry.getTotal() - allEntries.get(1).getTotal()) * 100.0) / 100.0;
                     rivalId = allEntries.get(1).getCustomerId();
                 } else {
                     difference = entry.getTotal();
                     rivalId = lowestIdCustomer != null ? lowestIdCustomer.getCustomerId() : entry.getCustomerId();
                 }
             } else {
-                difference = allEntries.get(i - 1).getTotal() - entry.getTotal();
+                difference = Math.round((allEntries.get(i - 1).getTotal() - entry.getTotal()) * 100.0) / 100.0;
                 rivalId = allEntries.get(i - 1).getCustomerId();
             }
 

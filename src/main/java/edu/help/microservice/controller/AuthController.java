@@ -402,22 +402,6 @@ public class AuthController {
         return ResponseEntity.ok(String.valueOf(customer.getCustomerId()));
     }
 
-    // ENDPOINT #4: Accept terms of service
-    @PostMapping("/accept-tos")
-    public ResponseEntity<String> acceptTOS(@RequestBody AcceptTOSRequest request) {
-        String email = request.getEmail();
-        Auth auth = authService.findByEmail(email);
-
-        if (auth != null && auth.getCustomer() != null) {
-            Customer customer = auth.getCustomer();
-            customer.setAcceptedTOS(true);
-            customerService.save(customer);
-            return ResponseEntity.ok("TOS accepted");
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("user not found");
-        }
-    }
-
     // ENDPOINT #5: Login with email and password
     @PostMapping("/login-customer")
     public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
