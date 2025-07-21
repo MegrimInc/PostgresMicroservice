@@ -43,9 +43,11 @@ public class LeaderboardService {
             Customer rivalCustomer = findCustomerById(entry.getRivalId());
             String rivalFullName = formatFullName(rivalCustomer.getFirstName(), rivalCustomer.getLastName());
 
+             double cleanDifference = Math.round(entry.getDifference() * 100.0) / 100.0;
+
             return LeaderboardRankResponse.builder()
                     .rank(entry.getRank())
-                    .difference(entry.getDifference())
+                    .difference(cleanDifference)
                     .rivalFullName(rivalFullName)
                     .customerFullName(customerFullName)
                     .build();
@@ -83,7 +85,7 @@ public class LeaderboardService {
         int rank = onBoardCount + (int) lowerUnrankedCount + 1;
 
         Leaderboard lowestEntry = leaderboard.get(leaderboard.size() - 1);
-        double difference = lowestEntry.getTotal();
+        double difference = Math.round(lowestEntry.getTotal() * 100.0) / 100.0;
 
         Customer rival = findCustomerById(lowestEntry.getCustomerId());
         String rivalFullName = formatFullName(rival.getFirstName(), rival.getLastName());
