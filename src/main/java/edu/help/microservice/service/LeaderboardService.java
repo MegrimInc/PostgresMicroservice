@@ -98,6 +98,8 @@ public class LeaderboardService {
 
     @Transactional
     public void addToLeaderboard(int merchantId, int customerId, double amount) {
+         double roundedAmount = Math.round(amount * 100.0) / 100.0;
+
         // 1. Update or insert this customer's total
         Optional<Leaderboard> leaderboardOpt = leaderboardRepository
                 .findByMerchantIdOrderByTotalDesc(merchantId)
@@ -107,13 +109,13 @@ public class LeaderboardService {
 
         if (leaderboardOpt.isPresent()) {
             Leaderboard leaderboard = leaderboardOpt.get();
-            leaderboard.setTotal(leaderboard.getTotal() + amount);
+            leaderboard.setTotal(leaderboard.getTotal() + roundedAmount);
             leaderboardRepository.save(leaderboard);
         } else {
             Leaderboard newLeaderboard = Leaderboard.builder()
                     .merchantId(merchantId)
                     .customerId(customerId)
-                    .total(amount)
+                    .total(roundedAmount)
                     .rank(0) // dummy placeholder
                     .rivalId(0) // dummy placeholder
                     .difference(0.0) // dummy placeholder
