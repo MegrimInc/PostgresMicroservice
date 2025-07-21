@@ -33,24 +33,24 @@ public class MerchantService {
      * and have a verified Stripe account.
      * 
      * Filters:
-     * - Only includes merchants where isOpen = true (Will include when we have more merchants)
+     * - Only includes merchants where image is not null
      * - Only includes merchants with stripeVerificationStatus = "verified"
      * 
      * @return List of eligible MerchantDTOs
      */
     public List<MerchantDTO> findAllMerchants() {
-        List<Merchant> merchants = merchantRepository.findAll().stream()
+        return merchantRepository.findAll().stream()
+                // Keep merchants that are verified
                 .filter(m -> "verified".equalsIgnoreCase(m.getStripeVerificationStatus()))
-                .collect(Collectors.toList());
-
-        return merchants.stream()
+                // AND also have a non-null image
+                .filter(m -> m.getImage() != null) // ✨ This is the new line
+                // Now, map the remaining merchants to DTOs
                 .map(merchant -> {
                     List<Employee> employees = employeeRepository.findByMerchantId(merchant.getMerchantId());
                     return DTOConverter.convertToMerchantDTO(merchant, employees);
                 })
                 .collect(Collectors.toList());
     }
-
 
     /**
      * Retrieves the Stripe Account ID for the given Merchant ID.
