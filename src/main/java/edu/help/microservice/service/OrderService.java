@@ -87,6 +87,10 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
+    public List<Order> getOrdersBetween(Integer merchantId, Instant start, Instant end) {
+        return orderRepository.findByMerchantIdAndTimestampBetween(merchantId, start, end);
+    }
+    @Transactional(readOnly = true)
     public List<Order> getByDay(int merchantId, Date day) {
         return orderRepository.findByMerchantIdAndDate(merchantId, day);
     }

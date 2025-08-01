@@ -14,12 +14,19 @@ import java.util.List;
 
 public interface OrderRepository extends JpaRepository<Order, Integer> {
 
+    @Query("""
+       SELECT o FROM Order o
+       WHERE o.merchantId = :merchantId
+         AND o.timestamp >= :start
+         AND o.timestamp <  :end
+       """)
+    List<Order> findByMerchantIdAndTimestampBetween(@Param("merchantId") int merchantId,
+                                                    @Param("start") Instant start,
+                                                    @Param("end")   Instant end);
 
     @Query("SELECT o FROM Order o WHERE o.merchantId = :merchantId")
     List<Order> findByMerchantId(@Param("merchantId") int merchantId);
 
-    @Query("SELECT o FROM Order o WHERE o.merchantId = :merchantId AND o.timestamp BETWEEN :start AND :end")
-    List<Order> findByMerchantIdAndTimestampBetween(@Param("merchantId") int merchantId, @Param("start") Instant start, @Param("end") Instant end);
 
     @Query("SELECT o FROM Order o WHERE o.merchantId = :merchantId AND o.timestamp <= :startingInstant ORDER BY o.timestamp DESC")
     org.springframework.data.domain.Page<Order> findByMerchantIdAndTimestampLessThanEqualOrderByTimestampDesc(

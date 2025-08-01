@@ -28,10 +28,8 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequ
 import com.stripe.param.AccountRetrieveParams;
 import com.stripe.model.Account.Requirements;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
-import java.time.ZoneId;
+import java.time.*;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 
@@ -309,34 +307,25 @@ public class MerchantController {
 
     @GetMapping("/byDay")
     public ResponseEntity<?> byDay(@CookieValue(value = "auth", required = false) String authCookie,
-            @RequestParam("date") String dayStr) { // expects "yyyy-MM-dd"
-        try {
-            ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
-            if (!validation.getStatusCode().is2xxSuccessful())
-                return validation;
-            Integer merchantID = validation.getBody();
-            assert merchantID != null;
+                                   @RequestParam("date") String dayStr) {
 
-            LocalDate localDate = LocalDate.parse(dayStr);
-            ZoneId newYorkZone = ZoneId.of("America/New_York");
-            ZonedDateTime startOfDayNY = localDate.atStartOfDay(newYorkZone);
-            Date day = Date.from(startOfDayNY.toInstant());
+        ResponseEntity<Integer> validation = validateAndGetMerchantId(authCookie);
+        if (!validation.getStatusCode().is2xxSuccessful()) return validation;
+        Integer merchantId = validation.getBody();
 
-            List<Order> orders = orderService.getByDay(merchantID, day);
-            orders.sort((o1, o2) -> o2.getTimestamp().compareTo(o1.getTimestamp()));
+        // yyyy-MM-dd passed from UI
+        LocalDate localDate = LocalDate.parse(dayStr);
 
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
-            mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        ZoneId ny = ZoneId.of("America/New_York");
+        Instant start = localDate.atStartOfDay(ny).toInstant();     // 00:00 NY
+        Instant end   = start.plus(1, ChronoUnit.DAYS);             // next midnight NY
 
-            String ordersJson = mapper.writeValueAsString(orders);
-            return ResponseEntity.ok("{\"orders\":" + ordersJson + "}");
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error processing request");
-        }
+        List<Order> orders = orderService.getOrdersBetween(merchantId, start, end);
+        orders.sort(Comparator.comparing(Order::getTimestamp).reversed());
+
+        return ResponseEntity.ok(Map.of("orders", orders));
     }
+
 
     @GetMapping("/allItemCounts")
     public ResponseEntity<?> getAllItemCounts(@CookieValue(value = "auth", required = false) String authCookie) {
