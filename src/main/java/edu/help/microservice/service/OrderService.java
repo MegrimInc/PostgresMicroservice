@@ -246,6 +246,8 @@ public class OrderService {
         // Add to final total
         finalTotal = baseAmount + totalServiceFee;
 
+        String timestamp = getCurrentTimestamp();
+
         // Check if customer has enough points to cover the point-based portion
         if (!pointService.customerHasRequiredBalance(totalPointsPrice, baseAmount, request.getCustomerId(),
                 merchantId)) {
@@ -259,6 +261,7 @@ public class OrderService {
                     .totalPointPrice(totalPointsPrice)
                     .items(itemOrderResponses)
                     .name(customerName)
+                    .timestamp(timestamp)
                     .build();
         }
 
@@ -280,6 +283,7 @@ public class OrderService {
                         .totalPointPrice(totalPointsPrice)
                         .items(itemOrderResponses)
                         .name(customerName)
+                        .timestamp(timestamp)
                         .build();
             } catch (InvalidStripeChargeException exception) {
                 System.out.println(exception.getMessage());
@@ -294,6 +298,7 @@ public class OrderService {
                         .totalPointPrice(totalPointsPrice)
                         .items(itemOrderResponses)
                         .name(customerName)
+                        .timestamp(timestamp)
                         .build();
             }
         }
@@ -312,6 +317,7 @@ public class OrderService {
                 .totalPointPrice(totalPointsPrice)
                 .items(itemOrderResponses)
                 .name(customerName)
+                .timestamp(timestamp)
                 .build();
 
         try {
@@ -325,6 +331,10 @@ public class OrderService {
         }
 
         return response;
+    }
+
+     private String getCurrentTimestamp() {
+        return String.valueOf(System.currentTimeMillis());
     }
 
 }

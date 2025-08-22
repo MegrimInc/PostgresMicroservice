@@ -1,6 +1,8 @@
 package edu.help.microservice.service;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.Map;
 import java.util.Optional;
 
@@ -11,12 +13,16 @@ import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
 import com.stripe.model.PaymentMethod;
 import com.stripe.model.SetupIntent;
+import com.stripe.model.Transfer;
+import com.stripe.net.RequestOptions;
 import com.stripe.param.AccountCreateParams;
 import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.CustomerUpdateParams;
 import com.stripe.param.PaymentIntentCreateParams;
 import com.stripe.param.PaymentMethodListParams;
 import com.stripe.param.SetupIntentCreateParams;
+import com.stripe.param.TransferCreateParams;
+
 import edu.help.microservice.dto.PaymentIdSetRequest;
 import edu.help.microservice.entity.Merchant;
 import edu.help.microservice.entity.Customer;
@@ -31,8 +37,7 @@ import edu.help.microservice.repository.AuthRepository;
 import lombok.RequiredArgsConstructor;
 import com.stripe.model.Account;
 import org.springframework.beans.factory.annotation.Value;
-
-
+import java.security.MessageDigest;
 
 @Service
 @RequiredArgsConstructor
@@ -78,6 +83,7 @@ public class StripeService {
 
     /**
      * Creates a new Stripe Express connected account for the given email.
+     * 
      * @param email the email address to onboard
      * @return the Stripe account ID
      */
@@ -277,7 +283,57 @@ public class StripeService {
     }
 
     public boolean isLiveMode() {
-    return stripeApiKey != null && stripeApiKey.startsWith("sk_live_");
-}
+        return stripeApiKey != null && stripeApiKey.startsWith("sk_live_");
+    }
+
+    public void payoutPointsToMerchant(
+            int merchantId,
+            int totalPoints,
+            String timestamp,
+            int customerId) throws StripeException {
+        if (totalPoints <= 0)
+            return;
+
+       long amountCents = totalPoints;
+
+        // Lookup merchant to get connected account id
+        var merchantOpt = merchantRepository.findById(merchantId);
+        if (merchantOpt.isEmpty())
+            throw new MerchantNotFoundException(merchantId);
+        var merchant = merchantOpt.get();
+        String destinationAccount = merchant.getAccountId();
+
+        // Build a stable idempotency key (no PII)
+        String raw = "points|" + merchantId + "|" + customerId + "|" + amountCents + "|"
+                + (timestamp == null ? "" : timestamp);
+        String idemKey = "points_payout_" + sha256(raw);
+
+        TransferCreateParams params = TransferCreateParams.builder()
+                .setAmount(amountCents)
+                .setCurrency("usd")
+                .setDestination(destinationAccount)
+                .putMetadata("type", "points_payout")
+                .putMetadata("merchantId", String.valueOf(merchantId))
+                .putMetadata("customerId", String.valueOf(customerId))
+                .putMetadata("timestamp", timestamp == null ? "" : timestamp)
+                .build();
+
+        RequestOptions opts = RequestOptions.builder()
+                .setIdempotencyKey(idemKey)
+                .build();
+
+        Transfer.create(params, opts);
+    }
+
+    private static String sha256(String s) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] hash = md.digest(s.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (Exception e) {
+            // fallback if algo missing (unlikely)
+            return Integer.toHexString(s.hashCode());
+        }
+    }
 
 }

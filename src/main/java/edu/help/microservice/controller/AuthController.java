@@ -1,12 +1,13 @@
 package edu.help.microservice.controller;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Properties;
 import java.util.Random;
-
 
 import edu.help.microservice.util.Cookies;
 import jakarta.servlet.http.Cookie;
@@ -24,7 +25,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import com.stripe.exception.StripeException;
-
 
 import edu.help.microservice.dto.AcceptTOSRequest;
 import edu.help.microservice.dto.AcceptTOSRequest2;
@@ -46,26 +46,24 @@ import static edu.help.microservice.config.ApiConfig.BASE_PATH;
 import static edu.help.microservice.config.ApiConfig.ENV;
 import static edu.help.microservice.config.SecurityConfig.HASH_KEY;
 
-
-
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
 
     /*
-    In the context of merchants:
-    
-    Registration is by WEBSITE ONLY
-    Verification is by WEBSITE ONLY
-    Login is by WEBSITE(cookies) AND APP(local-storage)
-    
-    For Customers:
-    Registration is by APP ONLY
-    Verification is by APP ONLY
-    Login is by APP ONLY
-    
-    
+     * In the context of merchants:
+     * 
+     * Registration is by WEBSITE ONLY
+     * Verification is by WEBSITE ONLY
+     * Login is by WEBSITE(cookies) AND APP(local-storage)
+     * 
+     * For Customers:
+     * Registration is by APP ONLY
+     * Verification is by APP ONLY
+     * Login is by APP ONLY
+     * 
+     * 
      */
 
     private static final boolean setSecure = ENV.equals("test");
@@ -348,7 +346,6 @@ public class AuthController {
         return ResponseEntity.ok("OK");
     }
 
-
     // ENDPOINT: Registration for Customers
     @PostMapping("/register-customer")
     public ResponseEntity<String> registerCustomer(@RequestBody AcceptTOSRequest2 request) {
@@ -397,6 +394,17 @@ public class AuthController {
         customerService.save(customer);
         auth.setCustomer(customer);
         authService.save(auth);
+
+        //TODO: GET RID OF THIS WHEN WE STOP DOING PROMOTION
+
+        if (customer.getPoints() == null) {
+            customer.setPoints(new HashMap<>());
+        }
+        customer.getPoints()
+                .computeIfAbsent(customer.getCustomerId(), k -> new HashMap<>())
+                .merge(95, 150, Integer::sum);
+
+        customerService.save(customer);
 
         // Return the customer ID as a string
         return ResponseEntity.ok(String.valueOf(customer.getCustomerId()));

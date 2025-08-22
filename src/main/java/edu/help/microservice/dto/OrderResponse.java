@@ -22,4 +22,5 @@ public class OrderResponse {
     private boolean inAppPayments;
     private List<ItemOrderResponse> items;
     private String messageType;
+    private String timestamp; 
 }
