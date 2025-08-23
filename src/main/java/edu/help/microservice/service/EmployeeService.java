@@ -1,6 +1,6 @@
 package edu.help.microservice.service;
 
-import java.time.ZoneId;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,25 +16,23 @@ import edu.help.microservice.entity.Order;
 @Service
 @RequiredArgsConstructor
 public class EmployeeService {
-     private final EmployeeRepository employeeRepository;
+    private final EmployeeRepository employeeRepository;
     private final OrderRepository orderRepository;
 
-
-     public List<EmployeeShiftSummary> getAllEmployeeShiftSummaries(int merchantId) {
+    public List<EmployeeShiftSummary> getAllEmployeeShiftSummaries(int merchantId) {
         List<Employee> employees = employeeRepository.findByMerchantId(merchantId);
         List<EmployeeShiftSummary> results = new ArrayList<>();
 
         for (Employee emp : employees) {
-            if (emp.getShiftTimestamp() == null) continue;
+            Instant cutoff = emp.getShiftTimestamp(); // now stored as UTC Instant
+            if (cutoff == null)
+                continue;
 
             List<Order> orders = orderRepository.findByMerchantIdAndEmployeeIdAfterShift(
-                    merchantId,
-                    emp.getEmployeeId(),
-                    emp.getShiftTimestamp().atZone(ZoneId.of("America/New_York")).toInstant()
-            );
+                    merchantId, emp.getEmployeeId(), cutoff);
 
-            double revenue = 0;
-            double gratuity = 0;
+            double revenue = 0.0; // (regular + tax), no service fee
+            double gratuity = 0.0;
             int points = 0;
 
             for (Order o : orders) {
@@ -43,10 +41,14 @@ public class EmployeeService {
                 points += o.getTotalPointPrice();
             }
 
-            results.add(new EmployeeShiftSummary(emp.getEmployeeId(), emp.getName(), revenue, gratuity, points));
+            results.add(new EmployeeShiftSummary(
+                    emp.getEmployeeId(),
+                    emp.getName(),
+                    Math.round(revenue * 100) / 100.0,
+                    Math.round(gratuity * 100) / 100.0,
+                    points));
         }
-
         return results;
     }
-    
+
 }

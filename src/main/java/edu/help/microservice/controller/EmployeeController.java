@@ -3,7 +3,6 @@ package edu.help.microservice.controller;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -51,17 +50,6 @@ public class EmployeeController {
     private final S3Service s3Service;
     private final EmployeeRepository employeeRepository;
     private final EmployeeService employeeService;
-
-    // @Autowired
-    // public EmployeeController(OrderService orderService, AuthService
-    // signUpService, MerchantService merchantService,
-    // S3Service s3Service, EmployeeRepository employeeRepository) {
-    // this.orderService = orderService;
-    // this.authService = signUpService;
-    // this.merchantService = merchantService;
-    // this.s3Service = s3Service;
-    // this.employeeRepository = employeeRepository;
-    // }
 
     // Endpoint to save an order
     @PostMapping("/save")
@@ -222,7 +210,7 @@ public class EmployeeController {
 
     @PostMapping("/createEmployee")
     public ResponseEntity<Employee> createEmployee(@RequestBody Employee employee) {
-        employee.setShiftTimestamp(LocalDateTime.now()); // set current time
+        employee.setShiftTimestamp(Instant.now());
         Employee saved = employeeRepository.save(employee);
         return new ResponseEntity<>(saved, HttpStatus.CREATED);
     }

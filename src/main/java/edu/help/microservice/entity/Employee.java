@@ -3,6 +3,7 @@ package edu.help.microservice.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Entity
@@ -31,6 +32,6 @@ public class Employee {
     private String email;
 
     @Column(name = "shift_timestamp")
-    private LocalDateTime shiftTimestamp;
+    private Instant shiftTimestamp;
 
 }
