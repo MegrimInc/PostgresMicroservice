@@ -15,7 +15,7 @@ public class OrderRequest {
     private int merchantId;
     private int customerId;
     private List<ItemOrderRequest> items;
-    private boolean isDiscount;
+    private Boolean isDiscount;
     private String password;
 
 }

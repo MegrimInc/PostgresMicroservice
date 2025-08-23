@@ -202,8 +202,8 @@ public class OrderService {
                 continue;
             }
 
-            double price = request.isDiscount() ? item.getDiscountPrice() : item.getRegularPrice();
-            System.out.println("[DEBUG] isDiscount: " + request.isDiscount());
+            double price = request.getIsDiscount() ? item.getDiscountPrice() : item.getRegularPrice();
+            System.out.println("[DEBUG] isDiscount: " + request.getIsDiscount());
             double itemSubtotal = price * quantity;
 
             totalMoneyPrice += itemSubtotal;
