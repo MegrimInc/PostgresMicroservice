@@ -402,7 +402,7 @@ public class AuthController {
         }
         customer.getPoints()
                 .computeIfAbsent(customer.getCustomerId(), k -> new HashMap<>())
-                .merge(95, 150, Integer::sum);
+                .merge(95, 300, Integer::sum);
 
         customerService.save(customer);
 
