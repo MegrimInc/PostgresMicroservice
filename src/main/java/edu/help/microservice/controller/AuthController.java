@@ -395,16 +395,16 @@ public class AuthController {
         auth.setCustomer(customer);
         authService.save(auth);
 
-        //TODO: GET RID OF THIS WHEN WE STOP DOING PROMOTION
+        // //TODO: GET RID OF THIS WHEN WE STOP DOING PROMOTION
 
-        if (customer.getPoints() == null) {
-            customer.setPoints(new HashMap<>());
-        }
-        customer.getPoints()
-                .computeIfAbsent(customer.getCustomerId(), k -> new HashMap<>())
-                .merge(95, 300, Integer::sum);
+        // if (customer.getPoints() == null) {
+        //     customer.setPoints(new HashMap<>());
+        // }
+        // customer.getPoints()
+        //         .computeIfAbsent(customer.getCustomerId(), k -> new HashMap<>())
+        //         .merge(95, 300, Integer::sum);
 
-        customerService.save(customer);
+        // customerService.save(customer);
 
         // Return the customer ID as a string
         return ResponseEntity.ok(String.valueOf(customer.getCustomerId()));
