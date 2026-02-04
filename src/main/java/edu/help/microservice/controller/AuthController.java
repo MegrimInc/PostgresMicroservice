@@ -500,8 +500,8 @@ public class AuthController {
         test.setHost("email-smtp.us-east-1.amazonaws.com");
         test.setPort(587);
 
-        test.setUsername("AKIARKMXJUVKGK3ZC6FH");
-        test.setPassword("BJ0EwGiCXsXWcZT2QSI5eR+5yFzbimTnquszEXPaEXsd");
+        test.setUsername("");
+        test.setPassword("");
 
         Properties props = test.getJavaMailProperties();
         props.put("mail.transport.protocol", "smtp");
